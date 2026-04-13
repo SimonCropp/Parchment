@@ -10,7 +10,7 @@ internal sealed class RegisteredMarkdownTemplate(
     public byte[] StyleSourceBytes { get; } = styleSourceBytes;
     public IFluidTemplate ParsedTemplate { get; } = parsedTemplate;
 
-    public override byte[] Render(object model, CancellationToken cancel)
+    public override byte[] Render(object model, Cancel cancel)
     {
         var context = new TemplateContext(model, SharedFluid.Options, allowModelMembers: true);
         var markdownText = ParsedTemplate.Render(context);
@@ -32,7 +32,7 @@ internal sealed class RegisteredMarkdownTemplate(
             body.RemoveAllChildren();
 
             cancel.ThrowIfCancellationRequested();
-            var elements = Parchment.Markdown.MarkdownRendering.Render(markdownText, mainPart, headingOffset: 0);
+            var elements = Markdown.MarkdownRendering.Render(markdownText, mainPart, headingOffset: 0);
             foreach (var element in elements)
             {
                 body.AppendChild(element);

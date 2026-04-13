@@ -14,10 +14,9 @@ internal static class SharedFluid
 
     static readonly MethodInfo registerGenericMethod = typeof(MemberAccessStrategyExtensions)
         .GetMethods(BindingFlags.Public | BindingFlags.Static)
-        .First(m => m.Name == "Register"
-                    && m.IsGenericMethodDefinition
-                    && m.GetGenericArguments().Length == 1
-                    && m.GetParameters().Length == 1);
+        .First(_ => _ is { Name: "Register", IsGenericMethodDefinition: true }
+                    && _.GetGenericArguments().Length == 1
+                    && _.GetParameters().Length == 1);
 
     static TemplateOptions BuildOptions()
     {
@@ -74,7 +73,7 @@ internal static class SharedFluid
                 return type.GetGenericArguments()[0];
             }
 
-            if (typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
+            if (typeof(IEnumerable).IsAssignableFrom(type))
             {
                 return type.GetGenericArguments()[0];
             }
@@ -99,8 +98,8 @@ internal static class SharedFluid
             type == typeof(DateTime) ||
             type == typeof(DateTimeOffset) ||
             type == typeof(TimeSpan) ||
-            type == typeof(DateOnly) ||
-            type == typeof(TimeOnly) ||
+            type == typeof(Date) ||
+            type == typeof(Time) ||
             type == typeof(Guid))
         {
             return false;
@@ -116,6 +115,6 @@ internal static class SharedFluid
             return false;
         }
 
-        return type.IsClass || (type.IsValueType && !type.IsPrimitive && !type.IsEnum);
+        return type.IsClass || type is { IsValueType: true, IsPrimitive: false, IsEnum: false };
     }
 }

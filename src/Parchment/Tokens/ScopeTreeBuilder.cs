@@ -36,7 +36,7 @@ internal static class ScopeTreeBuilder
         while (queue.Count > 0)
         {
             var next = queue.Peek();
-            if (next.Kind == ParagraphKind.Block && next.Block != null)
+            if (next is { Kind: ParagraphKind.Block, Block: not null })
             {
                 var kind = next.Block.Kind;
                 if (closer != null && IsCloserOrAlternate(kind, closer.Value))

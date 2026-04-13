@@ -76,7 +76,7 @@ internal static class Filters
             yield break;
         }
 
-        if (input.ToObjectValue() is System.Collections.IEnumerable raw and not string)
+        if (input.ToObjectValue() is IEnumerable raw and not string)
         {
             foreach (var item in raw)
             {

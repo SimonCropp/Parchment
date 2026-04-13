@@ -241,7 +241,7 @@ internal sealed class ScopeTreeRunner(
 
             foreach (var clone in clones)
             {
-                insertAnchor = parent.InsertAfter(clone, insertAnchor)!;
+                insertAnchor = parent.InsertAfter(clone, insertAnchor);
             }
         }
 
@@ -345,7 +345,7 @@ internal sealed class ScopeTreeRunner(
         };
 
     static string Rename(string name, Dictionary<string, string> map) =>
-        map.TryGetValue(name, out var replacement) ? replacement : name;
+        map.GetValueOrDefault(name, name);
 
     IEnumerable<object?> ResolveIterable(LoopNode loop)
     {
@@ -358,7 +358,7 @@ internal sealed class ScopeTreeRunner(
         }
 
         var raw = ResolveContextPath(refs[0]);
-        if (raw is System.Collections.IEnumerable enumerable and not string)
+        if (raw is IEnumerable enumerable and not string)
         {
             foreach (var item in enumerable)
             {

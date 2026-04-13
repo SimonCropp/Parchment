@@ -66,7 +66,7 @@ internal sealed class WordNumberingState(MainDocumentPart mainPart)
         foreach (var abstractNum in part.Numbering.Elements<AbstractNum>())
         {
             var idStr = abstractNum.AbstractNumberId?.Value;
-            if (idStr.HasValue && idStr.Value >= nextAbstractNumId)
+            if (idStr >= nextAbstractNumId)
             {
                 nextAbstractNumId = idStr.Value + 1;
             }
@@ -75,7 +75,7 @@ internal sealed class WordNumberingState(MainDocumentPart mainPart)
         foreach (var numberingInstance in part.Numbering.Elements<NumberingInstance>())
         {
             var idStr = numberingInstance.NumberID?.Value;
-            if (idStr.HasValue && idStr.Value >= nextNumId)
+            if (idStr >= nextNumId)
             {
                 nextNumId = idStr.Value + 1;
             }

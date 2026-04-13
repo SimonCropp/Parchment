@@ -5,7 +5,7 @@ internal sealed class HtmlInlineRenderer :
 {
     protected override void Write(OpenXmlMarkdownRenderer renderer, HtmlInline inline)
     {
-        var tag = inline.Tag ?? string.Empty;
+        var tag = inline.Tag;
         if (tag.Length == 0)
         {
             return;

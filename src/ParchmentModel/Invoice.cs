@@ -3,8 +3,8 @@ namespace ParchmentModel;
 public class Invoice
 {
     public required string Number { get; init; }
-    public required DateOnly IssueDate { get; init; }
-    public required DateOnly DueDate { get; init; }
+    public required Date IssueDate { get; init; }
+    public required Date DueDate { get; init; }
     public required Customer Customer { get; init; }
     public required IReadOnlyList<LineItem> Lines { get; init; }
     public required string Currency { get; init; }

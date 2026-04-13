@@ -10,7 +10,7 @@ internal sealed class RegisteredDocxTemplate(
     public byte[] CanonicalBytes { get; } = canonicalBytes;
     public IReadOnlyList<PartScopeTree> Parts { get; } = parts;
 
-    public override byte[] Render(object model, CancellationToken cancel)
+    public override byte[] Render(object model, Cancel cancel)
     {
         using var stream = DocxCloner.ToWritableStream(CanonicalBytes);
         using (var doc = WordprocessingDocument.Open(stream, true))

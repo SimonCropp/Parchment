@@ -9,10 +9,10 @@ internal static class DocxTemplateBuilder
     public static byte[] Build(params string[] paragraphs)
     {
         using var stream = new MemoryStream();
-        using (var doc = WordprocessingDocument.Create(stream, DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
+        using (var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
         {
             var mainPart = doc.AddMainDocumentPart();
-            mainPart.Document = new Document(new Body());
+            mainPart.Document = new(new Body());
             var body = mainPart.Document.Body!;
 
             AddStyles(mainPart);

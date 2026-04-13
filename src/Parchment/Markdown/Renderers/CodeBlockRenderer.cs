@@ -7,7 +7,7 @@ internal sealed class CodeBlockRenderer :
     {
         foreach (var line in block.Lines.Lines.Take(block.Lines.Count))
         {
-            var text = line.ToString() ?? string.Empty;
+            var text = line.ToString();
             var paragraph = new Paragraph(
                 new ParagraphProperties(new ParagraphStyleId { Val = "Code" }),
                 new Run(

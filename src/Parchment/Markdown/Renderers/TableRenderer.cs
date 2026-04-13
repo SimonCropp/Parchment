@@ -33,7 +33,7 @@ internal sealed class TableRenderer :
     static TableGrid BuildTableGrid(Markdig.Extensions.Tables.Table table)
     {
         var grid = new TableGrid();
-        var columns = table.ColumnDefinitions?.Count ?? 0;
+        var columns = table.ColumnDefinitions.Count;
         for (var i = 0; i < columns; i++)
         {
             grid.Append(new GridColumn());

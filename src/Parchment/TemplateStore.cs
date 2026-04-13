@@ -88,7 +88,7 @@ public sealed class TemplateStore
         using (var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
         {
             var mainPart = doc.AddMainDocumentPart();
-            mainPart.Document = new Document(new Body(new Paragraph()));
+            mainPart.Document = new(new Body(new Paragraph()));
 
             var stylesPart = mainPart.AddNewPart<StyleDefinitionsPart>();
             var styles = new Styles();
@@ -112,7 +112,7 @@ public sealed class TemplateStore
         return Regex.IsMatch(markdown, pattern);
     }
 
-    public async Task<byte[]> Render(string name, object model, CancellationToken cancel = default)
+    public async Task<byte[]> Render(string name, object model, Cancel cancel = default)
     {
         if (!templates.TryGetValue(name, out var template))
         {
@@ -129,13 +129,13 @@ public sealed class TemplateStore
         return await Task.Run(() => template.Render(model, cancel), cancel).ConfigureAwait(false);
     }
 
-    public async Task RenderToStream(string name, object model, Stream output, CancellationToken cancel = default)
+    public async Task RenderToStream(string name, object model, Stream output, Cancel cancel = default)
     {
         var bytes = await Render(name, model, cancel).ConfigureAwait(false);
         await output.WriteAsync(bytes, cancel).ConfigureAwait(false);
     }
 
-    public async Task RenderToFile(string name, object model, string path, CancellationToken cancel = default)
+    public async Task RenderToFile(string name, object model, string path, Cancel cancel = default)
     {
         var bytes = await Render(name, model, cancel).ConfigureAwait(false);
         await File.WriteAllBytesAsync(path, bytes, cancel).ConfigureAwait(false);
@@ -233,11 +233,11 @@ public sealed class TemplateStore
         return tag switch
         {
             "for" => RebuildFor(source, expression),
-            "endfor" => new BlockMarker(BlockTagKind.EndFor, source, null, null, null, null, []),
+            "endfor" => new(BlockTagKind.EndFor, source, null, null, null, null, []),
             "if" => RebuildIf(source, expression),
             "elsif" or "elseif" => RebuildElsif(source, expression),
-            "else" => new BlockMarker(BlockTagKind.Else, source, null, null, null, null, []),
-            "endif" => new BlockMarker(BlockTagKind.EndIf, source, null, null, null, null, []),
+            "else" => new(BlockTagKind.Else, source, null, null, null, null, []),
+            "endif" => new(BlockTagKind.EndIf, source, null, null, null, null, []),
             _ => null
         };
     }
