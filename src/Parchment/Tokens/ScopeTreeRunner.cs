@@ -122,11 +122,21 @@ internal sealed class ScopeTreeRunner(
     {
         try
         {
-            // If the token resolves directly to a TokenValue on the model (via a filter or a typed
-            // property), prefer that so structural rendering kicks in. Otherwise render to string.
-            if (TryGetDirectValue(site, out var direct))
+            // Walk the parsed FluidTemplate to its OutputStatement and evaluate the underlying
+            // Expression directly (filter chain included). This lets us see whether the value is a
+            // TokenValue (markdown / openxml hatch) before falling back to string rendering, without
+            // round-tripping through the Render() pipeline twice.
+            var statements = ((Fluid.Parser.FluidTemplate)site.Template).Statements;
+            if (statements.Count > 0 && statements[0] is Fluid.Ast.OutputStatement output)
             {
-                return direct;
+                var fluidValue = output.Expression.EvaluateAsync(context).GetAwaiter().GetResult();
+                var underlying = fluidValue.ToObjectValue();
+                if (underlying is TokenValue tokenValue)
+                {
+                    return tokenValue;
+                }
+
+                return fluidValue.ToStringValue();
             }
 
             return site.Template.Render(context);
@@ -145,65 +155,6 @@ internal sealed class ScopeTreeRunner(
                 site.Source,
                 inner: ex);
         }
-    }
-
-    bool TryGetDirectValue(DocxTokenSite site, out object value)
-    {
-        // For v1, direct TokenValue extraction is done by the Fluid filter chain: a filter returning
-        // an ObjectValue containing a TokenValue short-circuits into a render-time structural edit.
-        // We detect this by evaluating the token as an object via the model accessor.
-        value = null!;
-        if (site.References.Count == 0)
-        {
-            return false;
-        }
-
-        var first = site.References[0];
-        var raw = ResolveContextPath(first);
-        if (raw is TokenValue tokenValue)
-        {
-            value = tokenValue;
-            return true;
-        }
-
-        return false;
-    }
-
-    object? ResolveContextPath(IdentifierPath path)
-    {
-        var rootName = path.Root;
-        var fromContext = context.GetValue(rootName)?.ToObjectValue();
-        var value = fromContext;
-        var start = 1;
-        if (value == null)
-        {
-            value = context.Model?.ToObjectValue();
-            start = 0;
-            if (value == null)
-            {
-                return null;
-            }
-        }
-
-        for (var i = start; i < path.Segments.Count; i++)
-        {
-            var segment = path.Segments[i];
-            var property = value.GetType().GetProperty(
-                segment,
-                BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-            if (property == null)
-            {
-                return null;
-            }
-
-            value = property.GetValue(value);
-            if (value == null)
-            {
-                return null;
-            }
-        }
-
-        return value;
     }
 
     void ProcessLoop(LoopNode loop)
@@ -345,24 +296,14 @@ internal sealed class ScopeTreeRunner(
     static string Rename(string name, Dictionary<string, string> map) =>
         map.GetValueOrDefault(name, name);
 
-    IEnumerable<object?> ResolveIterable(LoopNode loop)
+    IEnumerable<FluidValue> ResolveIterable(LoopNode loop)
     {
-        // LoopSource is wrapped as `{{ expression }}` — we need the raw enumerable, not a string.
-        // Walk the identifier path through the template context to find the underlying object.
-        var refs = IdentifierVisitor.Collect(loop.LoopSource);
-        if (refs.Count == 0)
-        {
-            yield break;
-        }
-
-        var raw = ResolveContextPath(refs[0]);
-        if (raw is IEnumerable enumerable and not string)
-        {
-            foreach (var item in enumerable)
-            {
-                yield return item;
-            }
-        }
+        // Hand the loop source straight to Fluid: ForStatement.Source is an Expression that, when
+        // evaluated, yields a FluidValue we can enumerate. This honors filters, complex paths,
+        // arithmetic, and any value converters Fluid is configured with — none of which the previous
+        // reflection-walk supported.
+        var sourceValue = loop.LoopSource.EvaluateAsync(context).GetAwaiter().GetResult();
+        return sourceValue.Enumerate(context);
     }
 
     void ProcessIf(IfNode ifNode)
@@ -499,8 +440,8 @@ internal sealed class ScopeTreeRunner(
         }
     }
 
-    bool EvaluateCondition(IFluidTemplate template) =>
-        template.Render(context) == "true";
+    bool EvaluateCondition(Fluid.Ast.Expression condition) =>
+        condition.EvaluateAsync(context).GetAwaiter().GetResult().ToBooleanValue();
 
     static string ToDisplayString(object value) =>
         value switch

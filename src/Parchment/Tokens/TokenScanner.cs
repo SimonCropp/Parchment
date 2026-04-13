@@ -157,80 +157,76 @@ internal static class TokenScanner
                 source);
         }
 
-        var match = TokenRegex.ForExpression.Match(expression);
-        if (!match.Success)
+        // Parse `{% for x in y %}{% endfor %}` so Fluid yields a real ForStatement we can pull
+        // Identifier and Source off — no manual regex of the loop variable, no manual reflection.
+        var liquid = $"{{% for {expression} %}}{{% endfor %}}";
+        if (!SharedFluid.Parser.TryParse(liquid, out var template, out var error))
         {
             throw new ParchmentRegistrationException(
                 templateName,
-                $"Malformed {{% for %}} expression: {expression}",
+                $"Failed to parse {{% for %}} tag: {error}",
                 partUri,
                 source);
         }
 
-        var loopVar = match.Groups["var"].Value;
-        var sourceExpr = match.Groups["source"].Value.Trim();
-
-        var sourceLiquid = $"{{{{ {sourceExpr} }}}}";
-        if (!SharedFluid.Parser.TryParse(sourceLiquid, out var template, out var error))
+        var forStatement = ((Fluid.Parser.FluidTemplate)template).Statements
+            .OfType<Fluid.Ast.ForStatement>()
+            .FirstOrDefault();
+        if (forStatement == null)
         {
             throw new ParchmentRegistrationException(
                 templateName,
-                $"Failed to parse for-loop source expression: {error}",
+                $"{{% for %}} tag did not parse as a ForStatement",
                 partUri,
                 source);
         }
 
         var refs = IdentifierVisitor.Collect(template);
-        return new(BlockTagKind.For, source, expression, null, loopVar, template, refs);
+        return new(BlockTagKind.For, source, expression, null, forStatement.Identifier, forStatement.Source, refs);
     }
 
-    static BlockMarker BuildIfTag(string source, string? expression, string templateName, string partUri)
+    static BlockMarker BuildIfTag(string source, string? expression, string templateName, string partUri) =>
+        BuildConditional(BlockTagKind.If, source, expression, templateName, partUri);
+
+    static BlockMarker BuildElsifTag(string source, string? expression, string templateName, string partUri) =>
+        BuildConditional(BlockTagKind.ElsIf, source, expression, templateName, partUri);
+
+    static BlockMarker BuildConditional(BlockTagKind kind, string source, string? expression, string templateName, string partUri)
     {
         if (expression == null)
         {
             throw new ParchmentRegistrationException(
                 templateName,
-                "{% if %} tag is missing its condition",
+                $"{{% {kind.ToString().ToLowerInvariant()} %}} tag is missing its condition",
                 partUri,
                 source);
         }
 
-        var conditionLiquid = $"{{% if {expression} %}}true{{% else %}}false{{% endif %}}";
-        if (!SharedFluid.Parser.TryParse(conditionLiquid, out var template, out var error))
+        // Parse `{% if cond %}{% endif %}` so Fluid yields a real IfStatement we can pull
+        // Condition off — no string-comparison "true"/"false" trick at render time.
+        var liquid = $"{{% if {expression} %}}{{% endif %}}";
+        if (!SharedFluid.Parser.TryParse(liquid, out var template, out var error))
         {
             throw new ParchmentRegistrationException(
                 templateName,
-                $"Failed to parse if condition: {error}",
+                $"Failed to parse {{% if %}} tag: {error}",
+                partUri,
+                source);
+        }
+
+        var ifStatement = ((Fluid.Parser.FluidTemplate)template).Statements
+            .OfType<Fluid.Ast.IfStatement>()
+            .FirstOrDefault();
+        if (ifStatement == null)
+        {
+            throw new ParchmentRegistrationException(
+                templateName,
+                $"{{% {kind.ToString().ToLowerInvariant()} %}} tag did not parse as an IfStatement",
                 partUri,
                 source);
         }
 
         var refs = IdentifierVisitor.Collect(template);
-        return new(BlockTagKind.If, source, expression, template, null, null, refs);
-    }
-
-    static BlockMarker BuildElsifTag(string source, string? expression, string templateName, string partUri)
-    {
-        if (expression == null)
-        {
-            throw new ParchmentRegistrationException(
-                templateName,
-                "{% elsif %} tag is missing its condition",
-                partUri,
-                source);
-        }
-
-        var conditionLiquid = $"{{% if {expression} %}}true{{% else %}}false{{% endif %}}";
-        if (!SharedFluid.Parser.TryParse(conditionLiquid, out var template, out var error))
-        {
-            throw new ParchmentRegistrationException(
-                templateName,
-                $"Failed to parse elsif condition: {error}",
-                partUri,
-                source);
-        }
-
-        var refs = IdentifierVisitor.Collect(template);
-        return new(BlockTagKind.ElsIf, source, expression, template, null, null, refs);
+        return new(kind, source, expression, ifStatement.Condition, null, null, refs);
     }
 }

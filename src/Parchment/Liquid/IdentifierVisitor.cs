@@ -18,6 +18,13 @@ internal sealed class IdentifierVisitor :
         return visitor.paths;
     }
 
+    public static IReadOnlyList<IdentifierPath> Collect(Expression expression)
+    {
+        var visitor = new IdentifierVisitor();
+        visitor.Visit(expression);
+        return visitor.paths;
+    }
+
     protected override Expression VisitMemberExpression(MemberExpression memberExpression)
     {
         var segments = new List<string>(memberExpression.Segments.Count);

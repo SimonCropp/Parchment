@@ -1,2 +1,4 @@
 ﻿Tags:
-Parchment.Tokens.TokenValue+OpenXmlToken
+priority
+net-30
+repeat-customer

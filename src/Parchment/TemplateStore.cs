@@ -246,56 +246,53 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
             return null;
         }
 
-        var match = TokenRegex.ForExpression.Match(expression);
-        if (!match.Success)
+        var liquid = $"{{% for {expression} %}}{{% endfor %}}";
+        if (!SharedFluid.Parser.TryParse(liquid, out var template, out _))
         {
             return null;
         }
 
-        var loopVar = match.Groups["var"].Value;
-        var sourceExpr = match.Groups["source"].Value.Trim();
-        var sourceLiquid = $"{{{{ {sourceExpr} }}}}";
-        if (!SharedFluid.Parser.TryParse(sourceLiquid, out var template, out _))
+        var forStatement = ((Fluid.Parser.FluidTemplate)template).Statements
+            .OfType<Fluid.Ast.ForStatement>()
+            .FirstOrDefault();
+        if (forStatement == null)
         {
             return null;
         }
 
-        var refs = IdentifierVisitor.Collect(template);
-        return new(BlockTagKind.For, source, expression, null, loopVar, template, refs);
+        var refs = IdentifierVisitor.Collect(forStatement.Source);
+        return new(BlockTagKind.For, source, expression, null, forStatement.Identifier, forStatement.Source, refs);
     }
 
-    static BlockMarker? RebuildIf(string source, string? expression)
+    static BlockMarker? RebuildIf(string source, string? expression) =>
+        RebuildConditional(BlockTagKind.If, source, expression);
+
+    static BlockMarker? RebuildElsif(string source, string? expression) =>
+        RebuildConditional(BlockTagKind.ElsIf, source, expression);
+
+    static BlockMarker? RebuildConditional(BlockTagKind kind, string source, string? expression)
     {
         if (expression == null)
         {
             return null;
         }
 
-        var conditionLiquid = $"{{% if {expression} %}}true{{% else %}}false{{% endif %}}";
-        if (!SharedFluid.Parser.TryParse(conditionLiquid, out var template, out _))
+        var liquid = $"{{% if {expression} %}}{{% endif %}}";
+        if (!SharedFluid.Parser.TryParse(liquid, out var template, out _))
         {
             return null;
         }
 
-        var refs = IdentifierVisitor.Collect(template);
-        return new(BlockTagKind.If, source, expression, template, null, null, refs);
-    }
-
-    static BlockMarker? RebuildElsif(string source, string? expression)
-    {
-        if (expression == null)
+        var ifStatement = ((Fluid.Parser.FluidTemplate)template).Statements
+            .OfType<Fluid.Ast.IfStatement>()
+            .FirstOrDefault();
+        if (ifStatement == null)
         {
             return null;
         }
 
-        var conditionLiquid = $"{{% if {expression} %}}true{{% else %}}false{{% endif %}}";
-        if (!SharedFluid.Parser.TryParse(conditionLiquid, out var template, out _))
-        {
-            return null;
-        }
-
-        var refs = IdentifierVisitor.Collect(template);
-        return new(BlockTagKind.ElsIf, source, expression, template, null, null, refs);
+        var refs = IdentifierVisitor.Collect(ifStatement.Condition);
+        return new(kind, source, expression, ifStatement.Condition, null, null, refs);
     }
 }
 
