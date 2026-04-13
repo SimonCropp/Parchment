@@ -232,7 +232,7 @@ internal sealed class ScopeTreeRunner(
             var clonedRunner = new ScopeTreeRunner(
                 templateName,
                 partUri,
-                BuildCloneAnchorMap(clones, nameMap),
+                BuildCloneAnchorMap(clones),
                 context,
                 mainPart);
             var clonedBody = RemapBody(loop.Body, nameMap);
@@ -293,9 +293,7 @@ internal sealed class ScopeTreeRunner(
         return map;
     }
 
-    static Dictionary<string, Paragraph> BuildCloneAnchorMap(
-        IReadOnlyList<OpenXmlElement> clones,
-        Dictionary<string, string> nameMap)
+    static Dictionary<string, Paragraph> BuildCloneAnchorMap(IReadOnlyList<OpenXmlElement> clones)
     {
         var map = new Dictionary<string, Paragraph>(StringComparer.Ordinal);
         foreach (var clone in clones)

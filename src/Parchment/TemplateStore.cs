@@ -34,7 +34,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         }
 
         var canonicalBytes = stream.ToArray();
-        var registered = new RegisteredDocxTemplate(name, typeof(TModel), canonicalBytes, ExtractPartsFromBytes(name, canonicalBytes, typeof(TModel)));
+        var registered = new RegisteredDocxTemplate(name, typeof(TModel), canonicalBytes, ExtractPartsFromBytes(name, canonicalBytes));
         templates[name] = registered;
         logger.LogInformation("Registered docx template {Name} for {ModelType}", name, typeof(TModel).Name);
     }
@@ -141,7 +141,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
     public static void AddFilter(string name, FilterDelegate filter) =>
         SharedFluid.Options.Filters.AddFilter(name, filter);
 
-    static IReadOnlyList<PartScopeTree> ExtractPartsFromBytes(string name, byte[] bytes, Type modelType)
+    static IReadOnlyList<PartScopeTree> ExtractPartsFromBytes(string name, byte[] bytes)
     {
         using var stream = DocxCloner.ToWritableStream(bytes);
         using var doc = WordprocessingDocument.Open(stream, false);
@@ -204,7 +204,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
             }
             else
             {
-                block = ParseBlock(source, templateName, partUri);
+                block = ParseBlock(source);
             }
         }
 
@@ -216,7 +216,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         return new(paragraph, anchorName, ParagraphKind.Substitution, substitutions, null);
     }
 
-    static BlockMarker? ParseBlock(string source, string templateName, string partUri)
+    static BlockMarker? ParseBlock(string source)
     {
         var tagMatch = TokenRegex.BlockTag.Match(source);
         if (!tagMatch.Success)
