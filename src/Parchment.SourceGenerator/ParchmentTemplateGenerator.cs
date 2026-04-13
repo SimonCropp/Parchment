@@ -73,8 +73,9 @@ public sealed class ParchmentTemplateGenerator :
     static void Process(SourceProductionContext context, TemplateTarget target, ImmutableArray<AdditionalText> files)
     {
         var normalized = target.TemplatePath.Replace('\\', '/');
-        var file = files.FirstOrDefault(x =>
-            x.Path.Replace('\\', '/').EndsWith(normalized, StringComparison.OrdinalIgnoreCase));
+        var file = files.FirstOrDefault(_ =>
+            _.Path.Replace('\\', '/')
+                .EndsWith(normalized, StringComparison.OrdinalIgnoreCase));
         if (file == null)
         {
             context.ReportDiagnostic(Diagnostic.Create(
@@ -89,13 +90,13 @@ public sealed class ParchmentTemplateGenerator :
         {
             paragraphs = DocxArchiveReader.ReadParagraphTexts(file.Path);
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 Diagnostics.TemplateReadError,
                 target.Location,
                 target.TemplatePath,
-                ex.Message));
+                exception.Message));
             return;
         }
 

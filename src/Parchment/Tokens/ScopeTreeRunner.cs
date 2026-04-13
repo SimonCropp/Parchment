@@ -18,9 +18,8 @@ internal sealed class ScopeTreeRunner(
 
     public void ApplyStructural()
     {
-        foreach (var replacement in structuralReplacements)
+        foreach (var (host, replacement) in structuralReplacements)
         {
-            var host = replacement.Host;
             var parent = host.Parent;
             if (parent == null)
             {
@@ -28,9 +27,9 @@ internal sealed class ScopeTreeRunner(
             }
 
             OpenXmlElement cursor = host;
-            foreach (var produced in replacement.Produced)
+            foreach (var produced in replacement)
             {
-                cursor = parent.InsertAfter(produced, cursor) ?? cursor;
+                cursor = parent.InsertAfter(produced, cursor);
             }
 
             host.Remove();
@@ -72,7 +71,7 @@ internal sealed class ScopeTreeRunner(
             return;
         }
 
-        var sortedByOffset = node.Tokens.OrderByDescending(x => x.Offset).ToList();
+        var sortedByOffset = node.Tokens.OrderByDescending(_ => _.Offset).ToList();
         var structuralTokens = new List<(DocxTokenSite site, object value)>();
 
         foreach (var token in sortedByOffset)
@@ -127,7 +126,7 @@ internal sealed class ScopeTreeRunner(
             // TokenValue (markdown / openxml hatch) before falling back to string rendering, without
             // round-tripping through the Render() pipeline twice.
             var statements = ((Fluid.Parser.FluidTemplate)site.Template).Statements;
-            if (statements.Count > 0 && statements[0] is Fluid.Ast.OutputStatement output)
+            if (statements.Count > 0 && statements[0] is OutputStatement output)
             {
                 var fluidValue = output.Expression.EvaluateAsync(context).GetAwaiter().GetResult();
                 var underlying = fluidValue.ToObjectValue();
@@ -347,7 +346,7 @@ internal sealed class ScopeTreeRunner(
             var branchAnchors = new Dictionary<string, Paragraph>(StringComparer.Ordinal);
             foreach (var p in allBranchParagraphs.OfType<Paragraph>())
             {
-                var start = p.Elements<BookmarkStart>().FirstOrDefault(x => x.Name?.Value?.StartsWith(Anchors.Prefix, StringComparison.Ordinal) == true);
+                var start = p.Elements<BookmarkStart>().FirstOrDefault(_ => _.Name?.Value?.StartsWith(Anchors.Prefix, StringComparison.Ordinal) == true);
                 if (start?.Name?.Value != null)
                 {
                     branchAnchors[start.Name.Value] = p;
@@ -440,7 +439,7 @@ internal sealed class ScopeTreeRunner(
         }
     }
 
-    bool EvaluateCondition(Fluid.Ast.Expression condition) =>
+    bool EvaluateCondition(Expression condition) =>
         condition.EvaluateAsync(context).GetAwaiter().GetResult().ToBooleanValue();
 
     static string ToDisplayString(object value) =>

@@ -41,4 +41,31 @@ public static class SampleData
                 }
             ]
         };
+
+    public static ReportContext Report() =>
+        new()
+        {
+            Report = new()
+            {
+                Title = "Q2 Platform Health Review",
+                Author = "Alex Chen",
+                Date = new(2026, 7, 1),
+                Summary = "Platform reliability and developer experience both trended upward this quarter, " +
+                          "driven by the build pipeline rewrite and the new on-call rotation.",
+                Findings =
+                [
+                    new() { Area = "Build", Status = "Improved", Owner = "DevEx" },
+                    new() { Area = "Tests", Status = "Improved", Owner = "QA" },
+                    new() { Area = "Deploys", Status = "Stable", Owner = "SRE" },
+                    new() { Area = "On-call", Status = "Watch", Owner = "SRE" }
+                ],
+                Actions =
+                [
+                    new() { Title = "Roll out cached builds", Detail = "Extend the new pipeline to mobile repos." },
+                    new() { Title = "Document runbooks", Detail = "Capture the top five paging scenarios." },
+                    new() { Title = "Audit alert thresholds", Detail = "Reduce noise on the latency dashboard." }
+                ],
+                HasRisks = true
+            }
+        };
 }

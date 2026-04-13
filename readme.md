@@ -8,6 +8,11 @@ Parchment is a Word (.docx) document generation library with two complementary r
 **See [Milestones](../../milestones?state=closed) for release notes.**
 
 
+## NuGet package
+
+[Parchment](https://www.nuget.org/packages/Parchment/)
+
+
 ## Two modes
 
 Parchment supports two complementary template formats:
@@ -31,7 +36,7 @@ store.RegisterDocxTemplate<Invoice>("substitution", template);
 
 var bytes = await store.Render("substitution", SampleData.Invoice());
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L5-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-Substitution' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L8-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-Substitution' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -69,15 +74,109 @@ You can also use the bundled `bullet_list` and `numbered_list` filters to render
 
 ## Markdown template
 
+A markdown template is a `.md` file containing the full body of the document plus liquid tokens for substitution, looping, and conditional content. The template below combines headings, emphasis, a pipe table driven by a loop, an ordered list driven by a loop, and a blockquote chosen by an `{% if %}`:
+
+
+### Sample
+
+<!-- snippet: MarkdownTemplate -->
+<a id='snippet-MarkdownTemplate'></a>
 ```cs
+var markdownSource = """
+    # {{ Report.Title }}
+
+    *Prepared by **{{ Report.Author }}** on {{ Report.Date }}*
+
+    ## Summary
+
+    {{ Report.Summary }}
+
+    ## Findings
+
+    | Area | Status | Owner |
+    | --- | --- | --- |
+    {% for finding in Report.Findings -%}
+    | {{ finding.Area }} | {{ finding.Status }} | {{ finding.Owner }} |
+    {% endfor %}
+
+    ## Action items
+
+    {% for item in Report.Actions %}
+    1. **{{ item.Title }}** — {{ item.Detail }}
+    {% endfor %}
+
+    {% if Report.HasRisks %}
+    > ⚠ Outstanding risks remain. See appendix for mitigation plan.
+    {% else %}
+    > No outstanding risks.
+    {% endif %}
+    """;
+```
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L25-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The model the template binds against:
+
+<!-- snippet: ReportModel -->
+<a id='snippet-ReportModel'></a>
+```cs
+public class ReportContext
+{
+    public required Report Report { get; init; }
+}
+
+public class Report
+{
+    public required string Title { get; init; }
+    public required string Author { get; init; }
+    public required Date Date { get; init; }
+    public required string Summary { get; init; }
+    public required IReadOnlyList<Finding> Findings { get; init; }
+    public required IReadOnlyList<ActionItem> Actions { get; init; }
+    public required bool HasRisks { get; init; }
+}
+
+public class Finding
+{
+    public required string Area { get; init; }
+    public required string Status { get; init; }
+    public required string Owner { get; init; }
+}
+
+public class ActionItem
+{
+    public required string Title { get; init; }
+    public required string Detail { get; init; }
+}
+```
+<sup><a href='/src/ParchmentModel/Report.cs#L3-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-ReportModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Render it like any other template:
+
+<!-- snippet: Markdown -->
+<a id='snippet-Markdown'></a>
+```cs
+var brandDocxBytes = Fixtures.DocxTemplateBuilder.Build();
+var reportModel = SampleData.Report();
+
 var store = new TemplateStore();
-store.RegisterMarkdownTemplate<ReportModel>("report", markdownSource, styleSource: brandDocxBytes);
+store.RegisterMarkdownTemplate<ReportContext>(
+    "report",
+    markdownSource,
+    styleSource: brandDocxBytes);
 var bytes = await store.Render("report", reportModel);
 ```
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L57-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The rendered docx (page 1):
+
+![Markdown template output](/src/Parchment.Tests/UsageTests.Markdown%23page01.verified.png)
 
 The optional `styleSource` is a docx whose styles, headers, footers, theme, and section properties (page size, margins, header/footer references) are inherited by the output. If omitted, a built-in blank template is used.
 
-Supported Markdig extensions:
+### Supported Markdig extensions:
 
 - [Emphasis extras](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/EmphasisExtraSpecs.md): `~~strike~~`, `~sub~`, `^sup^`, `++ins++`, `==mark==`
 - [Grid tables](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/GridTableSpecs.md)
@@ -106,7 +205,16 @@ public partial class InvoiceReport
 }
 ```
 
-The generator emits diagnostics if a token references a missing model member (`PARCH001`), if a loop source isn't enumerable (`PARCH002`), or if the template path isn't in `<AdditionalFiles>`. It also generates a `RegisterWith(store)` helper so registration is one line at runtime.
+The generator emits the following diagnostics:
+
+- `PARCH001` — token references a member that doesn't exist on the model
+- `PARCH002` — loop source doesn't resolve to an `IEnumerable<T>`
+- `PARCH003` — unsupported block tag (only `for`/`endfor`/`if`/`elsif`/`else`/`endif` are supported)
+- `PARCH004` — template path isn't listed in `<AdditionalFiles>`
+- `PARCH005` — block tag shares a paragraph with other content (block tags must sit on their own line)
+- `PARCH006` — template file couldn't be read
+
+It also generates a `RegisterWith(store)` helper so registration is one line at runtime.
 
 Add the docx as an additional file:
 
@@ -120,11 +228,6 @@ Add the docx as an additional file:
 ## Determinism
 
 Rendering the same template with the same model produces a byte-identical output. Useful for hash-based caching, dedup, and legal sign-off workflows.
-
-
-## NuGet package
-
-[Parchment](https://www.nuget.org/packages/Parchment/)
 
 
 ## Icon
