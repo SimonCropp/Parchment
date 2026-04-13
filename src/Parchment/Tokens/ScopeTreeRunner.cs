@@ -380,19 +380,14 @@ internal sealed class ScopeTreeRunner(
         }
 
         IReadOnlyList<RangeNode>? chosen = null;
-        OpenXmlElement? chosenStart = null;
-        OpenXmlElement chosenEnd = close;
-
-        for (var i = 0; i < ifNode.Branches.Count; i++)
+        foreach (var branch in ifNode.Branches)
         {
-            var branch = ifNode.Branches[i];
             if (!EvaluateCondition(branch.Condition))
             {
                 continue;
             }
 
             chosen = branch.Body;
-            chosenStart = i == 0 ? open : anchorMap.GetValueOrDefault(branch.AnchorName);
             break;
         }
 
@@ -404,7 +399,7 @@ internal sealed class ScopeTreeRunner(
         // Collect all branch paragraphs between open and close — everything that should be removed
         var allBranchParagraphs = CaptureBetween(open, close);
 
-        if (chosen != null && chosenStart != null)
+        if (chosen != null)
         {
             // Process chosen branch in place (no cloning — branch paragraphs are used once)
             var branchNodes = chosen;
