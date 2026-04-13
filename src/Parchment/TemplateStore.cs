@@ -1,12 +1,9 @@
 namespace Parchment;
 
-public sealed class TemplateStore
+public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
 {
     readonly ConcurrentDictionary<string, RegisteredTemplate> templates = new(StringComparer.Ordinal);
-    readonly ILogger logger;
-
-    public TemplateStore(ILogger<TemplateStore>? logger = null) =>
-        this.logger = (ILogger?)logger ?? NullLogger.Instance;
+    readonly ILogger logger = (ILogger?)logger ?? NullLogger.Instance;
 
     public void RegisterDocxTemplate<TModel>(string name, byte[] templateBytes)
     {
