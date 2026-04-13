@@ -1,0 +1,33 @@
+global using System;
+global using System.Collections.Concurrent;
+global using System.Collections.Generic;
+global using System.IO;
+global using System.Linq;
+global using System.Reflection;
+global using System.Text;
+global using System.Text.RegularExpressions;
+global using System.Threading;
+global using System.Threading.Tasks;
+
+global using DocumentFormat.OpenXml;
+global using DocumentFormat.OpenXml.Packaging;
+global using DocumentFormat.OpenXml.Wordprocessing;
+
+global using Fluid;
+global using Fluid.Ast;
+global using Fluid.Values;
+
+global using Markdig;
+global using Markdig.Renderers;
+global using Markdig.Renderers.Html;
+global using Markdig.Syntax;
+global using Markdig.Syntax.Inlines;
+
+global using Microsoft.Extensions.Logging;
+global using Microsoft.Extensions.Logging.Abstractions;
+
+global using Parchment;
+global using Parchment.Errors;
+global using Parchment.Liquid;
+global using Parchment.Tokens;
+global using Parchment.Word;

@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="../.gitattributes" />
+    <File Path="../readme.md" />
+    <File Path="../.editorconfig" />
+    <File Path="appveyor.yml" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="mdsnippets.json" />
+  </Folder>
+  <Project Path="Parchment/Parchment.csproj" />
+  <Project Path="Parchment.SourceGenerator/Parchment.SourceGenerator.csproj" />
+  <Project Path="Parchment.SourceGenerator.Tests/Parchment.SourceGenerator.Tests.csproj" />
+  <Project Path="Parchment.Tests/Parchment.Tests.csproj" />
+  <Project Path="ParchmentModel/ParchmentModel.csproj" />
+</Solution>

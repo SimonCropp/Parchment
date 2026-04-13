@@ -1,0 +1,99 @@
+namespace Parchment.Liquid;
+
+/// <summary>
+/// Reflection-based validator that walks an <see cref="IdentifierPath"/> against a .NET type
+/// to ensure every segment resolves to a real member. Used by the runtime registration path.
+/// </summary>
+internal static class ModelValidator
+{
+    public static void Validate(
+        Type modelType,
+        IdentifierPath path,
+        IReadOnlyDictionary<string, Type>? scope,
+        string templateName,
+        string? partUri,
+        string? tokenSource)
+    {
+        var currentType = ResolveRoot(modelType, path.Root, scope);
+        if (currentType == null)
+        {
+            throw new ParchmentRegistrationException(
+                templateName,
+                $"Identifier '{path.Root}' is not a member of '{modelType.Name}'",
+                partUri,
+                tokenSource,
+                path.ToString());
+        }
+
+        for (var i = 1; i < path.Segments.Count; i++)
+        {
+            var segment = path.Segments[i];
+            var next = ResolveMember(currentType, segment);
+            if (next == null)
+            {
+                throw new ParchmentRegistrationException(
+                    templateName,
+                    $"Member '{segment}' is not a property or field of '{currentType.Name}'",
+                    partUri,
+                    tokenSource,
+                    path.ToString());
+            }
+
+            currentType = next;
+        }
+    }
+
+    public static Type? TryResolveElementType(Type enumerableType)
+    {
+        if (enumerableType.IsArray)
+        {
+            return enumerableType.GetElementType();
+        }
+
+        foreach (var i in enumerableType.GetInterfaces())
+        {
+            if (i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            {
+                return i.GetGenericArguments()[0];
+            }
+        }
+
+        if (enumerableType.IsGenericType && enumerableType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+        {
+            return enumerableType.GetGenericArguments()[0];
+        }
+
+        return null;
+    }
+
+    public static Type? ResolveMember(Type type, string name)
+    {
+        var property = type.GetProperty(
+            name,
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        if (property != null)
+        {
+            return property.PropertyType;
+        }
+
+        var field = type.GetField(
+            name,
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        return field?.FieldType;
+    }
+
+    static Type? ResolveRoot(Type modelType, string name, IReadOnlyDictionary<string, Type>? scope)
+    {
+        if (scope != null && scope.TryGetValue(name, out var scoped))
+        {
+            return scoped;
+        }
+
+        return ResolveMember(modelType, name) ?? (MatchesRootIdentifier(modelType, name) ? modelType : null);
+    }
+
+    static bool MatchesRootIdentifier(Type modelType, string name) =>
+        string.Equals(name, modelType.Name, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(name, "model", StringComparison.OrdinalIgnoreCase);
+
+}
