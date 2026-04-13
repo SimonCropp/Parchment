@@ -62,7 +62,7 @@ internal static class ModelSymbolResolver
             }
         }
 
-        if (type is INamedTypeSymbol named && named.IsGenericType &&
+        if (type is INamedTypeSymbol { IsGenericType: true } named &&
             named.ConstructedFrom.ToDisplayString() == "System.Collections.Generic.IEnumerable<T>")
         {
             return named.TypeArguments[0];
