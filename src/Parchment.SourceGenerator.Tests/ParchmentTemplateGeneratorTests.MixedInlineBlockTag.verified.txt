@@ -1,0 +1,23 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+
+[ParchmentTemplate("template.docx", typeof(Invoice))]
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+public partial class Mixed;
+*/
+ : (15,1)-(15,52),
+      Message: Template 'template.docx' block tag '{% for line in Lines %}' shares a paragraph with other content; block tags must be on their own lines,
+      Severity: Error,
+      Descriptor: {
+        Id: PARCH005,
+        Title: Block tag must sit in its own paragraph,
+        MessageFormat: Template '{0}' block tag '{1}' shares a paragraph with other content; block tags must be on their own lines,
+        Category: Parchment,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}

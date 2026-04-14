@@ -1,0 +1,23 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+}
+[ParchmentTemplate("template.docx", typeof(Letter))]
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+public partial class BadLoop;
+*/
+ : (13,1)-(13,51),
+      Message: Template 'template.docx' loop '{% for item in Customer %}' source does not resolve to a type implementing IEnumerable<T>,
+      Severity: Error,
+      Descriptor: {
+        Id: PARCH002,
+        Title: Loop source is not enumerable,
+        MessageFormat: Template '{0}' loop '{1}' source does not resolve to a type implementing IEnumerable<T>,
+        Category: Parchment,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+}
+[ParchmentTemplate("template.docx", typeof(Letter))]
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+public partial class CustomerLetter;
+*/
+ : (13,1)-(13,51),
+      Message: Template 'template.docx' token '{{ Customer.Missing }}' references 'Customer.Missing' which is not a member of 'Letter',
+      Severity: Error,
+      Descriptor: {
+        Id: PARCH001,
+        Title: Template references an unknown model member,
+        MessageFormat: Template '{0}' token '{1}' references '{2}' which is not a member of '{3}',
+        Category: Parchment,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}

@@ -4,7 +4,7 @@ namespace Parchment.SourceGenerator;
 public sealed class ParchmentTemplateGenerator :
     IIncrementalGenerator
 {
-    const string AttributeFullName = "Parchment.ParchmentTemplateAttribute";
+    const string attributeFullName = "Parchment.ParchmentTemplateAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -15,15 +15,17 @@ public sealed class ParchmentTemplateGenerator :
 
         var attributed = context.SyntaxProvider
             .ForAttributeWithMetadataName(
-                AttributeFullName,
+                attributeFullName,
                 static (node, _) => node is ClassDeclarationSyntax,
                 static (ctx, _) => ExtractTarget(ctx))
-            .Where(static x => x != null)
+            .Where(static _ => _ != null)
             .Collect();
 
         var combined = attributed.Combine(additionalFiles);
 
-        context.RegisterSourceOutput(combined, (productionContext, tuple) =>
+        context.RegisterSourceOutput(
+            combined,
+            (productionContext, tuple) =>
         {
             var (targets, files) = tuple;
             foreach (var target in targets)
@@ -298,9 +300,3 @@ public sealed class ParchmentTemplateGenerator :
         return builder.ToString();
     }
 }
-
-internal sealed record TemplateTarget(
-    INamedTypeSymbol Declaring,
-    INamedTypeSymbol ModelType,
-    string TemplatePath,
-    Location Location);

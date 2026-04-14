@@ -1,0 +1,23 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+
+[ParchmentTemplate("does-not-exist.docx", typeof(Empty))]
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+public partial class MissingFile;
+*/
+ : (6,1)-(6,56),
+      Message: Template path 'does-not-exist.docx' was not found in AdditionalFiles — add <AdditionalFiles Include="..."/> to the csproj,
+      Severity: Error,
+      Descriptor: {
+        Id: PARCH004,
+        Title: Template file not found in AdditionalFiles,
+        MessageFormat: Template path '{0}' was not found in AdditionalFiles — add <AdditionalFiles Include="..."/> to the csproj,
+        Category: Parchment,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}
