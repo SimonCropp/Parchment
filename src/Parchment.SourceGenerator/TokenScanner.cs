@@ -135,27 +135,24 @@ public static class TokenScanner
 
     static bool IsLiteral(string value)
     {
-        if (value == "true" || value == "false" || value == "nil" || value == "null" ||
-            value == "empty" || value == "blank" || value == "and" || value == "or" ||
-            value == "contains" || value == "in" || value == "not")
+        if (value is
+            "true" or
+            "false" or
+            "nil" or
+            "null" or
+            "empty" or
+            "blank" or
+            "and" or
+            "or" or
+            "contains" or
+            "in" or
+            "not")
         {
             return true;
         }
 
         return char.IsDigit(value[0]);
     }
-}
-
-public enum TokenKind
-{
-    Substitution,
-    ForOpen,
-    ForClose,
-    IfOpen,
-    ElsIf,
-    Else,
-    IfClose,
-    UnknownBlock
 }
 
 public sealed record Token(

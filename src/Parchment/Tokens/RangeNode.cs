@@ -15,7 +15,7 @@ internal sealed record LoopNode(
     string CloseAnchorName,
     RangeScopeKind Scope,
     string LoopVariable,
-    Fluid.Ast.Expression LoopSource,
+    Expression LoopSource,
     IReadOnlyList<RangeNode> Body) :
     RangeNode;
 
@@ -28,7 +28,7 @@ internal sealed record IfNode(
 
 internal sealed record IfBranch(
     string AnchorName,
-    Fluid.Ast.Expression Condition,
+    Expression Condition,
     IReadOnlyList<RangeNode> Body);
 
 internal enum RangeScopeKind

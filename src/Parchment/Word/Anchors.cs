@@ -86,7 +86,7 @@ internal static class Anchors
         var root = (OpenXmlCompositeElement?)paragraph.Ancestors<Body>().FirstOrDefault()
                    ?? (OpenXmlCompositeElement?)paragraph.Ancestors<Header>().FirstOrDefault()
                    ?? (OpenXmlCompositeElement?)paragraph.Ancestors<Footer>().FirstOrDefault()
-                   ?? (OpenXmlCompositeElement?)paragraph.Ancestors<OpenXmlCompositeElement>().LastOrDefault()
+                   ?? paragraph.Ancestors<OpenXmlCompositeElement>().LastOrDefault()
                    ?? paragraph;
 
         var max = 0;

@@ -109,7 +109,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         return Regex.IsMatch(markdown, pattern);
     }
 
-    public async Task Render(string name, object model, Stream output, Cancel cancel = default)
+    public Task Render(string name, object model, Stream output, Cancel cancel = default)
     {
         if (!templates.TryGetValue(name, out var template))
         {
@@ -123,7 +123,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
                 $"Model type mismatch: registered as {template.ModelType.Name} but received {model.GetType().Name}");
         }
 
-        await template.Render(model, output, cancel).ConfigureAwait(false);
+        return template.Render(model, output, cancel);
     }
 
     public async Task RenderToFile(string name, object model, string path, Cancel cancel = default)
@@ -154,7 +154,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
                     continue;
                 }
 
-                var reclassified = RestoreClassification(paragraph, anchorName, name, uri);
+                var reclassified = RestoreClassification(paragraph, anchorName);
                 classifications.Add(reclassified);
             }
 
@@ -172,9 +172,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
 
     static ParagraphClassification RestoreClassification(
         Paragraph paragraph,
-        string anchorName,
-        string templateName,
-        string partUri)
+        string anchorName)
     {
         var text = ParagraphText.Build(paragraph);
         var matches = TokenRegex.Tokens.Matches(text.InnerText);
@@ -247,7 +245,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         }
 
         var forStatement = ((Fluid.Parser.FluidTemplate)template).Statements
-            .OfType<Fluid.Ast.ForStatement>()
+            .OfType<ForStatement>()
             .FirstOrDefault();
         if (forStatement == null)
         {
@@ -278,7 +276,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         }
 
         var ifStatement = ((Fluid.Parser.FluidTemplate)template).Statements
-            .OfType<Fluid.Ast.IfStatement>()
+            .OfType<IfStatement>()
             .FirstOrDefault();
         if (ifStatement == null)
         {

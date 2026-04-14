@@ -14,7 +14,7 @@ internal sealed record BlockMarker(
     BlockTagKind Kind,
     string Source,
     string? Expression,
-    Fluid.Ast.Expression? Condition,
+    Expression? Condition,
     string? LoopVariable,
-    Fluid.Ast.Expression? LoopSource,
+    Expression? LoopSource,
     IReadOnlyList<IdentifierPath> References);

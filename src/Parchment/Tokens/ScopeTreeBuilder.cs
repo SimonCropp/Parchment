@@ -163,5 +163,5 @@ internal static class ScopeTreeBuilder
 
     static bool IsCloserOrAlternate(BlockTagKind kind, BlockTagKind closer) =>
         kind == closer ||
-        (closer == BlockTagKind.EndIf && (kind == BlockTagKind.ElsIf || kind == BlockTagKind.Else));
+        (closer == BlockTagKind.EndIf && kind is BlockTagKind.ElsIf or BlockTagKind.Else);
 }

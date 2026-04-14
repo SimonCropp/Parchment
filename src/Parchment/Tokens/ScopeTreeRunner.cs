@@ -68,7 +68,7 @@ internal sealed class ScopeTreeRunner(
         foreach (var token in sortedByOffset)
         {
             var evaluated = await EvaluateTokenAsync(token, host);
-            if (evaluated is TokenValue.MarkdownToken || evaluated is TokenValue.OpenXmlToken)
+            if (evaluated is TokenValue.MarkdownToken or TokenValue.OpenXmlToken)
             {
                 structuralTokens.Add((token, evaluated));
                 continue;

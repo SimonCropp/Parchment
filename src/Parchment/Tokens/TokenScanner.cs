@@ -170,13 +170,13 @@ internal static class TokenScanner
         }
 
         var forStatement = ((Fluid.Parser.FluidTemplate)template).Statements
-            .OfType<Fluid.Ast.ForStatement>()
+            .OfType<ForStatement>()
             .FirstOrDefault();
         if (forStatement == null)
         {
             throw new ParchmentRegistrationException(
                 templateName,
-                $"{{% for %}} tag did not parse as a ForStatement",
+                "{% for %} tag did not parse as a ForStatement",
                 partUri,
                 source);
         }
@@ -215,7 +215,7 @@ internal static class TokenScanner
         }
 
         var ifStatement = ((Fluid.Parser.FluidTemplate)template).Statements
-            .OfType<Fluid.Ast.IfStatement>()
+            .OfType<IfStatement>()
             .FirstOrDefault();
         if (ifStatement == null)
         {
