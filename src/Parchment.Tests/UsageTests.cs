@@ -14,9 +14,11 @@ public class UsageTests
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Invoice>("substitution", template);
 
-        var bytes = await store.Render("substitution", SampleData.Invoice());
+        using var stream = new MemoryStream();
+        await store.Render("substitution", SampleData.Invoice(), stream);
         // end-snippet
-        await Verify(bytes, "docx");
+        stream.Position = 0;
+        await Verify(stream, "docx");
     }
 
     [Test]
@@ -63,8 +65,11 @@ public class UsageTests
             "report",
             markdownSource,
             styleSource: brandDocxBytes);
-        var bytes = await store.Render("report", reportModel);
+
+        using var stream = new MemoryStream();
+        await store.Render("report", reportModel, stream);
         // end-snippet
-        await Verify(bytes, "docx");
+        stream.Position = 0;
+        await Verify(stream, "docx");
     }
 }

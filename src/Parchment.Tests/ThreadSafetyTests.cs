@@ -13,7 +13,12 @@ public class ThreadSafetyTests
         store.RegisterDocxTemplate<Invoice>("threading", template);
 
         var tasks = Enumerable.Range(0, 20)
-            .Select(_ => store.Render("threading", SampleData.Invoice()))
+            .Select(async _ =>
+            {
+                using var stream = new MemoryStream();
+                await store.Render("threading", SampleData.Invoice(), stream);
+                return stream.ToArray();
+            })
             .ToArray();
 
         var results = await Task.WhenAll(tasks);

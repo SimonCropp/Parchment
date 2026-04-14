@@ -18,13 +18,14 @@ public class ConsumerTests
         var store = new TemplateStore();
         store.RegisterDocxTemplate<InvoiceModel>("invoice", template);
 
-        var bytes = await store.Render("invoice", new InvoiceModel
+        using var stream = new MemoryStream();
+        await store.Render("invoice", new InvoiceModel
         {
             Number = "INT-001",
             Customer = new() { Name = "Acme" }
-        });
+        }, stream);
 
-        await Assert.That(bytes.Length).IsGreaterThan(0);
+        await Assert.That(stream.Length).IsGreaterThan(0);
     }
 
     [Test]
@@ -34,12 +35,13 @@ public class ConsumerTests
         var store = new TemplateStore();
         store.RegisterDocxTemplate<LoopModel>("loop", template);
 
-        var bytes = await store.Render("loop", new LoopModel
+        using var stream = new MemoryStream();
+        await store.Render("loop", new LoopModel
         {
             Items = ["alpha", "beta", "gamma"]
-        });
+        }, stream);
 
-        await Assert.That(bytes.Length).IsGreaterThan(0);
+        await Assert.That(stream.Length).IsGreaterThan(0);
     }
 
     public class LoopModel

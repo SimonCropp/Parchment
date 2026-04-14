@@ -16,8 +16,10 @@ public class ConditionalTests
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Invoice>("conditional", template);
-        var bytes = await store.Render("conditional", SampleData.Invoice());
-        await Verify(bytes, "docx");
+        using var stream = new MemoryStream();
+        await store.Render("conditional", SampleData.Invoice(), stream);
+        stream.Position = 0;
+        await Verify(stream, "docx");
     }
 
     public class FlagModel
@@ -40,11 +42,13 @@ public class ConditionalTests
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<FlagModel>("else-branch", template);
-        var bytes = await store.Render("else-branch", new FlagModel
+        using var stream = new MemoryStream();
+        await store.Render("else-branch", new FlagModel
         {
             Flag = false,
             Label = "fallback"
-        });
-        await Verify(bytes, "docx");
+        }, stream);
+        stream.Position = 0;
+        await Verify(stream, "docx");
     }
 }

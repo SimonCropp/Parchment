@@ -10,7 +10,7 @@ internal sealed class RegisteredDocxTemplate(
     public byte[] CanonicalBytes { get; } = canonicalBytes;
     public IReadOnlyList<PartScopeTree> Parts { get; } = parts;
 
-    public override async Task<byte[]> Render(object model, Cancel cancel)
+    public override async Task Render(object model, Stream output, Cancel cancel)
     {
         using var stream = DocxCloner.ToWritableStream(CanonicalBytes);
         using (var doc = WordprocessingDocument.Open(stream, true))
@@ -36,7 +36,8 @@ internal sealed class RegisteredDocxTemplate(
             doc.Save();
         }
 
-        return stream.ToArray();
+        stream.Position = 0;
+        await stream.CopyToAsync(output, cancel);
     }
 
     async Task RenderPartAsync(WordprocessingDocument doc, MainDocumentPart mainPart, PartScopeTree part, TemplateContext context)

@@ -17,7 +17,8 @@ public class TokenOverrideTests
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<NoteModel>("markdown-hatch", template);
-        var bytes = await store.Render("markdown-hatch", new NoteModel
+        using var stream = new MemoryStream();
+        await store.Render("markdown-hatch", new NoteModel
         {
             Title = "Weekly summary",
             Body = TokenValue.Markdown(
@@ -30,9 +31,9 @@ public class TokenOverrideTests
 
                 > Stay the course
                 """)
-        });
-
-        await Verify(bytes, "docx");
+        }, stream);
+        stream.Position = 0;
+        await Verify(stream, "docx");
     }
 
     [Test]
@@ -44,7 +45,9 @@ public class TokenOverrideTests
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Invoice>("bullet-filter", template);
-        var bytes = await store.Render("bullet-filter", SampleData.Invoice());
-        await Verify(bytes, "docx");
+        using var stream = new MemoryStream();
+        await store.Render("bullet-filter", SampleData.Invoice(), stream);
+        stream.Position = 0;
+        await Verify(stream, "docx");
     }
 }

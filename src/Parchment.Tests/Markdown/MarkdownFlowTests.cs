@@ -31,7 +31,8 @@ public class MarkdownFlowTests
         var store = new TemplateStore();
         store.RegisterMarkdownTemplate<ReportModel>("report", markdown, styleSource);
 
-        var bytes = await store.Render("report", new ReportModel
+        using var stream = new MemoryStream();
+        await store.Render("report", new ReportModel
         {
             Title = "Q2 Engineering Review",
             Author = "Alex Chen",
@@ -41,8 +42,8 @@ public class MarkdownFlowTests
                 "Test flake rate halved",
                 "Three new services in production"
             ]
-        });
-
-        await Verify(bytes, "docx");
+        }, stream);
+        stream.Position = 0;
+        await Verify(stream, "docx");
     }
 }

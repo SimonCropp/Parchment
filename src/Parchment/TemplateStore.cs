@@ -109,7 +109,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         return Regex.IsMatch(markdown, pattern);
     }
 
-    public async Task<byte[]> Render(string name, object model, Cancel cancel = default)
+    public async Task Render(string name, object model, Stream output, Cancel cancel = default)
     {
         if (!templates.TryGetValue(name, out var template))
         {
@@ -123,19 +123,13 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
                 $"Model type mismatch: registered as {template.ModelType.Name} but received {model.GetType().Name}");
         }
 
-        return await template.Render(model, cancel).ConfigureAwait(false);
-    }
-
-    public async Task RenderToStream(string name, object model, Stream output, Cancel cancel = default)
-    {
-        var bytes = await Render(name, model, cancel).ConfigureAwait(false);
-        await output.WriteAsync(bytes, cancel).ConfigureAwait(false);
+        await template.Render(model, output, cancel).ConfigureAwait(false);
     }
 
     public async Task RenderToFile(string name, object model, string path, Cancel cancel = default)
     {
-        var bytes = await Render(name, model, cancel).ConfigureAwait(false);
-        await File.WriteAllBytesAsync(path, bytes, cancel).ConfigureAwait(false);
+        await using var file = File.Create(path);
+        await Render(name, model, file, cancel).ConfigureAwait(false);
     }
 
     public static void AddFilter(string name, FilterDelegate filter) =>

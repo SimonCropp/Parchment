@@ -15,8 +15,10 @@ public class LoopTests
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Invoice>("loop", template);
 
-        var bytes = await store.Render("loop", SampleData.Invoice());
-        await Verify(bytes, "docx");
+        using var stream = new MemoryStream();
+        await store.Render("loop", SampleData.Invoice(), stream);
+        stream.Position = 0;
+        await Verify(stream, "docx");
     }
 
     [Test]
@@ -30,7 +32,9 @@ public class LoopTests
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Invoice>("loop-only", template);
-        var bytes = await store.Render("loop-only", SampleData.Invoice());
-        await Verify(bytes, "docx");
+        using var stream = new MemoryStream();
+        await store.Render("loop-only", SampleData.Invoice(), stream);
+        stream.Position = 0;
+        await Verify(stream, "docx");
     }
 }

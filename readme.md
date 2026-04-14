@@ -34,9 +34,10 @@ var template = Fixtures.DocxTemplateBuilder.Build(
 var store = new TemplateStore();
 store.RegisterDocxTemplate<Invoice>("substitution", template);
 
-var bytes = await store.Render("substitution", SampleData.Invoice());
+using var stream = new MemoryStream();
+await store.Render("substitution", SampleData.Invoice(), stream);
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L8-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-Substitution' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L8-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-Substitution' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -112,7 +113,7 @@ var markdownSource = """
     {% endif %}
     """;
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L25-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L27-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The model the template binds against:
@@ -165,9 +166,11 @@ store.RegisterMarkdownTemplate<ReportContext>(
     "report",
     markdownSource,
     styleSource: brandDocxBytes);
-var bytes = await store.Render("report", reportModel);
+
+using var stream = new MemoryStream();
+await store.Render("report", reportModel, stream);
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L57-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L59-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The rendered docx (page 1):

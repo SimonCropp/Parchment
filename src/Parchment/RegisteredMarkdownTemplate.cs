@@ -10,7 +10,7 @@ internal sealed class RegisteredMarkdownTemplate(
     public byte[] StyleSourceBytes { get; } = styleSourceBytes;
     public IFluidTemplate ParsedTemplate { get; } = parsedTemplate;
 
-    public override async Task<byte[]> Render(object model, Cancel cancel)
+    public override async Task Render(object model, Stream output, Cancel cancel)
     {
         var context = new TemplateContext(model, SharedFluid.Options, allowModelMembers: true);
         await using var writer = new StringWriter();
@@ -48,6 +48,7 @@ internal sealed class RegisteredMarkdownTemplate(
             doc.Save();
         }
 
-        return stream.ToArray();
+        stream.Position = 0;
+        await stream.CopyToAsync(output, cancel);
     }
 }
