@@ -13,8 +13,8 @@ internal sealed class ScopeTreeRunner(
 {
     readonly List<StructuralReplacement> structuralReplacements = [];
 
-    public void Run(IReadOnlyList<RangeNode> nodes) =>
-        Process(nodes);
+    public Task RunAsync(IReadOnlyList<RangeNode> nodes) =>
+        ProcessAsync(nodes);
 
     public void ApplyStructural()
     {
@@ -38,33 +38,24 @@ internal sealed class ScopeTreeRunner(
         structuralReplacements.Clear();
     }
 
-    void Process(IReadOnlyList<RangeNode> nodes)
+    async Task ProcessAsync(IReadOnlyList<RangeNode> nodes)
     {
         foreach (var node in nodes)
         {
-            Process(node);
+            await ProcessAsync(node);
         }
     }
 
-    void Process(RangeNode node)
-    {
-        switch (node)
+    Task ProcessAsync(RangeNode node) =>
+        node switch
         {
-            case SubstitutionNode substitution:
-                ProcessSubstitution(substitution);
-                break;
-            case LoopNode loop:
-                ProcessLoop(loop);
-                break;
-            case IfNode ifNode:
-                ProcessIf(ifNode);
-                break;
-            case StaticNode:
-                break;
-        }
-    }
+            SubstitutionNode substitution => ProcessSubstitutionAsync(substitution),
+            LoopNode loop => ProcessLoopAsync(loop),
+            IfNode ifNode => ProcessIfAsync(ifNode),
+            _ => Task.CompletedTask
+        };
 
-    void ProcessSubstitution(SubstitutionNode node)
+    async Task ProcessSubstitutionAsync(SubstitutionNode node)
     {
         if (!anchorMap.TryGetValue(node.AnchorName, out var host))
         {
@@ -76,7 +67,7 @@ internal sealed class ScopeTreeRunner(
 
         foreach (var token in sortedByOffset)
         {
-            var evaluated = EvaluateToken(token, host);
+            var evaluated = await EvaluateTokenAsync(token, host);
             if (evaluated is TokenValue.MarkdownToken || evaluated is TokenValue.OpenXmlToken)
             {
                 structuralTokens.Add((token, evaluated));
@@ -117,7 +108,7 @@ internal sealed class ScopeTreeRunner(
         return result;
     }
 
-    object EvaluateToken(DocxTokenSite site, Paragraph host)
+    async Task<object> EvaluateTokenAsync(DocxTokenSite site, Paragraph host)
     {
         try
         {
@@ -128,7 +119,7 @@ internal sealed class ScopeTreeRunner(
             var statements = ((Fluid.Parser.FluidTemplate)site.Template).Statements;
             if (statements.Count > 0 && statements[0] is OutputStatement output)
             {
-                var fluidValue = output.Expression.EvaluateAsync(context).GetAwaiter().GetResult();
+                var fluidValue = await output.Expression.EvaluateAsync(context);
                 var underlying = fluidValue.ToObjectValue();
                 if (underlying is TokenValue tokenValue)
                 {
@@ -138,25 +129,27 @@ internal sealed class ScopeTreeRunner(
                 return fluidValue.ToStringValue();
             }
 
-            return site.Template.Render(context);
+            await using var writer = new StringWriter();
+            await site.Template.RenderAsync(writer, System.Text.Encodings.Web.HtmlEncoder.Default, context);
+            return writer.ToString();
         }
         catch (ParchmentException)
         {
             throw;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
             throw new ParchmentRenderException(
                 templateName,
-                ex.Message,
+                exception.Message,
                 partUri,
                 Snippet(host, site),
                 site.Source,
-                inner: ex);
+                inner: exception);
         }
     }
 
-    void ProcessLoop(LoopNode loop)
+    async Task ProcessLoopAsync(LoopNode loop)
     {
         if (!anchorMap.TryGetValue(loop.OpenAnchorName, out var open) ||
             !anchorMap.TryGetValue(loop.CloseAnchorName, out var close))
@@ -170,7 +163,7 @@ internal sealed class ScopeTreeRunner(
             return;
         }
 
-        var items = ResolveIterable(loop);
+        var items = await ResolveIterableAsync(loop);
         var bodyElements = CaptureBetween(open, close);
         OpenXmlElement insertAnchor = open;
 
@@ -186,7 +179,7 @@ internal sealed class ScopeTreeRunner(
                 context,
                 mainPart);
             var clonedBody = RemapBody(loop.Body, nameMap);
-            clonedRunner.Run(clonedBody);
+            await clonedRunner.RunAsync(clonedBody);
             clonedRunner.ApplyStructural();
 
             foreach (var clone in clones)
@@ -295,17 +288,17 @@ internal sealed class ScopeTreeRunner(
     static string Rename(string name, Dictionary<string, string> map) =>
         map.GetValueOrDefault(name, name);
 
-    IEnumerable<FluidValue> ResolveIterable(LoopNode loop)
+    async Task<IEnumerable<FluidValue>> ResolveIterableAsync(LoopNode loop)
     {
         // Hand the loop source straight to Fluid: ForStatement.Source is an Expression that, when
         // evaluated, yields a FluidValue we can enumerate. This honors filters, complex paths,
         // arithmetic, and any value converters Fluid is configured with — none of which the previous
         // reflection-walk supported.
-        var sourceValue = loop.LoopSource.EvaluateAsync(context).GetAwaiter().GetResult();
+        var sourceValue = await loop.LoopSource.EvaluateAsync(context);
         return sourceValue.Enumerate(context);
     }
 
-    void ProcessIf(IfNode ifNode)
+    async Task ProcessIfAsync(IfNode ifNode)
     {
         if (!anchorMap.TryGetValue(ifNode.OpenAnchorName, out var open) ||
             !anchorMap.TryGetValue(ifNode.CloseAnchorName, out var close))
@@ -322,7 +315,7 @@ internal sealed class ScopeTreeRunner(
         IReadOnlyList<RangeNode>? chosen = null;
         foreach (var branch in ifNode.Branches)
         {
-            if (!EvaluateCondition(branch.Condition))
+            if (!await EvaluateConditionAsync(branch.Condition))
             {
                 continue;
             }
@@ -354,7 +347,7 @@ internal sealed class ScopeTreeRunner(
             }
 
             var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart);
-            innerRunner.Run(branchNodes);
+            await innerRunner.RunAsync(branchNodes);
             innerRunner.ApplyStructural();
 
             // Only keep paragraphs that belong to the chosen branch; remove others
@@ -439,8 +432,8 @@ internal sealed class ScopeTreeRunner(
         }
     }
 
-    bool EvaluateCondition(Expression condition) =>
-        condition.EvaluateAsync(context).GetAwaiter().GetResult().ToBooleanValue();
+    async Task<bool> EvaluateConditionAsync(Expression condition) =>
+        (await condition.EvaluateAsync(context)).ToBooleanValue();
 
     static string ToDisplayString(object value) =>
         value switch

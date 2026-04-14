@@ -12,7 +12,10 @@ internal sealed class LiteralInlineRenderer :
         }
 
         var run = new Run(
-            new Text(text) { Space = SpaceProcessingModeValues.Preserve });
+            new Text(text)
+            {
+                Space = SpaceProcessingModeValues.Preserve
+            });
         ApplyRunFormatting(run, renderer);
         renderer.AddRun(run);
     }

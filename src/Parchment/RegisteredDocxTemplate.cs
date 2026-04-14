@@ -10,7 +10,7 @@ internal sealed class RegisteredDocxTemplate(
     public byte[] CanonicalBytes { get; } = canonicalBytes;
     public IReadOnlyList<PartScopeTree> Parts { get; } = parts;
 
-    public override byte[] Render(object model, Cancel cancel)
+    public override async Task<byte[]> Render(object model, Cancel cancel)
     {
         using var stream = DocxCloner.ToWritableStream(CanonicalBytes);
         using (var doc = WordprocessingDocument.Open(stream, true))
@@ -25,7 +25,7 @@ internal sealed class RegisteredDocxTemplate(
             foreach (var part in Parts)
             {
                 cancel.ThrowIfCancellationRequested();
-                RenderPart(doc, mainPart, part, context);
+                await RenderPartAsync(doc, mainPart, part, context);
             }
 
             foreach (var (_, root) in DocxCloner.EnumerateParts(doc))
@@ -39,7 +39,7 @@ internal sealed class RegisteredDocxTemplate(
         return stream.ToArray();
     }
 
-    void RenderPart(WordprocessingDocument doc, MainDocumentPart mainPart, PartScopeTree part, TemplateContext context)
+    async Task RenderPartAsync(WordprocessingDocument doc, MainDocumentPart mainPart, PartScopeTree part, TemplateContext context)
     {
         OpenXmlCompositeElement? root = null;
         foreach (var (uri, candidate) in DocxCloner.EnumerateParts(doc))
@@ -58,7 +58,7 @@ internal sealed class RegisteredDocxTemplate(
 
         var map = Anchors.BuildMap(root);
         var runner = new ScopeTreeRunner(Name, part.PartUri, map, context, mainPart);
-        runner.Run(part.Nodes);
+        await runner.RunAsync(part.Nodes);
         runner.ApplyStructural();
     }
 }

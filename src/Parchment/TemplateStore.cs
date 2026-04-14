@@ -123,7 +123,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
                 $"Model type mismatch: registered as {template.ModelType.Name} but received {model.GetType().Name}");
         }
 
-        return await Task.Run(() => template.Render(model, cancel), cancel).ConfigureAwait(false);
+        return await template.Render(model, cancel).ConfigureAwait(false);
     }
 
     public async Task RenderToStream(string name, object model, Stream output, Cancel cancel = default)

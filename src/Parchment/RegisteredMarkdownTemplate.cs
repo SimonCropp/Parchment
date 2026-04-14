@@ -10,10 +10,12 @@ internal sealed class RegisteredMarkdownTemplate(
     public byte[] StyleSourceBytes { get; } = styleSourceBytes;
     public IFluidTemplate ParsedTemplate { get; } = parsedTemplate;
 
-    public override byte[] Render(object model, Cancel cancel)
+    public override async Task<byte[]> Render(object model, Cancel cancel)
     {
         var context = new TemplateContext(model, SharedFluid.Options, allowModelMembers: true);
-        var markdownText = ParsedTemplate.Render(context);
+        await using var writer = new StringWriter();
+        await ParsedTemplate.RenderAsync(writer, System.Text.Encodings.Web.HtmlEncoder.Default, context);
+        var markdownText = writer.ToString();
         cancel.ThrowIfCancellationRequested();
 
         using var stream = DocxCloner.ToWritableStream(StyleSourceBytes);
