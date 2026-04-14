@@ -1,0 +1,6 @@
+﻿{
+  Text:
+Start
+Preferred customer: Globex Corporation
+End
+}

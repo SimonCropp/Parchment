@@ -26,7 +26,7 @@ Parchment supports two complementary template formats:
 <!-- snippet: Substitution -->
 <a id='snippet-Substitution'></a>
 ```cs
-var template = Fixtures.DocxTemplateBuilder.Build(
+var template = DocxTemplateBuilder.Build(
     "Invoice {{ Number }}",
     "Customer: {{ Customer.Name }}",
     "Total: {{ Total }} {{ Currency }}");
@@ -37,7 +37,7 @@ store.RegisterDocxTemplate<Invoice>("substitution", template);
 using var stream = new MemoryStream();
 await store.Render("substitution", SampleData.Invoice(), stream);
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L8-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-Substitution' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L6-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-Substitution' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -82,38 +82,36 @@ A markdown template is a `.md` file containing the full body of the document plu
 
 <!-- snippet: MarkdownTemplate -->
 <a id='snippet-MarkdownTemplate'></a>
-```cs
-var markdownSource = """
-    # {{ Report.Title }}
+```handlebars
+# {{ Report.Title }}
 
-    *Prepared by **{{ Report.Author }}** on {{ Report.Date }}*
+*Prepared by **{{ Report.Author }}** on {{ Report.Date }}*
 
-    ## Summary
+## Summary
 
-    {{ Report.Summary }}
+{{ Report.Summary }}
 
-    ## Findings
+## Findings
 
-    | Area | Status | Owner |
-    | --- | --- | --- |
-    {% for finding in Report.Findings -%}
-    | {{ finding.Area }} | {{ finding.Status }} | {{ finding.Owner }} |
-    {% endfor %}
+| Area | Status | Owner |
+| --- | --- | --- |
+{% for finding in Report.Findings -%}
+| {{ finding.Area }} | {{ finding.Status }} | {{ finding.Owner }} |
+{% endfor %}
 
-    ## Action items
+## Action items
 
-    {% for item in Report.Actions %}
-    1. **{{ item.Title }}** — {{ item.Detail }}
-    {% endfor %}
+{% for item in Report.Actions %}
+1. **{{ item.Title }}** — {{ item.Detail }}
+{% endfor %}
 
-    {% if Report.HasRisks %}
-    > ⚠ Outstanding risks remain. See appendix for mitigation plan.
-    {% else %}
-    > No outstanding risks.
-    {% endif %}
-    """;
+{% if Report.HasRisks %}
+> ⚠ Outstanding risks remain. See appendix for mitigation plan.
+{% else %}
+> No outstanding risks.
+{% endif %}
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L27-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L26-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The model the template binds against:
@@ -158,7 +156,7 @@ Render it like any other template:
 <!-- snippet: Markdown -->
 <a id='snippet-Markdown'></a>
 ```cs
-var brandDocxBytes = Fixtures.DocxTemplateBuilder.Build();
+var brandDocxBytes = DocxTemplateBuilder.Build();
 var reportModel = SampleData.Report();
 
 var store = new TemplateStore();
@@ -170,7 +168,7 @@ store.RegisterMarkdownTemplate<ReportContext>(
 using var stream = new MemoryStream();
 await store.Render("report", reportModel, stream);
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L59-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L57-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The rendered docx (page 1):
@@ -195,6 +193,21 @@ Example with style attribute:
 
 Some intro paragraph. {.IntroBlock}
 ```
+
+### HTML comments are stripped
+
+HTML comment blocks (`<!-- ... -->`) are dropped during rendering rather than passed through as empty paragraphs. This lets you embed snippet markers, authoring notes, or TODOs in template sources without bleeding visible whitespace into the output docx:
+
+```markdown
+<!-- begin-snippet: report -->
+# {{ Title }}
+
+<!-- TODO: add executive summary -->
+Body text follows the heading.
+<!-- end-snippet -->
+```
+
+Only standalone comment *blocks* are removed; inline HTML, scripts, styles, and any other HTML constructs render normally via [OpenXmlHtml](https://github.com/SimonCropp/OpenXmlHtml).
 
 
 ## Source generator (compile-time validation)

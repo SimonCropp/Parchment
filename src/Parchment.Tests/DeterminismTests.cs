@@ -1,11 +1,9 @@
-namespace Parchment.Tests;
-
 public class DeterminismTests
 {
     [Test]
     public async Task DocxRenderIsByteIdentical()
     {
-        var template = Fixtures.DocxTemplateBuilder.Build(
+        var template = DocxTemplateBuilder.Build(
             "Invoice {{ Number }}",
             "Customer: {{ Customer.Name }}",
             "Total: {{ Total }} {{ Currency }}");

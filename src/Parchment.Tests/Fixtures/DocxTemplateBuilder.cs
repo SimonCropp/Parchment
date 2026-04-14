@@ -1,10 +1,8 @@
-namespace Parchment.Tests.Fixtures;
-
 /// <summary>
 /// Builds simple docx templates in-memory for test fixtures. Each template contains a sequence of
 /// paragraphs whose text may include liquid tokens.
 /// </summary>
-internal static class DocxTemplateBuilder
+static class DocxTemplateBuilder
 {
     public static byte[] Build(params string[] paragraphs)
     {

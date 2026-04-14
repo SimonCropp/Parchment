@@ -5,7 +5,7 @@ public class ConditionalTests
     [Test]
     public async Task IfTrue()
     {
-        var template = Fixtures.DocxTemplateBuilder.Build(
+        var template = DocxTemplateBuilder.Build(
             "Start",
             "{% if Customer.IsPreferred %}",
             "Preferred customer: {{ Customer.Name }}",
@@ -31,7 +31,7 @@ public class ConditionalTests
     [Test]
     public async Task ElseBranchRenders()
     {
-        var template = Fixtures.DocxTemplateBuilder.Build(
+        var template = DocxTemplateBuilder.Build(
             "Start",
             "{% if Flag %}",
             "Affirmative: {{ Label }}",

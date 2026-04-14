@@ -5,6 +5,5 @@ public static class ModuleInitializer
     {
         VerifyOpenXml.Initialize();
         VerifierSettings.InitializePlugins();
-        VerifierSettings.UseStrictJson();
     }
 }

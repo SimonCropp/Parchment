@@ -5,6 +5,13 @@ internal sealed class HtmlBlockRenderer :
 {
     protected override void Write(OpenXmlMarkdownRenderer renderer, HtmlBlock block)
     {
+        // Comment-only blocks (snippet markers, TODOs, authoring notes) would otherwise round-trip
+        // through the HTML converter as empty paragraphs and bleed visible whitespace into the docx.
+        if (block.Type == HtmlBlockType.Comment)
+        {
+            return;
+        }
+
         var html = block.Lines.ToString();
         var settings = new OpenXmlHtml.HtmlConvertSettings
         {

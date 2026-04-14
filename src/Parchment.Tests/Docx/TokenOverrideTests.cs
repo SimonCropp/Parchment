@@ -11,7 +11,7 @@ public class TokenOverrideTests
     [Test]
     public async Task MarkdownHatch()
     {
-        var template = Fixtures.DocxTemplateBuilder.Build(
+        var template = DocxTemplateBuilder.Build(
             "# {{ Title }}",
             "{{ Body }}");
 
@@ -39,7 +39,7 @@ public class TokenOverrideTests
     [Test]
     public async Task BulletListFilter()
     {
-        var template = Fixtures.DocxTemplateBuilder.Build(
+        var template = DocxTemplateBuilder.Build(
             "Tags:",
             "{{ Tags | bullet_list }}");
 

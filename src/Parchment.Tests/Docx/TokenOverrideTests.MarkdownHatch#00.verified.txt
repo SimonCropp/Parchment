@@ -1,0 +1,9 @@
+﻿{
+  Text:
+# Weekly summary
+Highlights
+Shipped the new feature
+Closed several bugs
+Ran a code review
+Stay the course
+}

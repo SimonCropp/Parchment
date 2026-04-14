@@ -1,12 +1,10 @@
-namespace Parchment.Tests;
-
 public class UsageTests
 {
     [Test]
     public async Task Substitution()
     {
         // begin-snippet: Substitution
-        var template = Fixtures.DocxTemplateBuilder.Build(
+        var template = DocxTemplateBuilder.Build(
             "Invoice {{ Number }}",
             "Customer: {{ Customer.Name }}",
             "Total: {{ Total }} {{ Currency }}");
@@ -24,8 +22,8 @@ public class UsageTests
     [Test]
     public async Task Markdown()
     {
-        // begin-snippet: MarkdownTemplate
         var markdownSource = """
+            <!-- begin-snippet: MarkdownTemplate(lang=handlebars) -->
             # {{ Report.Title }}
 
             *Prepared by **{{ Report.Author }}** on {{ Report.Date }}*
@@ -53,11 +51,11 @@ public class UsageTests
             {% else %}
             > No outstanding risks.
             {% endif %}
+            <!-- end-snippet -->
             """;
-        // end-snippet
 
         // begin-snippet: Markdown
-        var brandDocxBytes = Fixtures.DocxTemplateBuilder.Build();
+        var brandDocxBytes = DocxTemplateBuilder.Build();
         var reportModel = SampleData.Report();
 
         var store = new TemplateStore();

@@ -1,11 +1,9 @@
-namespace Parchment.Tests;
-
 public class ThreadSafetyTests
 {
     [Test]
     public async Task ParallelRendersProduceIdenticalOutput()
     {
-        var template = Fixtures.DocxTemplateBuilder.Build(
+        var template = DocxTemplateBuilder.Build(
             "Invoice {{ Number }}",
             "Customer: {{ Customer.Name }}");
 
