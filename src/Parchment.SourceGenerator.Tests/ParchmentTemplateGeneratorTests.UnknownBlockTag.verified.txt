@@ -1,13 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: /*
-
-[ParchmentTemplate("template.docx", typeof(Empty))]
- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-public partial class WeirdTag;
-*/
- : (6,1)-(6,50),
+      Location: : (6,1)-(6,50),
       Message: Template 'template.docx' uses unsupported block tag '{% foobar %}' (supported: for, endfor, if, elsif, else, endif),
       Severity: Error,
       Descriptor: {

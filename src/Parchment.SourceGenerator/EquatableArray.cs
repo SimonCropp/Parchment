@@ -1,0 +1,72 @@
+namespace Parchment.SourceGenerator;
+
+/// <summary>
+/// ImmutableArray wrapper with structural value equality, safe to flow through the
+/// incremental pipeline so downstream stages can be cached when contents are unchanged.
+/// </summary>
+readonly struct EquatableArray<T> :
+    IEquatable<EquatableArray<T>>,
+    IEnumerable<T>
+    where T : IEquatable<T>
+{
+    public static readonly EquatableArray<T> Empty = new(ImmutableArray<T>.Empty);
+
+    readonly ImmutableArray<T> array;
+
+    public EquatableArray(ImmutableArray<T> array) =>
+        this.array = array;
+
+    public int Count => array.IsDefault ? 0 : array.Length;
+
+    public T this[int index] => array[index];
+
+    public ImmutableArray<T> AsImmutableArray() =>
+        array.IsDefault ? ImmutableArray<T>.Empty : array;
+
+    public bool Equals(EquatableArray<T> other)
+    {
+        var a = AsImmutableArray();
+        var b = other.AsImmutableArray();
+        if (a.Length != b.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < a.Length; i++)
+        {
+            if (!a[i].Equals(b[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public override bool Equals(object? obj) =>
+        obj is EquatableArray<T> other && Equals(other);
+
+    public override int GetHashCode()
+    {
+        var a = AsImmutableArray();
+        var hash = 17;
+        for (var i = 0; i < a.Length; i++)
+        {
+            hash = (hash * 31) + (a[i]?.GetHashCode() ?? 0);
+        }
+
+        return hash;
+    }
+
+    public IEnumerator<T> GetEnumerator() =>
+        ((IEnumerable<T>) AsImmutableArray()).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() =>
+        GetEnumerator();
+
+    public static bool operator ==(EquatableArray<T> left, EquatableArray<T> right) =>
+        left.Equals(right);
+
+    public static bool operator !=(EquatableArray<T> left, EquatableArray<T> right) =>
+        !left.Equals(right);
+}

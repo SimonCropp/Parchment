@@ -1,13 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: /*
-
-[ParchmentTemplate("does-not-exist.docx", typeof(Empty))]
- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-public partial class MissingFile;
-*/
- : (6,1)-(6,56),
+      Location: : (6,1)-(6,56),
       Message: Template path 'does-not-exist.docx' was not found in AdditionalFiles — add <AdditionalFiles Include="..."/> to the csproj,
       Severity: Error,
       Descriptor: {

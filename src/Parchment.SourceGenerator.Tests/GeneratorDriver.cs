@@ -23,6 +23,12 @@ static class GeneratorDriver
 
     public static GeneratorDriverRunResult Run(string userSource, params string[] templateParagraphs)
     {
+        var setup = CreateDriver(userSource, templateParagraphs);
+        return setup.Driver.RunGenerators(setup.Compilation).GetRunResult();
+    }
+
+    public static DriverSetup CreateDriver(string userSource, params string[] templateParagraphs)
+    {
         var docxPath = WriteDocx(templateParagraphs);
 
         var syntaxTrees = new[]
@@ -37,15 +43,30 @@ static class GeneratorDriver
             BuildReferences(),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-        var additionalTexts = ImmutableArray.Create<AdditionalText>(new PathAdditionalText(docxPath));
+        AdditionalText additionalText = new PathAdditionalText(docxPath);
+        var additionalTexts = ImmutableArray.Create(additionalText);
 
-        var driver = CSharpGeneratorDriver
-            .Create(new ParchmentTemplateGenerator())
-            .AddAdditionalTexts(additionalTexts)
-            .RunGenerators(compilation);
+        var driver = CSharpGeneratorDriver.Create(
+            generators: [new ParchmentTemplateGenerator().AsSourceGenerator()],
+            additionalTexts: additionalTexts,
+            parseOptions: (CSharpParseOptions) syntaxTrees[0].Options,
+            optionsProvider: null,
+            driverOptions: new(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
 
-        return driver.GetRunResult();
+        return new(driver, compilation, additionalText, docxPath);
     }
+
+    public static AdditionalText RewriteDocx(string path, params string[] paragraphs)
+    {
+        File.WriteAllBytes(path, BuildDocx(paragraphs));
+        return new PathAdditionalText(path);
+    }
+
+    public sealed record DriverSetup(
+        CSharpGeneratorDriver Driver,
+        CSharpCompilation Compilation,
+        AdditionalText DocxAdditionalText,
+        string DocxPath);
 
     static string WriteDocx(string[] paragraphs)
     {

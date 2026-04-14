@@ -1,13 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: /*
-}
-[ParchmentTemplate("template.docx", typeof(Letter))]
- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-public partial class BadLoop;
-*/
- : (13,1)-(13,51),
+      Location: : (13,1)-(13,51),
       Message: Template 'template.docx' loop '{% for item in Customer %}' source does not resolve to a type implementing IEnumerable<T>,
       Severity: Error,
       Descriptor: {

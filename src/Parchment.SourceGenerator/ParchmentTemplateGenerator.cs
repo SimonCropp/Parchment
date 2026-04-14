@@ -8,39 +8,50 @@ public sealed class ParchmentTemplateGenerator :
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var additionalFiles = context.AdditionalTextsProvider
-            .Where(static x =>
-                x.Path.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
-            .Collect();
-
-        var attributed = context.SyntaxProvider
+        // ForAttributeWithMetadataName only re-fires ExtractTarget when the attributed class's
+        // own syntax changes. Editing a model class (e.g. adding/removing a property on Invoice)
+        // in a separate file will NOT re-validate templates that reference it until the
+        // attributed class is touched. The tradeoff: combining with CompilationProvider would
+        // make the extract re-run every compilation and defeat the point of the primitive-only
+        // pipeline below. Kicking the attributed file forces revalidation in the meantime.
+        var targets = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 attributeFullName,
                 static (node, _) => node is ClassDeclarationSyntax,
-                static (ctx, _) => ExtractTarget(ctx))
-            .Where(static _ => _ != null)
-            .Collect();
+                static (ctx, cancel) => ExtractTarget(ctx, cancel))
+            .Where(static target => target != null)
+            .Select(static (target, _) => target!)
+            .WithTrackingName(Stages.Targets)
+            .Collect()
+            .Select(static (array, _) => new EquatableArray<TargetInfo>(array))
+            .WithTrackingName(Stages.TargetsCollected);
 
-        var combined = attributed.Combine(additionalFiles);
+        var docs = context.AdditionalTextsProvider
+            .Where(static text => text.Path.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
+            .Select(static (text, _) => ReadDocx(text))
+            .WithTrackingName(Stages.Docs)
+            .Collect()
+            .Select(static (array, _) => new EquatableArray<DocxData>(array))
+            .WithTrackingName(Stages.DocsCollected);
+
+        var combined = targets
+            .Combine(docs)
+            .WithTrackingName(Stages.Combined);
 
         context.RegisterSourceOutput(
             combined,
-            (productionContext, tuple) =>
-        {
-            var (targets, files) = tuple;
-            foreach (var target in targets)
+            static (productionContext, tuple) =>
             {
-                if (target == null)
+                var targetInfos = tuple.Left;
+                var docData = tuple.Right;
+                foreach (var target in targetInfos)
                 {
-                    continue;
+                    Process(productionContext, target, docData);
                 }
-
-                Process(productionContext, target, files);
-            }
-        });
+            });
     }
 
-    static TemplateTarget? ExtractTarget(GeneratorAttributeSyntaxContext context)
+    static TargetInfo? ExtractTarget(GeneratorAttributeSyntaxContext context, CancellationToken cancel)
     {
         if (context.TargetSymbol is not INamedTypeSymbol typeSymbol)
         {
@@ -63,55 +74,94 @@ public sealed class ParchmentTemplateGenerator :
             return null;
         }
 
-        var location = attribute.ApplicationSyntaxReference != null
+        var rawLocation = attribute.ApplicationSyntaxReference != null
             ? Location.Create(
                 attribute.ApplicationSyntaxReference.SyntaxTree,
                 attribute.ApplicationSyntaxReference.Span)
             : Location.None;
 
-        return new(typeSymbol, modelType, path, location);
+        var declaringNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
+            ? null
+            : typeSymbol.ContainingNamespace.ToDisplayString();
+
+        var shape = ShapeBuilder.Build(modelType, cancel);
+
+        return new(
+            declaringNamespace,
+            typeSymbol.Name,
+            modelType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            modelType.Name,
+            path,
+            EquatableLocation.From(rawLocation),
+            shape);
     }
 
-    static void Process(SourceProductionContext context, TemplateTarget target, ImmutableArray<AdditionalText> files)
+    static DocxData ReadDocx(AdditionalText text)
     {
+        try
+        {
+            var paragraphs = DocxArchiveReader.ReadParagraphTexts(text.Path);
+            return new(text.Path, new(paragraphs.ToImmutableArray()), null);
+        }
+        catch (Exception exception)
+        {
+            return new(text.Path, EquatableArray<string>.Empty, exception.Message);
+        }
+    }
+
+    static void Process(SourceProductionContext context, TargetInfo target, EquatableArray<DocxData> docs)
+    {
+        var location = target.Location.ToLocation();
         var normalized = target.TemplatePath.Replace('\\', '/');
-        var file = files.FirstOrDefault(_ =>
-            _.Path.Replace('\\', '/')
-                .EndsWith(normalized, StringComparison.OrdinalIgnoreCase));
-        if (file == null)
+
+        DocxData? matched = null;
+        foreach (var doc in docs)
+        {
+            if (doc.Path.Replace('\\', '/').EndsWith(normalized, StringComparison.OrdinalIgnoreCase))
+            {
+                matched = doc;
+                break;
+            }
+        }
+
+        if (matched == null)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 Diagnostics.TemplateFileMissing,
-                target.Location,
+                location,
                 target.TemplatePath));
             return;
         }
 
-        List<string> paragraphs;
-        try
-        {
-            paragraphs = DocxArchiveReader.ReadParagraphTexts(file.Path);
-        }
-        catch (Exception exception)
+        if (matched.ReadError != null)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 Diagnostics.TemplateReadError,
-                target.Location,
+                location,
                 target.TemplatePath,
-                exception.Message));
+                matched.ReadError));
             return;
         }
 
-        var tokens = TokenScanner.Scan(paragraphs);
-        ValidateTokens(context, target, tokens);
+        var tokens = TokenScanner.Scan(matched.Paragraphs.AsImmutableArray());
+        ValidateTokens(context, target, tokens, location);
 
         var source = GenerateRegistration(target);
-        context.AddSource($"{target.Declaring.ToDisplayString().Replace('.', '_')}_ParchmentTemplate.g.cs", SourceText.From(source, Encoding.UTF8));
+        var hintPrefix = target.DeclaringNamespace is null
+            ? target.DeclaringName
+            : $"{target.DeclaringNamespace}.{target.DeclaringName}";
+        context.AddSource(
+            $"{hintPrefix.Replace('.', '_')}_ParchmentTemplate.g.cs",
+            SourceText.From(source, Encoding.UTF8));
     }
 
-    static void ValidateTokens(SourceProductionContext context, TemplateTarget target, IReadOnlyList<Token> tokens)
+    static void ValidateTokens(
+        SourceProductionContext context,
+        TargetInfo target,
+        IReadOnlyList<Token> tokens,
+        Location location)
     {
-        var scope = new Dictionary<string, ITypeSymbol>(StringComparer.Ordinal);
+        var scope = new Dictionary<string, string>(StringComparer.Ordinal);
         var loopStack = new Stack<string>();
 
         foreach (var token in tokens)
@@ -119,12 +169,7 @@ public sealed class ParchmentTemplateGenerator :
             switch (token.Kind)
             {
                 case TokenKind.Substitution:
-                    if (token.HasOtherContent)
-                    {
-                        // ok — substitution tokens can share a paragraph with static text
-                    }
-
-                    ValidateReferences(context, target, token.References, scope, token.Source);
+                    ValidateReferences(context, target, location, token.References, scope, token.Source);
                     break;
 
                 case TokenKind.ForOpen:
@@ -132,7 +177,7 @@ public sealed class ParchmentTemplateGenerator :
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
                             Diagnostics.MixedInlineBlockTag,
-                            target.Location,
+                            location,
                             target.TemplatePath,
                             token.Source));
                     }
@@ -142,31 +187,31 @@ public sealed class ParchmentTemplateGenerator :
                         break;
                     }
 
-                    var sourceType = ResolveType(target, token.References[0], scope);
-                    if (sourceType == null)
+                    var sourceFqn = ShapeResolver.Resolve(target.Shape, token.References[0], scope);
+                    if (sourceFqn == null)
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
                             Diagnostics.MissingMember,
-                            target.Location,
+                            location,
                             target.TemplatePath,
                             token.Source,
                             string.Join(".", token.References[0]),
-                            target.ModelType.Name));
+                            target.ModelSimpleName));
                         break;
                     }
 
-                    var elementType = ModelSymbolResolver.TryGetElementType(sourceType);
-                    if (elementType == null)
+                    var elementFqn = ShapeResolver.GetElementType(target.Shape, sourceFqn);
+                    if (elementFqn == null)
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
                             Diagnostics.LoopSourceNotEnumerable,
-                            target.Location,
+                            location,
                             target.TemplatePath,
                             token.Source));
                         break;
                     }
 
-                    scope[token.LoopVariable] = elementType;
+                    scope[token.LoopVariable] = elementFqn;
                     loopStack.Push(token.LoopVariable);
                     break;
 
@@ -175,7 +220,7 @@ public sealed class ParchmentTemplateGenerator :
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
                             Diagnostics.MixedInlineBlockTag,
-                            target.Location,
+                            location,
                             target.TemplatePath,
                             token.Source));
                     }
@@ -193,12 +238,12 @@ public sealed class ParchmentTemplateGenerator :
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
                             Diagnostics.MixedInlineBlockTag,
-                            target.Location,
+                            location,
                             target.TemplatePath,
                             token.Source));
                     }
 
-                    ValidateReferences(context, target, token.References, scope, token.Source);
+                    ValidateReferences(context, target, location, token.References, scope, token.Source);
                     break;
 
                 case TokenKind.Else:
@@ -207,7 +252,7 @@ public sealed class ParchmentTemplateGenerator :
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
                             Diagnostics.MixedInlineBlockTag,
-                            target.Location,
+                            location,
                             target.TemplatePath,
                             token.Source));
                     }
@@ -217,7 +262,7 @@ public sealed class ParchmentTemplateGenerator :
                 case TokenKind.UnknownBlock:
                     context.ReportDiagnostic(Diagnostic.Create(
                         Diagnostics.UnsupportedBlockTag,
-                        target.Location,
+                        location,
                         target.TemplatePath,
                         token.Source));
                     break;
@@ -227,76 +272,61 @@ public sealed class ParchmentTemplateGenerator :
 
     static void ValidateReferences(
         SourceProductionContext context,
-        TemplateTarget target,
+        TargetInfo target,
+        Location location,
         IReadOnlyList<string[]> references,
-        IReadOnlyDictionary<string, ITypeSymbol> scope,
+        IReadOnlyDictionary<string, string> scope,
         string tokenSource)
     {
         foreach (var reference in references)
         {
-            var resolved = ResolveType(target, reference, scope);
+            var resolved = ShapeResolver.Resolve(target.Shape, reference, scope);
             if (resolved == null)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     Diagnostics.MissingMember,
-                    target.Location,
+                    location,
                     target.TemplatePath,
                     tokenSource,
                     string.Join(".", reference),
-                    target.ModelType.Name));
+                    target.ModelSimpleName));
             }
         }
     }
 
-    static ITypeSymbol? ResolveType(TemplateTarget target, string[] segments, IReadOnlyDictionary<string, ITypeSymbol> scope)
+    static string GenerateRegistration(TargetInfo target)
     {
-        if (segments.Length == 0)
-        {
-            return null;
-        }
-
-        if (scope.TryGetValue(segments[0], out var scoped))
-        {
-            if (segments.Length == 1)
-            {
-                return scoped;
-            }
-
-            return ModelSymbolResolver.ResolvePath(scoped, segments.Skip(1).ToArray());
-        }
-
-        return ModelSymbolResolver.ResolvePath(target.ModelType, segments);
-    }
-
-    static string GenerateRegistration(TemplateTarget target)
-    {
-        var declaring = target.Declaring;
-        var namespaceName = declaring.ContainingNamespace.IsGlobalNamespace ? null : declaring.ContainingNamespace.ToDisplayString();
-        var className = declaring.Name;
-        var modelFullName = target.ModelType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
         var builder = new StringBuilder();
         builder.AppendLine("// <auto-generated />");
         builder.AppendLine("#nullable enable");
-        if (namespaceName != null)
+        if (target.DeclaringNamespace != null)
         {
-            builder.Append("namespace ").Append(namespaceName).AppendLine(";");
+            builder.Append("namespace ").Append(target.DeclaringNamespace).AppendLine(";");
             builder.AppendLine();
         }
 
-        builder.Append("partial class ").AppendLine(className);
+        builder.Append("partial class ").AppendLine(target.DeclaringName);
         builder.AppendLine("{");
         builder.Append("    public static string TemplatePath => \"").Append(target.TemplatePath.Replace("\\", "\\\\")).AppendLine("\";");
-        builder.Append("    public static string TemplateName => \"").Append(className).AppendLine("\";");
+        builder.Append("    public static string TemplateName => \"").Append(target.DeclaringName).AppendLine("\";");
         builder.AppendLine();
         builder.AppendLine("    public static void RegisterWith(global::Parchment.TemplateStore store, string? basePath = null)");
         builder.AppendLine("    {");
         builder.AppendLine("        var path = basePath is null ? TemplatePath : global::System.IO.Path.Combine(basePath, TemplatePath);");
         builder.AppendLine("        var bytes = global::System.IO.File.ReadAllBytes(path);");
-        builder.Append("        store.RegisterDocxTemplate<").Append(modelFullName).AppendLine(">(TemplateName, bytes);");
+        builder.Append("        store.RegisterDocxTemplate<").Append(target.ModelFullyQualifiedName).AppendLine(">(TemplateName, bytes);");
         builder.AppendLine("    }");
         builder.AppendLine("}");
 
         return builder.ToString();
+    }
+
+    public static class Stages
+    {
+        public const string Targets = "Parchment_Targets";
+        public const string TargetsCollected = "Parchment_TargetsCollected";
+        public const string Docs = "Parchment_Docs";
+        public const string DocsCollected = "Parchment_DocsCollected";
+        public const string Combined = "Parchment_Combined";
     }
 }

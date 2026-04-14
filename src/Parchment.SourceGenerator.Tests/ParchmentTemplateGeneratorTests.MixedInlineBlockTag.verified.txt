@@ -1,13 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: /*
-
-[ParchmentTemplate("template.docx", typeof(Invoice))]
- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-public partial class Mixed;
-*/
- : (15,1)-(15,52),
+      Location: : (15,1)-(15,52),
       Message: Template 'template.docx' block tag '{% for line in Lines %}' shares a paragraph with other content; block tags must be on their own lines,
       Severity: Error,
       Descriptor: {
