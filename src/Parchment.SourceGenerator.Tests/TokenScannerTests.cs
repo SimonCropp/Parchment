@@ -1,5 +1,3 @@
-namespace Parchment.SourceGenerator.Tests;
-
 public class TokenScannerTests
 {
     [Test]
