@@ -124,6 +124,92 @@ public class ParchmentTemplateGeneratorTests
     }
 
     [Test]
+    public Task ForLoop_StringIsNotEnumerable()
+    {
+        // Guards against string being silently treated as IEnumerable<char>. ShapeBuilder
+        // has a special-case for SpecialType.System_String; this test fails loudly if that
+        // guard is removed (loop would validate as legal "for c in <string>" instead).
+        var source = letterModel +
+                     """
+
+                     [ParchmentTemplate("template.docx", typeof(Letter))]
+                     public partial class StringLoop;
+                     """;
+        var result = GeneratorDriver.Run(
+            source,
+            "{% for c in Customer.Name %}",
+            "x",
+            "{% endfor %}");
+        return Verify(result);
+    }
+
+    [Test]
+    public Task MultiTarget_MultiDocx()
+    {
+        var source = """
+                     using Parchment;
+
+                     namespace Sample;
+
+                     public class Customer
+                     {
+                         public string Name { get; set; } = "";
+                     }
+
+                     public class Letter
+                     {
+                         public Customer Customer { get; set; } = new();
+                     }
+
+                     public class Invoice
+                     {
+                         public decimal Total { get; set; }
+                     }
+
+                     [ParchmentTemplate("letter.docx", typeof(Letter))]
+                     public partial class LetterDoc;
+
+                     [ParchmentTemplate("invoice.docx", typeof(Invoice))]
+                     public partial class InvoiceDoc;
+                     """;
+
+        var setup = GeneratorDriver.CreateDriverWithDocxes(
+            source,
+            ("letter.docx", GeneratorDriver.BuildDocxBytes("Hello {{ Customer.Name }}!")),
+            ("invoice.docx", GeneratorDriver.BuildDocxBytes("Total: {{ Total }}")));
+
+        var result = setup.Driver.RunGenerators(setup.Compilation).GetRunResult();
+        return Verify(result);
+    }
+
+    [Test]
+    public async Task TemplateReadError_CorruptDocx()
+    {
+        // PARCH006: exception message is platform/culture dependent, so assert the diagnostic
+        // id directly instead of snapshotting the full message.
+        var source = """
+                     using Parchment;
+
+                     namespace Sample;
+
+                     public class Empty;
+
+                     [ParchmentTemplate("template.docx", typeof(Empty))]
+                     public partial class Corrupt;
+                     """;
+
+        var setup = GeneratorDriver.CreateDriverWithDocxes(
+            source,
+            ("template.docx", "not a zip file"u8.ToArray()));
+
+        var result = setup.Driver.RunGenerators(setup.Compilation).GetRunResult();
+        var diagnostics = result.Results.Single().Diagnostics;
+
+        await Assert.That(diagnostics.Length).IsEqualTo(1);
+        await Assert.That(diagnostics[0].Id).IsEqualTo("PARCH006");
+    }
+
+    [Test]
     public Task MixedInlineBlockTag()
     {
         var source = """

@@ -27,9 +27,25 @@ static class GeneratorDriver
         return setup.Driver.RunGenerators(setup.Compilation).GetRunResult();
     }
 
-    public static DriverSetup CreateDriver(string userSource, params string[] templateParagraphs)
+    public static DriverSetup CreateDriver(string userSource, params string[] templateParagraphs) =>
+        CreateDriverWithDocxes(userSource, ("template.docx", BuildDocx(templateParagraphs)));
+
+    public static DriverSetup CreateDriverWithDocxes(
+        string userSource,
+        params (string FileName, byte[] Bytes)[] docxes)
     {
-        var docxPath = WriteDocx(templateParagraphs);
+        var directory = Path.Combine(Path.GetTempPath(), "parchment-sg-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+
+        var texts = ImmutableArray.CreateBuilder<AdditionalText>();
+        var paths = ImmutableArray.CreateBuilder<string>();
+        foreach (var (name, bytes) in docxes)
+        {
+            var path = Path.Combine(directory, name);
+            File.WriteAllBytes(path, bytes);
+            texts.Add(new PathAdditionalText(path));
+            paths.Add(path);
+        }
 
         var syntaxTrees = new[]
         {
@@ -43,9 +59,7 @@ static class GeneratorDriver
             BuildReferences(),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-        AdditionalText additionalText = new PathAdditionalText(docxPath);
-        var additionalTexts = ImmutableArray.Create(additionalText);
-
+        var additionalTexts = texts.ToImmutable();
         var driver = CSharpGeneratorDriver.Create(
             generators: [new ParchmentTemplateGenerator().AsSourceGenerator()],
             additionalTexts: additionalTexts,
@@ -53,8 +67,10 @@ static class GeneratorDriver
             optionsProvider: null,
             driverOptions: new(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
 
-        return new(driver, compilation, additionalText, docxPath);
+        return new(driver, compilation, additionalTexts, paths.ToImmutable());
     }
+
+    public static byte[] BuildDocxBytes(params string[] paragraphs) => BuildDocx(paragraphs);
 
     public static AdditionalText RewriteDocx(string path, params string[] paragraphs)
     {
@@ -65,8 +81,12 @@ static class GeneratorDriver
     public sealed record DriverSetup(
         CSharpGeneratorDriver Driver,
         CSharpCompilation Compilation,
-        AdditionalText DocxAdditionalText,
-        string DocxPath);
+        ImmutableArray<AdditionalText> AdditionalTexts,
+        ImmutableArray<string> DocxPaths)
+    {
+        public AdditionalText DocxAdditionalText => AdditionalTexts[0];
+        public string DocxPath => DocxPaths[0];
+    }
 
     static string WriteDocx(string[] paragraphs)
     {
