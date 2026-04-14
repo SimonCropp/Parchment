@@ -8,7 +8,7 @@
     <PackageVersion Include="OpenXmlHtml" Version="0.4.0" />
     <PackageVersion Include="Markdig" Version="0.38.0" />
     <PackageVersion Include="Fluid.Core" Version="2.15.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.5" />
     <PackageVersion Include="Polyfill" Version="10.3.0" />
     <PackageVersion Include="ProjectDefaults" Version="1.0.172" />
     <PackageVersion Include="ProjectFiles" Version="1.1.1" />
