@@ -1,5 +1,3 @@
-namespace Parchment.Tokens;
-
 sealed record LoopNode(
     string OpenAnchorName,
     string CloseAnchorName,

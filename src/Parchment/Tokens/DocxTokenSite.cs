@@ -1,5 +1,3 @@
-namespace Parchment.Tokens;
-
 sealed record DocxTokenSite(
     int Offset,
     int Length,

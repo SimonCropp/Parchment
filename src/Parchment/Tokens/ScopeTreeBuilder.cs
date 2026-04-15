@@ -1,5 +1,3 @@
-namespace Parchment.Tokens;
-
 /// <summary>
 /// Builds a scope tree from a flat list of paragraph classifications. Opening block tags (for/if)
 /// nest their following paragraphs as body nodes up to their matching closing tag.

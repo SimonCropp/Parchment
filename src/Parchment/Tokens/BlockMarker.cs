@@ -1,5 +1,3 @@
-namespace Parchment.Tokens;
-
 sealed record BlockMarker(
     BlockTagKind Kind,
     string Source,

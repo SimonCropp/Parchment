@@ -1,5 +1,3 @@
-namespace Parchment.Tokens;
-
 enum ParagraphKind
 {
     Static,

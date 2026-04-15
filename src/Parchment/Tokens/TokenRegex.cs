@@ -1,5 +1,3 @@
-namespace Parchment.Tokens;
-
 static class TokenRegex
 {
     // Captures the tag name and expression of a block tag like `{% for item in items %}`.

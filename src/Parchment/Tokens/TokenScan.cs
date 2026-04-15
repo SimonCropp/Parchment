@@ -1,5 +1,3 @@
-namespace Parchment.Tokens;
-
 internal enum TokenSiteKind
 {
     Substitution,

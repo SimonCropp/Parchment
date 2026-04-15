@@ -1,5 +1,3 @@
-namespace Parchment.Tokens;
-
 /// <summary>
 /// Walks a cached scope tree against a cloned docx, evaluating substitution tokens and block tags
 /// to produce the final rendered document.

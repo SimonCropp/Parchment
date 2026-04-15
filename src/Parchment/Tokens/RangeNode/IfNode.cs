@@ -1,5 +1,3 @@
-namespace Parchment.Tokens;
-
 sealed record IfNode(
     string OpenAnchorName,
     string CloseAnchorName,

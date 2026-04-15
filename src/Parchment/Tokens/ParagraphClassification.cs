@@ -1,5 +1,3 @@
-namespace Parchment.Tokens;
-
 sealed record ParagraphClassification(
     Paragraph Paragraph,
     string AnchorName,
