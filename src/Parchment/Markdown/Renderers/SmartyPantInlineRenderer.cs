@@ -1,5 +1,3 @@
-using Parchment.Markdown;
-
 class SmartyPantInlineRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, Markdig.Extensions.SmartyPants.SmartyPant>
 {

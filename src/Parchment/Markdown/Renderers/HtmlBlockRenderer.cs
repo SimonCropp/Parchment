@@ -1,5 +1,3 @@
-using Parchment.Markdown;
-
 class HtmlBlockRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, HtmlBlock>
 {

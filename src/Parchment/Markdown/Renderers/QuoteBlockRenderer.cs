@@ -1,5 +1,3 @@
-using Parchment.Markdown;
-
 class QuoteBlockRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, QuoteBlock>
 {

@@ -1,5 +1,3 @@
-using Parchment.Markdown;
-
 class ListBlockRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, ListBlock>
 {

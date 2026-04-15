@@ -1,5 +1,3 @@
-using Parchment.Markdown;
-
 class ThematicBreakRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, ThematicBreakBlock>
 {

@@ -1,5 +1,3 @@
-using Parchment.Markdown;
-
 class HtmlInlineRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, HtmlInline>
 {

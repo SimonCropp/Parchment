@@ -1,5 +1,3 @@
-using Parchment.Markdown;
-
 class AutolinkInlineRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, AutolinkInline>
 {

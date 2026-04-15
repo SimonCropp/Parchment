@@ -1,5 +1,3 @@
-namespace Parchment.Markdown;
-
 class OpenXmlMarkdownRenderer :
     RendererBase
 {

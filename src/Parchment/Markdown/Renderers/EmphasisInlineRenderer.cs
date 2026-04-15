@@ -1,5 +1,3 @@
-using Parchment.Markdown;
-
 class EmphasisInlineRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, EmphasisInline>
 {

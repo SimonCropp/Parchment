@@ -1,5 +1,3 @@
-using Parchment.Markdown;
-
 class CodeBlockRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, CodeBlock>
 {

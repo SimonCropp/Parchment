@@ -1,5 +1,3 @@
-using Parchment.Markdown;
-
 class CodeInlineRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, CodeInline>
 {
