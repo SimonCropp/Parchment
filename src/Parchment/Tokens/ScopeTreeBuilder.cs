@@ -4,7 +4,7 @@ namespace Parchment.Tokens;
 /// Builds a scope tree from a flat list of paragraph classifications. Opening block tags (for/if)
 /// nest their following paragraphs as body nodes up to their matching closing tag.
 /// </summary>
-internal static class ScopeTreeBuilder
+static class ScopeTreeBuilder
 {
     public static IReadOnlyList<RangeNode> Build(
         IReadOnlyList<ParagraphClassification> classifications,

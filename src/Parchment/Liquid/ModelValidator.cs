@@ -4,7 +4,7 @@ namespace Parchment.Liquid;
 /// Reflection-based validator that walks an <see cref="IdentifierPath"/> against a .NET type
 /// to ensure every segment resolves to a real member. Used by the runtime registration path.
 /// </summary>
-internal static class ModelValidator
+static class ModelValidator
 {
     public static void Validate(
         Type modelType,

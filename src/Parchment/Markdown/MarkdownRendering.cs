@@ -4,7 +4,7 @@ namespace Parchment.Markdown;
 /// Entry point for rendering a markdown string into a list of OpenXML elements suitable for
 /// splicing into a Word document body, header, footer, or other content host.
 /// </summary>
-internal static class MarkdownRendering
+static class MarkdownRendering
 {
     public static IReadOnlyList<OpenXmlElement> Render(string markdown, MainDocumentPart mainPart, int headingOffset)
     {

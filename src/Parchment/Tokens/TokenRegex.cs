@@ -1,6 +1,6 @@
 namespace Parchment.Tokens;
 
-internal static class TokenRegex
+static class TokenRegex
 {
     // Captures the tag name and expression of a block tag like `{% for item in items %}`.
     public static readonly Regex BlockTag = new(

@@ -22,7 +22,7 @@ internal readonly struct TokenSite(int offset, int length, TokenSiteKind kind)
 /// <c>{</c> or <c>}</c>, a block body cannot contain <c>{</c> or <c>%</c>, and the scanner
 /// advances past each match without nesting.
 /// </summary>
-internal static class TokenScan
+static class TokenScan
 {
     public static List<TokenSite> Scan(string text)
     {

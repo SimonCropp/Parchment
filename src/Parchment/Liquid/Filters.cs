@@ -1,6 +1,6 @@
 namespace Parchment.Liquid;
 
-internal static class Filters
+static class Filters
 {
     public static void Register(FilterCollection filters)
     {

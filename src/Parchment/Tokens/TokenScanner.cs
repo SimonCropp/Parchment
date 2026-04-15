@@ -4,7 +4,7 @@ namespace Parchment.Tokens;
 /// Scans every paragraph of a given part for Fluid tokens, classifies each paragraph, and injects
 /// anchor bookmarks into token-bearing paragraphs so they can be located by name at render time.
 /// </summary>
-internal static class TokenScanner
+static class TokenScanner
 {
     public static List<ParagraphClassification> Scan(OpenXmlCompositeElement partRoot, string templateName, string partUri)
     {

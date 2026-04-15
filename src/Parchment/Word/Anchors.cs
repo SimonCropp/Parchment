@@ -6,7 +6,7 @@ namespace Parchment.Word;
 /// relying on fragile positional indices that break when structural replacements expand a token into
 /// multiple elements.
 /// </summary>
-internal static class Anchors
+static class Anchors
 {
     public const string Prefix = "parchment-anchor-";
 

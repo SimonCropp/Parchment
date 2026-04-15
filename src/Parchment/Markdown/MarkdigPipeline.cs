@@ -1,6 +1,6 @@
 namespace Parchment.Markdown;
 
-internal static class MarkdigPipeline
+static class MarkdigPipeline
 {
     public static MarkdownPipeline Pipeline { get; } = new MarkdownPipelineBuilder()
         .UseEmphasisExtras()

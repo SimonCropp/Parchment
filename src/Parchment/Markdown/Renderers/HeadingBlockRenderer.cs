@@ -23,7 +23,7 @@ class HeadingBlockRenderer :
     }
 }
 
-internal static class RendererInlineExtensions
+static class RendererInlineExtensions
 {
     public static void WriteLeafInline(this OpenXmlMarkdownRenderer renderer, LeafBlock block)
     {
