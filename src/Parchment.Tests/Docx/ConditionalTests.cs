@@ -1,5 +1,3 @@
-namespace Parchment.Tests.Docx;
-
 public class ConditionalTests
 {
     [Test]

@@ -1,5 +1,3 @@
-namespace Parchment.Tests.Markdown;
-
 public class MarkdownFlowTests
 {
     public class ReportModel

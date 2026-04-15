@@ -1,6 +1,4 @@
-namespace Parchment.Tests.Markdown.Renderers;
-
-using MarkdigTable = global::Markdig.Extensions.Tables.Table;
+using MarkdigTable = Markdig.Extensions.Tables.Table;
 
 public class TableRendererTests
 {

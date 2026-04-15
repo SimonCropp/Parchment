@@ -1,5 +1,3 @@
-namespace Parchment.Tests.Markdown.Renderers;
-
 using Markdig.Extensions.SmartyPants;
 
 public class SmartyPantInlineRendererTests
