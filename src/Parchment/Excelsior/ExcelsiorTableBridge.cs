@@ -1,5 +1,4 @@
 using Excelsior;
-using W = DocumentFormat.OpenXml.Wordprocessing;
 
 /// <summary>
 /// Reflection adapter that constructs the closed-generic <c>Excelsior.WordTableBuilder&lt;T&gt;</c>
@@ -10,7 +9,7 @@ static class ExcelsiorTableBridge
 {
     static readonly ConcurrentDictionary<Type, BuilderInvoker> invokerCache = new();
 
-    public static W.Table BuildTable(Type elementType, object data, MainDocumentPart mainPart)
+    public static Table BuildTable(Type elementType, object data, MainDocumentPart mainPart)
     {
         var invoker = invokerCache.GetOrAdd(elementType, CreateInvoker);
         return invoker(data, mainPart);
@@ -30,9 +29,9 @@ static class ExcelsiorTableBridge
         return (data, mainPart) =>
         {
             var builder = ctor.Invoke([data]);
-            return (W.Table) build.Invoke(builder, [mainPart])!;
+            return (Table) build.Invoke(builder, [mainPart])!;
         };
     }
 
-    delegate W.Table BuilderInvoker(object data, MainDocumentPart mainPart);
+    delegate Table BuilderInvoker(object data, MainDocumentPart mainPart);
 }

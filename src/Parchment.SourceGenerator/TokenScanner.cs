@@ -51,12 +51,11 @@ public static class TokenScanner
     // A "plain" substitution is `{{ a.b.c }}` — just an OutputStatement wrapping a MemberExpression,
     // no filter chain, no arithmetic, no literal. The Excelsior dispatch path requires this shape
     // because it walks the model object directly instead of going through Fluid evaluation.
-    static bool IsPlainMemberAccess(Fluid.IFluidTemplate template)
+    static bool IsPlainMemberAccess(IFluidTemplate template)
     {
-        var statements = ((Fluid.Parser.FluidTemplate) template).Statements;
+        var statements = ((FluidTemplate) template).Statements;
         return statements.Count == 1
-               && statements[0] is Fluid.Ast.OutputStatement output
-               && output.Expression is Fluid.Ast.MemberExpression;
+               && statements[0] is OutputStatement {Expression: MemberExpression};
     }
 
     static Token ParseBlockTag(string source, string paragraph, bool hasOtherContent)

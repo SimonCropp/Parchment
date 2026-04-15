@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Diagnostics.CodeAnalysis;
-
 /// <summary>
 /// Cache of <see cref="ExcelsiorTableAttribute"/>-marked properties reachable from a model type,
 /// keyed by their dotted path from the root (e.g. <c>Customer.Lines</c>). Built once at template
@@ -98,8 +95,8 @@ sealed class ExcelsiorTableMap
             type == typeof(decimal) ||
             type == typeof(DateTime) ||
             type == typeof(DateTimeOffset) ||
-            type == typeof(DateOnly) ||
-            type == typeof(TimeOnly) ||
+            type == typeof(Date) ||
+            type == typeof(Time) ||
             type == typeof(TimeSpan) ||
             type == typeof(Guid) ||
             type == typeof(Uri))

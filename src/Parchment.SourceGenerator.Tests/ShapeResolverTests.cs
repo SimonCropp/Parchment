@@ -99,6 +99,7 @@ public class ShapeResolverTests
         await Assert.That(element).IsNull();
     }
 
+    // ReSharper disable once CollectionNeverUpdated.Local
     static Dictionary<string, string> emptyScope = new(StringComparer.OrdinalIgnoreCase);
 
     static ModelShape BuildShape()
