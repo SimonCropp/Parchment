@@ -8,6 +8,12 @@
     <PackageVersion Include="OpenXmlHtml" Version="0.4.0" />
     <PackageVersion Include="Markdig" Version="1.1.2" />
     <PackageVersion Include="Fluid.Core" Version="2.31.0" />
+    <PackageVersion Include="Parlot" Version="1.5.7" />
+    <PackageVersion Include="Microsoft.Extensions.FileProviders.Abstractions" Version="10.0.6" />
+    <PackageVersion Include="TimeZoneConverter" Version="7.2.0" />
+    <PackageVersion Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
+    <PackageVersion Include="System.Text.Json" Version="10.0.6" />
+    <PackageVersion Include="PackageShader.MsBuild" Version="1.1.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.6" />
     <PackageVersion Include="Polyfill" Version="10.3.0" />
     <PackageVersion Include="ProjectDefaults" Version="1.0.172" />
