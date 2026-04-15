@@ -1,4 +1,4 @@
-namespace Parchment.Markdown.Renderers;
+using Parchment.Markdown;
 
 class LinkInlineRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, LinkInline>

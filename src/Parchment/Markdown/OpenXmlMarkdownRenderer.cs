@@ -14,24 +14,24 @@ class OpenXmlMarkdownRenderer :
         stack.Push(new());
 
         // Block renderers
-        ObjectRenderers.Add(new Renderers.HeadingBlockRenderer());
-        ObjectRenderers.Add(new Renderers.ParagraphBlockRenderer());
-        ObjectRenderers.Add(new Renderers.ListBlockRenderer());
-        ObjectRenderers.Add(new Renderers.QuoteBlockRenderer());
-        ObjectRenderers.Add(new Renderers.TableRenderer());
-        ObjectRenderers.Add(new Renderers.CodeBlockRenderer());
-        ObjectRenderers.Add(new Renderers.ThematicBreakRenderer());
-        ObjectRenderers.Add(new Renderers.HtmlBlockRenderer());
+        ObjectRenderers.Add(new HeadingBlockRenderer());
+        ObjectRenderers.Add(new ParagraphBlockRenderer());
+        ObjectRenderers.Add(new ListBlockRenderer());
+        ObjectRenderers.Add(new QuoteBlockRenderer());
+        ObjectRenderers.Add(new TableRenderer());
+        ObjectRenderers.Add(new CodeBlockRenderer());
+        ObjectRenderers.Add(new ThematicBreakRenderer());
+        ObjectRenderers.Add(new HtmlBlockRenderer());
 
         // Inline renderers
-        ObjectRenderers.Add(new Renderers.LiteralInlineRenderer());
-        ObjectRenderers.Add(new Renderers.EmphasisInlineRenderer());
-        ObjectRenderers.Add(new Renderers.LinkInlineRenderer());
-        ObjectRenderers.Add(new Renderers.AutolinkInlineRenderer());
-        ObjectRenderers.Add(new Renderers.CodeInlineRenderer());
-        ObjectRenderers.Add(new Renderers.LineBreakInlineRenderer());
-        ObjectRenderers.Add(new Renderers.HtmlInlineRenderer());
-        ObjectRenderers.Add(new Renderers.SmartyPantInlineRenderer());
+        ObjectRenderers.Add(new LiteralInlineRenderer());
+        ObjectRenderers.Add(new EmphasisInlineRenderer());
+        ObjectRenderers.Add(new LinkInlineRenderer());
+        ObjectRenderers.Add(new AutolinkInlineRenderer());
+        ObjectRenderers.Add(new CodeInlineRenderer());
+        ObjectRenderers.Add(new LineBreakInlineRenderer());
+        ObjectRenderers.Add(new HtmlInlineRenderer());
+        ObjectRenderers.Add(new SmartyPantInlineRenderer());
     }
 
     public MainDocumentPart MainPart { get; }

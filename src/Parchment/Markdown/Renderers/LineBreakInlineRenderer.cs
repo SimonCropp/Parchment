@@ -1,4 +1,4 @@
-namespace Parchment.Markdown.Renderers;
+using Parchment.Markdown;
 
 class LineBreakInlineRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, LineBreakInline>

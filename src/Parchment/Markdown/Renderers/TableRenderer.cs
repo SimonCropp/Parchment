@@ -1,4 +1,4 @@
-namespace Parchment.Markdown.Renderers;
+using Parchment.Markdown;
 
 class TableRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, Markdig.Extensions.Tables.Table>
