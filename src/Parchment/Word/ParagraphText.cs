@@ -1,4 +1,3 @@
-namespace Parchment.Word;
 
 /// <summary>
 /// Builds the flat InnerText of a paragraph plus a map from character offset → (Text element, char index within).
@@ -6,8 +5,8 @@ namespace Parchment.Word;
 /// </summary>
 class ParagraphText
 {
-    readonly List<TextSpan> spans;
-    readonly string innerText;
+    List<TextSpan> spans;
+    string innerText;
 
     ParagraphText(List<TextSpan> spans, string innerText)
     {

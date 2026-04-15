@@ -6,7 +6,6 @@ global using System.Linq;
 global using System.Reflection;
 global using System.Text;
 global using System.Text.RegularExpressions;
-global using System.Threading;
 global using System.Threading.Tasks;
 
 global using DocumentFormat.OpenXml;
@@ -27,7 +26,3 @@ global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Logging.Abstractions;
 
 global using Parchment;
-global using Parchment.Errors;
-global using Parchment.Liquid;
-global using Parchment.Tokens;
-global using Parchment.Word;

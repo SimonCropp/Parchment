@@ -1,5 +1,3 @@
-namespace Parchment.Word;
-
 /// <summary>
 /// Adapter for <see cref="NumberingDefinitionsPart"/> that reuses the existing definitions when present
 /// and creates new ones on demand for bullet and ordered lists.

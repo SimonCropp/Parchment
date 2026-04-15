@@ -1,5 +1,3 @@
-namespace Parchment.Word;
-
 static class DocxCloner
 {
     public static MemoryStream ToWritableStream(byte[] bytes)

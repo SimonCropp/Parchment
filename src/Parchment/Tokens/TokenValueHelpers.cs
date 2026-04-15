@@ -1,4 +1,4 @@
-namespace Parchment.Tokens;
+namespace Parchment;
 
 public static class TokenValueHelpers
 {

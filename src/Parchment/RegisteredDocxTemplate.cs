@@ -1,5 +1,3 @@
-namespace Parchment;
-
 class RegisteredDocxTemplate(
     string name,
     Type modelType,

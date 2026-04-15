@@ -1,5 +1,3 @@
-namespace Parchment;
-
 class RegisteredMarkdownTemplate(
     string name,
     Type modelType,

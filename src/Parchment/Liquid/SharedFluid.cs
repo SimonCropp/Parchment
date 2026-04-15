@@ -1,5 +1,3 @@
-namespace Parchment.Liquid;
-
 /// <summary>
 /// Static singletons for Fluid. Fluid's parser, options, and filters are thread-safe and expensive
 /// to construct; one instance per process is the documented recommendation.

@@ -1,5 +1,3 @@
-namespace Parchment.Liquid;
-
 static class Filters
 {
     public static void Register(FilterCollection filters)

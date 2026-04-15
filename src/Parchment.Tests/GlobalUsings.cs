@@ -9,10 +9,7 @@ global using DocumentFormat.OpenXml;
 global using DocumentFormat.OpenXml.Packaging;
 global using DocumentFormat.OpenXml.Wordprocessing;
 
-global using Fluid;
 global using Parchment;
-global using Parchment.Errors;
-global using Parchment.Tokens;
 global using ParchmentModel;
 
 global using TUnit.Core;

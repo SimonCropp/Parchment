@@ -1,5 +1,3 @@
-namespace Parchment.Word;
-
 /// <summary>
 /// Manages the Parchment anchor bookmarks injected at registration time into token-bearing paragraphs.
 /// Anchors survive clones intact and let us locate the host paragraph by name at render time, without
@@ -14,7 +12,9 @@ static class Anchors
     {
         var existing = paragraph
             .Elements<BookmarkStart>()
-            .FirstOrDefault(x => x.Name != null && x.Name.Value != null && x.Name.Value.StartsWith(Prefix, StringComparison.Ordinal));
+            .FirstOrDefault(_ => _.Name != null &&
+                                 _.Name.Value != null &&
+                                 _.Name.Value.StartsWith(Prefix, StringComparison.Ordinal));
         if (existing?.Name?.Value != null)
         {
             return existing.Name.Value;
@@ -22,8 +22,15 @@ static class Anchors
 
         var name = Prefix + Guid.NewGuid().ToString("N");
         var id = NextBookmarkId(paragraph);
-        var start = new BookmarkStart { Id = id.ToString(), Name = name };
-        var end = new BookmarkEnd { Id = id.ToString() };
+        var start = new BookmarkStart
+        {
+            Id = id.ToString(),
+            Name = name
+        };
+        var end = new BookmarkEnd
+        {
+            Id = id.ToString()
+        };
         InsertAfterProperties(paragraph, start, end);
         return name;
     }
@@ -53,7 +60,7 @@ static class Anchors
     {
         var starts = root
             .Descendants<BookmarkStart>()
-            .Where(x => x.Name?.Value?.StartsWith(Prefix, StringComparison.Ordinal) == true)
+            .Where(_ => _.Name?.Value?.StartsWith(Prefix, StringComparison.Ordinal) == true)
             .ToList();
         foreach (var start in starts)
         {
@@ -64,7 +71,7 @@ static class Anchors
                 continue;
             }
 
-            var end = root.Descendants<BookmarkEnd>().FirstOrDefault(x => x.Id?.Value == id);
+            var end = root.Descendants<BookmarkEnd>().FirstOrDefault(_ => _.Id?.Value == id);
             end?.Remove();
         }
     }
@@ -74,7 +81,8 @@ static class Anchors
         foreach (var start in root.Descendants<BookmarkStart>())
         {
             var name = start.Name?.Value;
-            if (name != null && map.TryGetValue(name, out var replacement))
+            if (name != null &&
+                map.TryGetValue(name, out var replacement))
             {
                 start.Name = replacement;
             }
@@ -83,11 +91,11 @@ static class Anchors
 
     static int NextBookmarkId(Paragraph paragraph)
     {
-        var root = (OpenXmlCompositeElement?)paragraph.Ancestors<Body>().FirstOrDefault()
-                   ?? (OpenXmlCompositeElement?)paragraph.Ancestors<Header>().FirstOrDefault()
-                   ?? (OpenXmlCompositeElement?)paragraph.Ancestors<Footer>().FirstOrDefault()
-                   ?? paragraph.Ancestors<OpenXmlCompositeElement>().LastOrDefault()
-                   ?? paragraph;
+        var root = (OpenXmlCompositeElement?)paragraph.Ancestors<Body>().FirstOrDefault() ??
+                   (OpenXmlCompositeElement?)paragraph.Ancestors<Header>().FirstOrDefault() ??
+                   (OpenXmlCompositeElement?)paragraph.Ancestors<Footer>().FirstOrDefault() ??
+                   paragraph.Ancestors<OpenXmlCompositeElement>().LastOrDefault() ??
+                   paragraph;
 
         var max = 0;
         foreach (var b in root.Descendants<BookmarkStart>())

@@ -1,5 +1,3 @@
-namespace Parchment;
-
 internal abstract class RegisteredTemplate(string name, Type modelType)
 {
     public string Name { get; } = name;

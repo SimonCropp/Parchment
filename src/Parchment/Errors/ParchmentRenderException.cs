@@ -1,4 +1,4 @@
-namespace Parchment.Errors;
+namespace Parchment;
 
 public sealed class ParchmentRenderException(
     string templateName,

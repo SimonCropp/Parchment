@@ -1,5 +1,3 @@
-namespace Parchment.Liquid;
-
 /// <summary>
 /// Walks a Fluid AST collecting the root identifiers of every member expression it sees.
 /// Used by ModelValidator to check that referenced model members actually exist.

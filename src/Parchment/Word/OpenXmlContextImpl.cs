@@ -1,5 +1,3 @@
-namespace Parchment.Word;
-
 class OpenXmlContextImpl(
     MainDocumentPart mainPart,
     WordNumberingState numbering,

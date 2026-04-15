@@ -1,5 +1,3 @@
-namespace Parchment.Liquid;
-
 /// <summary>
 /// Reflection-based validator that walks an <see cref="IdentifierPath"/> against a .NET type
 /// to ensure every segment resolves to a real member. Used by the runtime registration path.

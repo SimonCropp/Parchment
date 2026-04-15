@@ -1,4 +1,4 @@
-namespace Parchment.Liquid;
+namespace Parchment;
 
 /// <summary>
 /// Test-only access to the shared Fluid singletons. Not part of the public API surface in v1 but

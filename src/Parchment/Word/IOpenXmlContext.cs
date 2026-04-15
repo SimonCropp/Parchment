@@ -1,4 +1,4 @@
-namespace Parchment.Word;
+namespace Parchment;
 
 /// <summary>
 /// Narrow context passed to <see cref="TokenValue.OpenXml"/> render delegates. Kept intentionally
@@ -12,12 +12,4 @@ public interface IOpenXmlContext
     bool TryGetStyle(string styleId, out StyleType styleType);
     int CreateBulletNumbering();
     int CreateOrderedNumbering(NumberFormatValues numberFormat);
-}
-
-public enum StyleType
-{
-    Paragraph,
-    Character,
-    Table,
-    Numbering
 }
