@@ -5,13 +5,12 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IsPackable>false</IsPackable>
     <NoWarn>$(NoWarn);RS1041;RS2008;RS1038;RS1036</NoWarn>
-    <LangVersion>preview</LangVersion>
-    <Nullable>enable</Nullable>
     <!-- PackageShader configuration: keep Fluid types internal in the merged assembly -->
     <Shader_Internalize>true</Shader_Internalize>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Parchment\Tokens\TokenScan.cs" Link="TokenScan.cs" />
     <PackageReference Include="Polyfill" PrivateAssets="all" />
     <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />

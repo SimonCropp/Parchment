@@ -2,10 +2,6 @@ namespace Parchment.SourceGenerator;
 
 public static class TokenScanner
 {
-    static readonly Regex TokenRegex = new(
-        @"\{\{[^{}]*?\}\}|\{%[^{%]*?%\}",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
     static readonly Regex BlockTagRegex = new(
         @"^\{%\s*(?<tag>\w+)(?:\s+(?<expr>.*?))?\s*%\}$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -17,19 +13,18 @@ public static class TokenScanner
         var result = new List<Token>();
         foreach (var paragraph in paragraphs)
         {
-            var matches = TokenRegex.Matches(paragraph);
-            if (matches.Count == 0)
+            var sites = TokenScan.Scan(paragraph);
+            if (sites.Count == 0)
             {
                 continue;
             }
 
-            var nonTokenText = TokenRegex.Replace(paragraph, "").Trim();
-            var hasOtherContent = nonTokenText.Length > 0;
+            var hasOtherContent = TokenScan.HasContentOutsideSites(paragraph, sites);
 
-            foreach (Match match in matches)
+            foreach (var site in sites)
             {
-                var source = match.Value;
-                if (source.StartsWith("{{", StringComparison.Ordinal))
+                var source = paragraph.Substring(site.Offset, site.Length);
+                if (site.Kind == TokenSiteKind.Substitution)
                 {
                     result.Add(ParseSubstitution(source, paragraph, hasOtherContent));
                 }

@@ -175,23 +175,24 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         string anchorName)
     {
         var text = ParagraphText.Build(paragraph);
-        var matches = TokenRegex.Tokens.Matches(text.InnerText);
-        if (matches.Count == 0)
+        var innerText = text.InnerText;
+        var sites = TokenScan.Scan(innerText);
+        if (sites.Count == 0)
         {
             return new(paragraph, anchorName, ParagraphKind.Static, [], null);
         }
 
         var substitutions = new List<DocxTokenSite>();
         BlockMarker? block = null;
-        foreach (Match match in matches)
+        foreach (var site in sites)
         {
-            var source = match.Value;
-            if (source.StartsWith("{{", StringComparison.Ordinal))
+            var source = innerText.Substring(site.Offset, site.Length);
+            if (site.Kind == TokenSiteKind.Substitution)
             {
                 if (SharedFluid.Parser.TryParse(source, out var template, out _))
                 {
                     var refs = IdentifierVisitor.Collect(template);
-                    substitutions.Add(new(match.Index, source.Length, source, template, refs));
+                    substitutions.Add(new(site.Offset, site.Length, source, template, refs));
                 }
             }
             else
