@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="DocumentFormat.OpenXml" />
+    <PackageReference Include="Excelsior" />
     <PackageReference Include="OpenXmlHtml" />
     <PackageReference Include="Markdig" />
     <PackageReference Include="Fluid.Core" />

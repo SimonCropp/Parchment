@@ -47,4 +47,20 @@ static class Diagnostics
         category: "Parchment",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ExcelsiorTokenNotAlone = new(
+        id: "PARCH007",
+        title: "[ExcelsiorTable] token must sit alone in its own paragraph",
+        messageFormat: "Template '{0}' token '{1}' references an [ExcelsiorTable] property but shares its paragraph with other content; structural table replacement would discard the surrounding text",
+        category: "Parchment",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ExcelsiorTokenNotPlainIdentifier = new(
+        id: "PARCH008",
+        title: "[ExcelsiorTable] token must be a plain member-access expression",
+        messageFormat: "Template '{0}' token '{1}' references an [ExcelsiorTable] property with filters or a non-plain expression; the Excelsior render path bypasses Fluid and walks the model directly, so filters would be ignored",
+        category: "Parchment",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }

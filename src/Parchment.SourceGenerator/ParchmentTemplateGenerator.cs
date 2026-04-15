@@ -168,6 +168,7 @@ public sealed class ParchmentTemplateGenerator :
             {
                 case TokenKind.Substitution:
                     ValidateReferences(context, target, location, token.References, scope, token.Source);
+                    ValidateExcelsiorToken(context, target, location, token, scope);
                     break;
 
                 case TokenKind.ForOpen:
@@ -265,6 +266,45 @@ public sealed class ParchmentTemplateGenerator :
                         token.Source));
                     break;
             }
+        }
+    }
+
+    static void ValidateExcelsiorToken(
+        SourceProductionContext context,
+        TargetInfo target,
+        Location location,
+        Token token,
+        Dictionary<string, string> scope)
+    {
+        // Only substitution tokens whose first identifier path resolves to an [ExcelsiorTable]
+        // property need these extra checks. Everything else is handled by normal reference
+        // validation (PARCH001/etc) or flows through the standard runtime substitution path.
+        if (token.References.Count == 0)
+        {
+            return;
+        }
+
+        if (!ShapeResolver.IsExcelsiorTableMember(target.Shape, token.References[0], scope))
+        {
+            return;
+        }
+
+        if (token.HasOtherContent)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                Diagnostics.ExcelsiorTokenNotAlone,
+                location,
+                target.TemplatePath,
+                token.Source));
+        }
+
+        if (!token.IsPlainIdentifier)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                Diagnostics.ExcelsiorTokenNotPlainIdentifier,
+                location,
+                target.TemplatePath,
+                token.Source));
         }
     }
 

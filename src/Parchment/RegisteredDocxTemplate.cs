@@ -2,7 +2,8 @@ class RegisteredDocxTemplate(
     string name,
     Type modelType,
     byte[] canonicalBytes,
-    IReadOnlyList<PartScopeTree> parts) :
+    IReadOnlyList<PartScopeTree> parts,
+    ExcelsiorTableMap excelsiorTables) :
     RegisteredTemplate(name, modelType)
 {
     public override async Task Render(object model, Stream output, Cancel cancel)
@@ -20,7 +21,7 @@ class RegisteredDocxTemplate(
             foreach (var part in parts)
             {
                 cancel.ThrowIfCancellationRequested();
-                await RenderPartAsync(doc, mainPart, part, context);
+                await RenderPartAsync(doc, mainPart, part, context, model);
             }
 
             foreach (var (_, root) in DocxCloner.EnumerateParts(doc))
@@ -35,7 +36,7 @@ class RegisteredDocxTemplate(
         await stream.CopyToAsync(output, cancel);
     }
 
-    async Task RenderPartAsync(WordprocessingDocument doc, MainDocumentPart mainPart, PartScopeTree part, TemplateContext context)
+    async Task RenderPartAsync(WordprocessingDocument doc, MainDocumentPart mainPart, PartScopeTree part, TemplateContext context, object model)
     {
         OpenXmlCompositeElement? root = null;
         foreach (var (uri, candidate) in DocxCloner.EnumerateParts(doc))
@@ -53,7 +54,7 @@ class RegisteredDocxTemplate(
         }
 
         var map = Anchors.BuildMap(root);
-        var runner = new ScopeTreeRunner(Name, part.PartUri, map, context, mainPart);
+        var runner = new ScopeTreeRunner(Name, part.PartUri, map, context, mainPart, model, excelsiorTables);
         await runner.RunAsync(part.Nodes);
         runner.ApplyStructural();
     }

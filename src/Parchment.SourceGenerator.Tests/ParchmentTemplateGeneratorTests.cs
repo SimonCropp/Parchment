@@ -209,6 +209,71 @@ public class ParchmentTemplateGeneratorTests
         await Assert.That(diagnostics[0].Id).IsEqualTo("PARCH006");
     }
 
+    const string excelsiorModel = """
+                                  using System.Collections.Generic;
+                                  using Parchment;
+
+                                  namespace Sample;
+
+                                  public class Line
+                                  {
+                                      public string Description { get; set; } = "";
+                                  }
+
+                                  public class Invoice
+                                  {
+                                      [ExcelsiorTable]
+                                      public List<Line> Lines { get; set; } = new();
+                                  }
+                                  """;
+
+    [Test]
+    public async Task ExcelsiorToken_MixedInline_Diagnostic()
+    {
+        // Token in the same paragraph as other text must trip PARCH007. The SG asserts diagnostic
+        // id directly instead of snapshotting because diagnostic messages may reword over time.
+        var source = excelsiorModel +
+                     """
+
+                     [ParchmentTemplate("template.docx", typeof(Invoice))]
+                     public partial class MixedExcelsior;
+                     """;
+        var result = GeneratorDriver.Run(source, "Prefix {{ Lines }}");
+        var diagnostics = result.Results.Single().Diagnostics;
+        await Assert.That(diagnostics.Any(d => d.Id == "PARCH007")).IsTrue();
+    }
+
+    [Test]
+    public async Task ExcelsiorToken_WithFilter_Diagnostic()
+    {
+        // Filter chain on an [ExcelsiorTable] substitution must trip PARCH008.
+        var source = excelsiorModel +
+                     """
+
+                     [ParchmentTemplate("template.docx", typeof(Invoice))]
+                     public partial class FilteredExcelsior;
+                     """;
+        var result = GeneratorDriver.Run(source, "{{ Lines | reverse }}");
+        var diagnostics = result.Results.Single().Diagnostics;
+        await Assert.That(diagnostics.Any(d => d.Id == "PARCH008")).IsTrue();
+    }
+
+    [Test]
+    public async Task ExcelsiorToken_Clean_NoDiagnostics()
+    {
+        // Baseline: plain {{ Lines }} in its own paragraph should NOT trip PARCH007/PARCH008.
+        var source = excelsiorModel +
+                     """
+
+                     [ParchmentTemplate("template.docx", typeof(Invoice))]
+                     public partial class CleanExcelsior;
+                     """;
+        var result = GeneratorDriver.Run(source, "{{ Lines }}");
+        var diagnostics = result.Results.Single().Diagnostics;
+        await Assert.That(diagnostics.Any(d => d.Id == "PARCH007")).IsFalse();
+        await Assert.That(diagnostics.Any(d => d.Id == "PARCH008")).IsFalse();
+    }
+
     [Test]
     public Task MixedInlineBlockTag()
     {

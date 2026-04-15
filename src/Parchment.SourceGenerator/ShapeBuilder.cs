@@ -9,6 +9,8 @@
 /// </summary>
 static class ShapeBuilder
 {
+    const string ExcelsiorTableAttributeFullName = "Parchment.ExcelsiorTableAttribute";
+
     static readonly SymbolDisplayFormat format = SymbolDisplayFormat.FullyQualifiedFormat;
 
     public static ModelShape Build(INamedTypeSymbol root, Cancel cancel)
@@ -60,7 +62,8 @@ static class ShapeBuilder
                         continue;
                     }
 
-                    members.Add(new(memberName, Fqn(memberType)));
+                    var isExcelsior = HasExcelsiorTableAttribute(member);
+                    members.Add(new(memberName, Fqn(memberType), isExcelsior));
                     Enqueue(memberType, visited, queue);
                 }
 
@@ -69,6 +72,20 @@ static class ShapeBuilder
         }
 
         return new(Fqn(type), elementFqn, new(members.ToImmutable()));
+    }
+
+    static bool HasExcelsiorTableAttribute(ISymbol member)
+    {
+        foreach (var attribute in member.GetAttributes())
+        {
+            var attrClass = attribute.AttributeClass;
+            if (attrClass != null && Fqn(attrClass) == "global::" + ExcelsiorTableAttributeFullName)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     static bool TryGetMemberType(ISymbol member, out ITypeSymbol type, out string name)
