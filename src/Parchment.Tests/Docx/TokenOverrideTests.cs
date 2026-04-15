@@ -1,5 +1,3 @@
-namespace Parchment.Tests.Docx;
-
 public class TokenOverrideTests
 {
     public class NoteModel
@@ -12,8 +10,11 @@ public class TokenOverrideTests
     public async Task MarkdownHatch()
     {
         var template = DocxTemplateBuilder.Build(
-            "# {{ Title }}",
-            "{{ Body }}");
+            """
+            # {{ Title }}
+
+            {{ Body }}
+            """);
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<NoteModel>("markdown-hatch", template);
@@ -40,8 +41,11 @@ public class TokenOverrideTests
     public async Task BulletListFilter()
     {
         var template = DocxTemplateBuilder.Build(
-            "Tags:",
-            "{{ Tags | bullet_list }}");
+            """
+            Tags:
+
+            {{ Tags | bullet_list }}
+            """);
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Invoice>("bullet-filter", template);

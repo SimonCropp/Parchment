@@ -4,13 +4,21 @@ public class ConditionalTests
     public async Task IfTrue()
     {
         var template = DocxTemplateBuilder.Build(
-            "Start",
-            "{% if Customer.IsPreferred %}",
-            "Preferred customer: {{ Customer.Name }}",
-            "{% else %}",
-            "Regular customer: {{ Customer.Name }}",
-            "{% endif %}",
-            "End");
+            """
+            Start
+
+            {% if Customer.IsPreferred %}
+
+            Preferred customer: {{ Customer.Name }}
+
+            {% else %}
+
+            Regular customer: {{ Customer.Name }}
+
+            {% endif %}
+
+            End
+            """);
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Invoice>("conditional", template);
@@ -30,13 +38,21 @@ public class ConditionalTests
     public async Task ElseBranchRenders()
     {
         var template = DocxTemplateBuilder.Build(
-            "Start",
-            "{% if Flag %}",
-            "Affirmative: {{ Label }}",
-            "{% else %}",
-            "Negative: {{ Label }}",
-            "{% endif %}",
-            "End");
+            """
+            Start
+
+            {% if Flag %}
+
+            Affirmative: {{ Label }}
+
+            {% else %}
+
+            Negative: {{ Label }}
+
+            {% endif %}
+
+            End
+            """);
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<FlagModel>("else-branch", template);

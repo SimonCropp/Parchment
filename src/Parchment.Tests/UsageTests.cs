@@ -5,9 +5,13 @@ public class UsageTests
     {
         // begin-snippet: Substitution
         var template = DocxTemplateBuilder.Build(
-            "Invoice {{ Number }}",
-            "Customer: {{ Customer.Name }}",
-            "Total: {{ Total }} {{ Currency }}");
+            """
+            Invoice {{ Number }}
+
+            Customer: {{ Customer.Name }}
+
+            Total: {{ Total }} {{ Currency }}
+            """);
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Invoice>("substitution", template);

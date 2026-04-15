@@ -1,6 +1,3 @@
-namespace Parchment.Tests.Scenarios;
-
-using System.Runtime.CompilerServices;
 using WordRender;
 
 /// <summary>

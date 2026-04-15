@@ -1,10 +1,11 @@
 /// <summary>
-/// Builds simple docx templates in-memory for test fixtures. Each template contains a sequence of
-/// paragraphs whose text may include liquid tokens.
+/// Builds simple docx templates in-memory for test fixtures. The single <c>content</c> string is
+/// split into paragraphs on blank lines — a line consisting only of whitespace separates two
+/// paragraphs. Paragraph text may include liquid tokens.
 /// </summary>
 static class DocxTemplateBuilder
 {
-    public static byte[] Build(params string[] paragraphs)
+    public static byte[] Build(string content = "")
     {
         using var stream = new MemoryStream();
         using (var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
@@ -15,17 +16,65 @@ static class DocxTemplateBuilder
 
             AddStyles(mainPart);
 
-            foreach (var text in paragraphs)
+            foreach (var text in SplitParagraphs(content))
             {
                 body.Append(BuildParagraph(text));
             }
 
-            body.Append(new SectionProperties(
-                new PageSize { Width = 12240, Height = 15840 },
-                new PageMargin { Top = 1440, Right = 1440, Bottom = 1440, Left = 1440, Header = 720, Footer = 720 }));
+            body.Append(
+                new SectionProperties(
+                    new PageSize
+                    {
+                        Width = 12240,
+                        Height = 15840
+                    },
+                    new PageMargin
+                    {
+                        Top = 1440,
+                        Right = 1440,
+                        Bottom = 1440,
+                        Left = 1440,
+                        Header = 720,
+                        Footer = 720
+                    }));
         }
 
         return stream.ToArray();
+    }
+
+    static IEnumerable<string> SplitParagraphs(string content)
+    {
+        if (string.IsNullOrEmpty(content))
+        {
+            yield break;
+        }
+
+        var normalized = content.Replace("\r\n", "\n").Replace('\r', '\n');
+        var lines = normalized.Split('\n');
+        var current = new StringBuilder();
+        foreach (var line in lines)
+        {
+            if (line.Length == 0 || string.IsNullOrWhiteSpace(line))
+            {
+                if (current.Length > 0)
+                {
+                    yield return current.ToString();
+                    current.Clear();
+                }
+                continue;
+            }
+
+            if (current.Length > 0)
+            {
+                current.Append('\n');
+            }
+            current.Append(line);
+        }
+
+        if (current.Length > 0)
+        {
+            yield return current.ToString();
+        }
     }
 
     static Paragraph BuildParagraph(string text) =>

@@ -1,6 +1,3 @@
-namespace Parchment.Tests.Docx;
-
-using System.Runtime.CompilerServices;
 using Excelsior;
 
 public class ExcelsiorTableTests
@@ -66,10 +63,15 @@ public class ExcelsiorTableTests
         // {{ Buyer.Addresses }} must walk the nested path at registration time and the runner
         // must dispatch on the dotted-path lookup.
         var template = DocxTemplateBuilder.Build(
-            "Order {{ Number }}",
-            "Buyer: {{ Buyer.Name }}",
-            "{{ Buyer.Addresses }}",
-            "End.");
+            """
+            Order {{ Number }}
+
+            Buyer: {{ Buyer.Name }}
+
+            {{ Buyer.Addresses }}
+
+            End.
+            """);
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Order>("nested-order", template);
@@ -100,9 +102,13 @@ public class ExcelsiorTableTests
         // "Prefix {{ Lines }}" — the token doesn't cover the whole paragraph. Structural
         // replacement would drop "Prefix ", so registration must fail up-front.
         var template = DocxTemplateBuilder.Build(
-            "Quote {{ Reference }}",
-            "Prefix {{ Lines }}",
-            "End.");
+            """
+            Quote {{ Reference }}
+
+            Prefix {{ Lines }}
+
+            End.
+            """);
 
         var store = new TemplateStore();
         var exception = await Assert.That(
@@ -117,9 +123,13 @@ public class ExcelsiorTableTests
         // {{ Lines | reverse }} — the Excelsior renderer walks the model object directly
         // and bypasses Fluid, so a filter would be silently dropped. Registration must fail.
         var template = DocxTemplateBuilder.Build(
-            "Quote {{ Reference }}",
-            "{{ Lines | reverse }}",
-            "End.");
+            """
+            Quote {{ Reference }}
+
+            {{ Lines | reverse }}
+
+            End.
+            """);
 
         var store = new TemplateStore();
         var exception = await Assert.That(

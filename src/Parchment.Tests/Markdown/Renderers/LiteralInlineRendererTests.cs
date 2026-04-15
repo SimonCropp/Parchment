@@ -1,5 +1,3 @@
-namespace Parchment.Tests.Markdown.Renderers;
-
 using Markdig.Syntax.Inlines;
 
 public class LiteralInlineRendererTests

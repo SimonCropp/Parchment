@@ -4,9 +4,13 @@ public class DeterminismTests
     public async Task DocxRenderIsByteIdentical()
     {
         var template = DocxTemplateBuilder.Build(
-            "Invoice {{ Number }}",
-            "Customer: {{ Customer.Name }}",
-            "Total: {{ Total }} {{ Currency }}");
+            """
+            Invoice {{ Number }}
+
+            Customer: {{ Customer.Name }}
+
+            Total: {{ Total }} {{ Currency }}
+            """);
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Invoice>("determinism", template);

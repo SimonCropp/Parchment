@@ -4,8 +4,11 @@ public class ThreadSafetyTests
     public async Task ParallelRendersProduceIdenticalOutput()
     {
         var template = DocxTemplateBuilder.Build(
-            "Invoice {{ Number }}",
-            "Customer: {{ Customer.Name }}");
+            """
+            Invoice {{ Number }}
+
+            Customer: {{ Customer.Name }}
+            """);
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Invoice>("threading", template);

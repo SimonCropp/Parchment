@@ -1,5 +1,3 @@
-namespace Parchment.Tests.Markdown.Renderers;
-
 public class HeadingBlockRendererTests
 {
     [Test]

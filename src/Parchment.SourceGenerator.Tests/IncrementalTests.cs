@@ -1,23 +1,24 @@
 public class IncrementalTests
 {
-    const string source = """
-using Parchment;
+    const string source =
+        """
+        using Parchment;
 
-namespace Sample;
+        namespace Sample;
 
-public class Customer
-{
-    public string Name { get; set; } = "";
-}
+        public class Customer
+        {
+            public string Name { get; set; } = "";
+        }
 
-public class Letter
-{
-    public Customer Customer { get; set; } = new();
-}
+        public class Letter
+        {
+            public Customer Customer { get; set; } = new();
+        }
 
-[ParchmentTemplate("template.docx", typeof(Letter))]
-public partial class CustomerLetter;
-""";
+        [ParchmentTemplate("template.docx", typeof(Letter))]
+        public partial class CustomerLetter;
+        """;
 
     [Test]
     public async Task PipelineCachesWhenUnrelatedSyntaxAdded()

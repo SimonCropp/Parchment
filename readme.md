@@ -27,9 +27,13 @@ Parchment supports two complementary template formats:
 <a id='snippet-Substitution'></a>
 ```cs
 var template = DocxTemplateBuilder.Build(
-    "Invoice {{ Number }}",
-    "Customer: {{ Customer.Name }}",
-    "Total: {{ Total }} {{ Currency }}");
+    """
+    Invoice {{ Number }}
+
+    Customer: {{ Customer.Name }}
+
+    Total: {{ Total }} {{ Currency }}
+    """);
 
 var store = new TemplateStore();
 store.RegisterDocxTemplate<Invoice>("substitution", template);
@@ -37,7 +41,7 @@ store.RegisterDocxTemplate<Invoice>("substitution", template);
 using var stream = new MemoryStream();
 await store.Render("substitution", SampleData.Invoice(), stream);
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L6-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-Substitution' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L6-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-Substitution' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -102,7 +106,7 @@ public class QuoteLine
     public required decimal UnitPrice { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L17-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L14-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Drop a `{{ Lines }}` substitution into the template on its own line. The template:
@@ -134,7 +138,7 @@ var model = new Quote
 using var stream = new MemoryStream();
 await store.Render("excelsior-quote", model, stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L134-L154' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableUsage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L144-L164' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The rendered output:
@@ -187,7 +191,7 @@ A markdown template is a `.md` file containing the full body of the document plu
 > No outstanding risks.
 {% endif %}
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L26-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L30-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The model the template binds against:
@@ -244,7 +248,7 @@ store.RegisterMarkdownTemplate<ReportContext>(
 using var stream = new MemoryStream();
 await store.Render("report", reportModel, stream);
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L57-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L61-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The rendered docx (page 1):
