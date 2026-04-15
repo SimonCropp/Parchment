@@ -28,8 +28,8 @@ internal static class TokenScanner
     {
         var text = ParagraphText.Build(paragraph);
         var innerText = text.InnerText;
-        var matches = TokenRegex.Tokens.Matches(innerText);
-        if (matches.Count == 0)
+        var sites = TokenScan.Scan(innerText);
+        if (sites.Count == 0)
         {
             return new(paragraph, string.Empty, ParagraphKind.Static, [], null);
         }
@@ -37,12 +37,12 @@ internal static class TokenScanner
         var substitutions = new List<DocxTokenSite>();
         var blocks = new List<BlockMarker>();
 
-        foreach (Match match in matches)
+        foreach (var site in sites)
         {
-            var source = match.Value;
-            if (source.StartsWith("{{", StringComparison.Ordinal))
+            var source = innerText.Substring(site.Offset, site.Length);
+            if (site.Kind == TokenSiteKind.Substitution)
             {
-                substitutions.Add(ParseSubstitution(source, match.Index, templateName, partUri));
+                substitutions.Add(ParseSubstitution(source, site.Offset, templateName, partUri));
             }
             else
             {
@@ -61,12 +61,6 @@ internal static class TokenScanner
 
         if (blocks.Count == 1)
         {
-            var nonBlockText = TokenRegex.Tokens.Replace(innerText, match => match.Value.StartsWith("{%", StringComparison.Ordinal) ? "" : match.Value);
-            if (!string.IsNullOrWhiteSpace(nonBlockText) && substitutions.Count == 0)
-            {
-                // Block tag paragraph also contains static text - that's fine.
-            }
-
             if (substitutions.Count > 0)
             {
                 throw new ParchmentRegistrationException(
@@ -76,8 +70,7 @@ internal static class TokenScanner
                     blocks[0].Source);
             }
 
-            var nonBlockContent = TokenRegex.Tokens.Replace(innerText, "").Trim();
-            if (nonBlockContent.Length > 0)
+            if (TokenScan.HasContentOutsideSites(innerText, sites))
             {
                 throw new ParchmentRegistrationException(
                     templateName,
