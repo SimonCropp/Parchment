@@ -1,5 +1,3 @@
-namespace Parchment.Markdown;
-
 static class MarkdigPipeline
 {
     public static MarkdownPipeline Pipeline { get; } = new MarkdownPipelineBuilder()

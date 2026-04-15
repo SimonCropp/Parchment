@@ -93,7 +93,7 @@ class ScopeTreeRunner(
             switch (value)
             {
                 case TokenValue.MarkdownToken md:
-                    result.AddRange(Markdown.MarkdownRendering.Render(md.Source, mainPart, headingOffset: 0));
+                    result.AddRange(MarkdownRendering.Render(md.Source, mainPart, headingOffset: 0));
                     break;
                 case TokenValue.OpenXmlToken raw:
                     var ctx = new OpenXmlContextImpl(

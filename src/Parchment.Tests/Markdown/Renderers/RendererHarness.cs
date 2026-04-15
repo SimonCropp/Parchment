@@ -1,5 +1,4 @@
 using Markdig.Syntax;
-using Parchment.Markdown;
 
 static class RendererHarness
 {

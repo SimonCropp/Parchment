@@ -34,7 +34,7 @@ class RegisteredMarkdownTemplate(
             body.RemoveAllChildren();
 
             cancel.ThrowIfCancellationRequested();
-            var elements = Markdown.MarkdownRendering.Render(markdownText, mainPart, headingOffset: 0);
+            var elements = MarkdownRendering.Render(markdownText, mainPart, headingOffset: 0);
             foreach (var element in elements)
             {
                 body.AppendChild(element);
