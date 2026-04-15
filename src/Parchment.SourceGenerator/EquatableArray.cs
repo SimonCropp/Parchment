@@ -1,5 +1,3 @@
-namespace Parchment.SourceGenerator;
-
 /// <summary>
 /// ImmutableArray wrapper with structural value equality, safe to flow through the
 /// incremental pipeline so downstream stages can be cached when contents are unchanged.
@@ -7,7 +5,8 @@ namespace Parchment.SourceGenerator;
 readonly struct EquatableArray<T>(ImmutableArray<T> array) :
     IEquatable<EquatableArray<T>>,
     IEnumerable<T>
-    where T : IEquatable<T>
+// ReSharper disable once RedundantNotNullConstraint
+    where T : notnull, IEquatable<T>
 {
     public static readonly EquatableArray<T> Empty = new(ImmutableArray<T>.Empty);
 
@@ -43,14 +42,13 @@ readonly struct EquatableArray<T>(ImmutableArray<T> array) :
 
     public override int GetHashCode()
     {
-        var a = AsImmutableArray();
-        var hash = 17;
-        for (var i = 0; i < a.Length; i++)
+        var hash = new HashCode();
+        foreach (var item in AsImmutableArray())
         {
-            hash = (hash * 31) + (a[i]?.GetHashCode() ?? 0);
+            hash.Add(item);
         }
 
-        return hash;
+        return hash.ToHashCode();
     }
 
     public IEnumerator<T> GetEnumerator() =>
