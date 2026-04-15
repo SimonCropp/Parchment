@@ -106,7 +106,7 @@ internal static class TokenScan
             {
                 if (text[k + 1] == '}')
                 {
-                    length = (k + 2) - start;
+                    length = k + 2 - start;
                     return true;
                 }
 
@@ -135,7 +135,7 @@ internal static class TokenScan
             {
                 if (text[k + 1] == '}')
                 {
-                    length = (k + 2) - start;
+                    length = k + 2 - start;
                     return true;
                 }
 

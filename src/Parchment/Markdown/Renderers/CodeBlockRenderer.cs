@@ -1,6 +1,6 @@
 namespace Parchment.Markdown.Renderers;
 
-internal sealed class CodeBlockRenderer :
+class CodeBlockRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, CodeBlock>
 {
     protected override void Write(OpenXmlMarkdownRenderer renderer, CodeBlock block)

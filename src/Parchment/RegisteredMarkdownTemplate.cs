@@ -1,6 +1,6 @@
 namespace Parchment;
 
-internal sealed class RegisteredMarkdownTemplate(
+class RegisteredMarkdownTemplate(
     string name,
     Type modelType,
     byte[] styleSourceBytes,

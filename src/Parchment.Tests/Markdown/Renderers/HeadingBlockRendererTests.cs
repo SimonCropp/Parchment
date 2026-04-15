@@ -39,7 +39,7 @@ public class HeadingBlockRendererTests
 
     static Paragraph RenderHeading(string markdown, int headingOffset = 0)
     {
-        var heading = RendererHarness.FirstBlock<global::Markdig.Syntax.HeadingBlock>(markdown);
+        var heading = RendererHarness.FirstBlock<Markdig.Syntax.HeadingBlock>(markdown);
         var renderer = RendererHarness.BuildRenderer(headingOffset);
         renderer.Render(heading);
         return (Paragraph)renderer.Drain().Single();

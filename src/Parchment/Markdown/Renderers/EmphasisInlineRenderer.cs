@@ -1,6 +1,6 @@
 namespace Parchment.Markdown.Renderers;
 
-internal sealed class EmphasisInlineRenderer :
+class EmphasisInlineRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, EmphasisInline>
 {
     protected override void Write(OpenXmlMarkdownRenderer renderer, EmphasisInline inline)

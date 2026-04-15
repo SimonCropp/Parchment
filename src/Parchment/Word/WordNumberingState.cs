@@ -4,7 +4,7 @@ namespace Parchment.Word;
 /// Adapter for <see cref="NumberingDefinitionsPart"/> that reuses the existing definitions when present
 /// and creates new ones on demand for bullet and ordered lists.
 /// </summary>
-internal sealed class WordNumberingState(MainDocumentPart mainPart)
+class WordNumberingState(MainDocumentPart mainPart)
 {
     readonly MainDocumentPart mainPart = mainPart;
     int? bulletAbstractNumId;

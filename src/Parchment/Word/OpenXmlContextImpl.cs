@@ -1,6 +1,6 @@
 namespace Parchment.Word;
 
-internal sealed class OpenXmlContextImpl(
+class OpenXmlContextImpl(
     MainDocumentPart mainPart,
     WordNumberingState numbering,
     StyleSet styles) :

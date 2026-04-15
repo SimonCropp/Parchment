@@ -1,6 +1,6 @@
 namespace Parchment.Markdown.Renderers;
 
-internal sealed class SmartyPantInlineRenderer :
+class SmartyPantInlineRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, Markdig.Extensions.SmartyPants.SmartyPant>
 {
     protected override void Write(OpenXmlMarkdownRenderer renderer, Markdig.Extensions.SmartyPants.SmartyPant inline)

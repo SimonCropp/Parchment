@@ -4,17 +4,12 @@ namespace Parchment.SourceGenerator;
 /// ImmutableArray wrapper with structural value equality, safe to flow through the
 /// incremental pipeline so downstream stages can be cached when contents are unchanged.
 /// </summary>
-readonly struct EquatableArray<T> :
+readonly struct EquatableArray<T>(ImmutableArray<T> array) :
     IEquatable<EquatableArray<T>>,
     IEnumerable<T>
     where T : IEquatable<T>
 {
     public static readonly EquatableArray<T> Empty = new(ImmutableArray<T>.Empty);
-
-    readonly ImmutableArray<T> array;
-
-    public EquatableArray(ImmutableArray<T> array) =>
-        this.array = array;
 
     public int Count => array.IsDefault ? 0 : array.Length;
 

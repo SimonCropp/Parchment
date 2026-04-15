@@ -4,14 +4,14 @@ namespace Parchment.Tokens;
 /// Walks a cached scope tree against a cloned docx, evaluating substitution tokens and block tags
 /// to produce the final rendered document.
 /// </summary>
-internal sealed class ScopeTreeRunner(
+class ScopeTreeRunner(
     string templateName,
     string partUri,
     Dictionary<string, Paragraph> anchorMap,
     TemplateContext context,
     MainDocumentPart mainPart)
 {
-    readonly List<StructuralReplacement> structuralReplacements = [];
+    List<StructuralReplacement> structuralReplacements = [];
 
     public Task RunAsync(IReadOnlyList<RangeNode> nodes) =>
         ProcessAsync(nodes);

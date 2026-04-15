@@ -1,7 +1,7 @@
 namespace Parchment.Tests.Markdown.Renderers;
 
-using global::Markdig.Syntax;
-using global::Markdig.Syntax.Inlines;
+using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
 
 public class EmphasisInlineRendererTests
 {

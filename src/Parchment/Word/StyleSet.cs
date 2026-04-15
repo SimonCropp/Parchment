@@ -3,7 +3,7 @@ namespace Parchment.Word;
 /// <summary>
 /// Snapshot of the styles defined in a docx's <see cref="StyleDefinitionsPart"/>, keyed by styleId.
 /// </summary>
-internal sealed class StyleSet
+class StyleSet
 {
     readonly Dictionary<string, StyleType> styles;
 

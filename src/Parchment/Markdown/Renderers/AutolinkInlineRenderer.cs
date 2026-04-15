@@ -1,6 +1,6 @@
 namespace Parchment.Markdown.Renderers;
 
-internal sealed class AutolinkInlineRenderer :
+class AutolinkInlineRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, AutolinkInline>
 {
     protected override void Write(OpenXmlMarkdownRenderer renderer, AutolinkInline inline)

@@ -11,9 +11,9 @@ namespace Parchment.SourceGenerator;
 /// </summary>
 static class ShapeBuilder
 {
-    static readonly SymbolDisplayFormat Format = SymbolDisplayFormat.FullyQualifiedFormat;
+    static readonly SymbolDisplayFormat format = SymbolDisplayFormat.FullyQualifiedFormat;
 
-    public static ModelShape Build(INamedTypeSymbol root, CancellationToken cancel)
+    public static ModelShape Build(INamedTypeSymbol root, Cancel cancel)
     {
         var entries = ImmutableArray.CreateBuilder<TypeEntry>();
         var visited = new HashSet<string>(StringComparer.Ordinal);
@@ -125,5 +125,5 @@ static class ShapeBuilder
     }
 
     static string Fqn(ITypeSymbol type) =>
-        type.ToDisplayString(Format);
+        type.ToDisplayString(format);
 }

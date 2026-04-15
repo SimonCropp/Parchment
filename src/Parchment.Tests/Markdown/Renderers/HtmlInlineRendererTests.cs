@@ -1,6 +1,6 @@
 namespace Parchment.Tests.Markdown.Renderers;
 
-using global::Markdig.Syntax.Inlines;
+using Markdig.Syntax.Inlines;
 
 public class HtmlInlineRendererTests
 {

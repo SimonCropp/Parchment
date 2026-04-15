@@ -51,7 +51,7 @@ public sealed class ParchmentTemplateGenerator :
             });
     }
 
-    static TargetInfo? ExtractTarget(GeneratorAttributeSyntaxContext context, CancellationToken cancel)
+    static TargetInfo? ExtractTarget(GeneratorAttributeSyntaxContext context, Cancel cancel)
     {
         if (context.TargetSymbol is not INamedTypeSymbol typeSymbol)
         {

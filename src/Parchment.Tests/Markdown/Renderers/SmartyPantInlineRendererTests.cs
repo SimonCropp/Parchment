@@ -1,6 +1,6 @@
 namespace Parchment.Tests.Markdown.Renderers;
 
-using global::Markdig.Extensions.SmartyPants;
+using Markdig.Extensions.SmartyPants;
 
 public class SmartyPantInlineRendererTests
 {

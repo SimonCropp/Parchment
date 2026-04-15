@@ -289,7 +289,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
     }
 }
 
-internal sealed class ReferenceValidator(Type modelType, string templateName, string partUri)
+class ReferenceValidator(Type modelType, string templateName, string partUri)
 {
     public void ValidateTree(IReadOnlyList<RangeNode> nodes)
     {

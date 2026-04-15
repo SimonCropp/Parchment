@@ -1,6 +1,6 @@
 namespace Parchment.Markdown.Renderers;
 
-internal sealed class CodeInlineRenderer :
+class CodeInlineRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, CodeInline>
 {
     protected override void Write(OpenXmlMarkdownRenderer renderer, CodeInline inline)

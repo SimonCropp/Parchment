@@ -1,6 +1,6 @@
 namespace Parchment.Tests.Markdown.Renderers;
 
-using global::Markdig.Syntax;
+using Markdig.Syntax;
 
 public class ParagraphBlockRendererTests
 {

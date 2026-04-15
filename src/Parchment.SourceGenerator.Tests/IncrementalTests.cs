@@ -42,7 +42,7 @@ public partial class CustomerLetter;
     // the attributed class itself, so this scenario is a known gap documented in
     // ParchmentTemplateGenerator.Initialize and ShapeBuilder.
     [Test]
-    public async Task PipelineReRunsWhenAttributedClassChanges()
+    public Task PipelineReRunsWhenAttributedClassChanges()
     {
         var setup = GeneratorDriver.CreateDriver(source, "Hello {{ Customer.Name }}!");
         var driver = (CSharpGeneratorDriver) setup.Driver.RunGenerators(setup.Compilation);
@@ -57,7 +57,7 @@ public partial class CustomerLetter;
         driver = (CSharpGeneratorDriver) driver.RunGenerators(compilation2);
 
         var runResult = driver.GetRunResult().Results.Single();
-        await AssertAnyModified(runResult, ParchmentTemplateGenerator.Stages.TargetsCollected);
+        return AssertAnyModified(runResult, ParchmentTemplateGenerator.Stages.TargetsCollected);
     }
 
     [Test]

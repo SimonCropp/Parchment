@@ -1,6 +1,6 @@
 namespace Parchment.Markdown.Renderers;
 
-internal sealed class LineBreakInlineRenderer :
+class LineBreakInlineRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, LineBreakInline>
 {
     protected override void Write(OpenXmlMarkdownRenderer renderer, LineBreakInline inline)

@@ -1,6 +1,6 @@
 namespace Parchment.Markdown.Renderers;
 
-internal sealed class QuoteBlockRenderer :
+class QuoteBlockRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, QuoteBlock>
 {
     protected override void Write(OpenXmlMarkdownRenderer renderer, QuoteBlock quoteBlock)

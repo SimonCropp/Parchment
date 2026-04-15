@@ -14,19 +14,19 @@ public abstract class TokenValue
     public static implicit operator TokenValue(string text) =>
         Text(text);
 
-    internal sealed class TextToken(string value) :
+    class TextToken(string value) :
         TokenValue
     {
         public string Value { get; } = value;
     }
 
-    internal sealed class MarkdownToken(string markdown) :
+    public class MarkdownToken(string markdown) :
         TokenValue
     {
         public string Source { get; } = markdown;
     }
 
-    internal sealed class OpenXmlToken(Func<IOpenXmlContext, IEnumerable<OpenXmlElement>> render) :
+    public class OpenXmlToken(Func<IOpenXmlContext, IEnumerable<OpenXmlElement>> render) :
         TokenValue
     {
         public Func<IOpenXmlContext, IEnumerable<OpenXmlElement>> Render { get; } = render;

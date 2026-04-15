@@ -1,6 +1,6 @@
 namespace Parchment.Tests.Markdown.Renderers;
 
-using global::Markdig.Syntax;
+using Markdig.Syntax;
 using Parchment.Markdown;
 
 static class RendererHarness
@@ -10,19 +10,19 @@ static class RendererHarness
         var stream = new MemoryStream();
         var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document);
         var mainPart = doc.AddMainDocumentPart();
-        mainPart.Document = new Document(new Body());
+        mainPart.Document = new(new Body());
         var stylesPart = mainPart.AddNewPart<StyleDefinitionsPart>();
-        stylesPart.Styles = new Styles();
-        return new OpenXmlMarkdownRenderer(mainPart, headingOffset);
+        stylesPart.Styles = new();
+        return new(mainPart, headingOffset);
     }
 
     public static MarkdownDocument Parse(string markdown) =>
-        global::Markdig.Markdown.Parse(markdown, MarkdigPipeline.Pipeline);
+        Markdig.Markdown.Parse(markdown, MarkdigPipeline.Pipeline);
 
     public static T FirstBlock<T>(string markdown) where T : Block =>
         Parse(markdown).Descendants<T>().First();
 
-    public static T FirstInline<T>(string markdown) where T : global::Markdig.Syntax.Inlines.Inline
+    public static T FirstInline<T>(string markdown) where T : Markdig.Syntax.Inlines.Inline
     {
         var paragraph = FirstBlock<ParagraphBlock>(markdown);
         var child = paragraph.Inline!.FirstChild;

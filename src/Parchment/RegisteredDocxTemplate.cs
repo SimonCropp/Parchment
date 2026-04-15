@@ -1,6 +1,6 @@
 namespace Parchment;
 
-internal sealed class RegisteredDocxTemplate(
+class RegisteredDocxTemplate(
     string name,
     Type modelType,
     byte[] canonicalBytes,

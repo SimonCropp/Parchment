@@ -1,6 +1,6 @@
 namespace Parchment.Markdown.Renderers;
 
-internal sealed class ThematicBreakRenderer :
+class ThematicBreakRenderer :
     MarkdownObjectRenderer<OpenXmlMarkdownRenderer, ThematicBreakBlock>
 {
     protected override void Write(OpenXmlMarkdownRenderer renderer, ThematicBreakBlock block)

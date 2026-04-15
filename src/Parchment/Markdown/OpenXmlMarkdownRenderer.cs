@@ -1,6 +1,6 @@
 namespace Parchment.Markdown;
 
-internal sealed class OpenXmlMarkdownRenderer :
+class OpenXmlMarkdownRenderer :
     RendererBase
 {
     readonly Stack<ContainerState> stack = new();
@@ -89,7 +89,7 @@ internal sealed class OpenXmlMarkdownRenderer :
     }
 }
 
-internal sealed class ContainerState
+class ContainerState
 {
     public List<OpenXmlElement> Blocks { get; } = [];
     public List<OpenXmlElement> CurrentRuns { get; } = [];

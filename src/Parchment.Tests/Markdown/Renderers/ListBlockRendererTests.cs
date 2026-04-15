@@ -1,6 +1,6 @@
 namespace Parchment.Tests.Markdown.Renderers;
 
-using global::Markdig.Syntax;
+using Markdig.Syntax;
 
 public class ListBlockRendererTests
 {
@@ -19,7 +19,7 @@ public class ListBlockRendererTests
         }
 
         var texts = paragraphs.Select(p => p.GetFirstChild<Run>()!.GetFirstChild<Text>()!.Text).ToList();
-        await Assert.That(texts).IsEquivalentTo(new[] { "one", "two", "three" });
+        await Assert.That(texts).IsEquivalentTo(["one", "two", "three"]);
     }
 
     [Test]

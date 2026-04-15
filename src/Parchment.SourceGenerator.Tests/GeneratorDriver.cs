@@ -57,7 +57,7 @@ static class GeneratorDriver
             "GeneratorTest",
             syntaxTrees,
             BuildReferences(),
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            new(OutputKind.DynamicallyLinkedLibrary));
 
         var additionalTexts = texts.ToImmutable();
         var driver = CSharpGeneratorDriver.Create(
@@ -103,7 +103,7 @@ static class GeneratorDriver
         using (var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
         {
             var mainPart = doc.AddMainDocumentPart();
-            mainPart.Document = new Document(new Body());
+            mainPart.Document = new(new Body());
             var body = mainPart.Document.Body!;
             foreach (var text in paragraphs)
             {
