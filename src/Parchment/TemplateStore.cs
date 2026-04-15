@@ -34,7 +34,8 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         }
 
         var canonicalBytes = stream.ToArray();
-        var registered = new RegisteredDocxTemplate(name, typeof(TModel), canonicalBytes, ExtractPartsFromBytes(name, canonicalBytes));
+        var excelsiorMap = ExcelsiorTableMap.Build(typeof(TModel), name);
+        var registered = new RegisteredDocxTemplate(name, typeof(TModel), canonicalBytes, ExtractPartsFromBytes(name, canonicalBytes), excelsiorMap);
         templates[name] = registered;
         logger.LogInformation("Registered docx template {Name} for {ModelType}", name, typeof(TModel).Name);
     }

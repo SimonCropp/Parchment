@@ -7,7 +7,9 @@ class ScopeTreeRunner(
     string partUri,
     Dictionary<string, Paragraph> anchorMap,
     TemplateContext context,
-    MainDocumentPart mainPart)
+    MainDocumentPart mainPart,
+    object rootModel,
+    ExcelsiorTableMap excelsiorTables)
 {
     List<StructuralReplacement> structuralReplacements = [];
 
@@ -110,6 +112,11 @@ class ScopeTreeRunner(
     {
         try
         {
+            if (TryResolveExcelsiorTable(site) is { } excelsiorToken)
+            {
+                return excelsiorToken;
+            }
+
             // Walk the parsed FluidTemplate to its OutputStatement and evaluate the underlying
             // Expression directly (filter chain included). This lets us see whether the value is a
             // TokenValue (markdown / openxml hatch) before falling back to string rendering, without
@@ -147,6 +154,36 @@ class ScopeTreeRunner(
         }
     }
 
+    TokenValue? TryResolveExcelsiorTable(DocxTokenSite site)
+    {
+        if (excelsiorTables.IsEmpty || site.References.Count == 0)
+        {
+            return null;
+        }
+
+        // Only intercept tokens of the shape `{{ Property }}` — a single identifier whose root
+        // matches a model property marked [ExcelsiorTable]. Filter chains and dotted paths fall
+        // through to normal Fluid evaluation.
+        var reference = site.References[0];
+        if (reference.Segments.Count != 1)
+        {
+            return null;
+        }
+
+        if (!excelsiorTables.TryGet(reference.Root, out var entry))
+        {
+            return null;
+        }
+
+        var data = entry.Getter(rootModel);
+        if (data == null)
+        {
+            return TokenValue.OpenXml(_ => []);
+        }
+
+        return TokenValue.OpenXml(_ => [ExcelsiorTableBridge.BuildTable(entry.ElementType, data, mainPart)]);
+    }
+
     async Task ProcessLoopAsync(LoopNode loop)
     {
         if (!anchorMap.TryGetValue(loop.OpenAnchorName, out var open) ||
@@ -175,7 +212,9 @@ class ScopeTreeRunner(
                 partUri,
                 BuildCloneAnchorMap(clones),
                 context,
-                mainPart);
+                mainPart,
+                rootModel,
+                excelsiorTables);
             var clonedBody = RemapBody(loop.Body, nameMap);
             await clonedRunner.RunAsync(clonedBody);
             clonedRunner.ApplyStructural();
@@ -344,7 +383,7 @@ class ScopeTreeRunner(
                 }
             }
 
-            var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart);
+            var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart, rootModel, excelsiorTables);
             await innerRunner.RunAsync(branchNodes);
             innerRunner.ApplyStructural();
 
