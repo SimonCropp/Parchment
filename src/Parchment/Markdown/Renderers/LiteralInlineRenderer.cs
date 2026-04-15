@@ -16,13 +16,6 @@ internal sealed class LiteralInlineRenderer :
             {
                 Space = SpaceProcessingModeValues.Preserve
             });
-        ApplyRunFormatting(run, renderer);
         renderer.AddRun(run);
-    }
-
-    internal static void ApplyRunFormatting(Run run, OpenXmlMarkdownRenderer renderer)
-    {
-        var formatting = renderer.Top.Blocks is { } _ ? null : (object?)null;
-        _ = formatting;
     }
 }
