@@ -161,16 +161,14 @@ class ScopeTreeRunner(
             return null;
         }
 
-        // Only intercept tokens of the shape `{{ Property }}` — a single identifier whose root
-        // matches a model property marked [ExcelsiorTable]. Filter chains and dotted paths fall
-        // through to normal Fluid evaluation.
+        // Match the token's full dotted reference (e.g. `Customer.Lines`) against the registered
+        // map. Single-segment, multi-segment, and arbitrarily-nested paths from the root model
+        // all flow through the same lookup. Loop-scope variables (e.g. `{{ line.SubItems }}`
+        // inside `{% for line in Lines %}`) won't match because the map is keyed on paths from
+        // the root model only — they fall through to normal Fluid evaluation.
         var reference = site.References[0];
-        if (reference.Segments.Count != 1)
-        {
-            return null;
-        }
-
-        if (!excelsiorTables.TryGet(reference.Root, out var entry))
+        var dottedPath = string.Join('.', reference.Segments);
+        if (!excelsiorTables.TryGet(dottedPath, out var entry))
         {
             return null;
         }

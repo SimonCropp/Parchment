@@ -12,6 +12,8 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
 
         SharedFluid.RegisterModel(typeof(TModel));
 
+        var excelsiorMap = ExcelsiorTableMap.Build(typeof(TModel), name);
+
         using var stream = DocxCloner.ToWritableStream(templateBytes);
         using (var doc = WordprocessingDocument.Open(stream, true))
         {
@@ -27,6 +29,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
                 var tree = ScopeTreeBuilder.Build(classifications, name, uri);
                 var validator = new ReferenceValidator(typeof(TModel), name, uri);
                 validator.ValidateTree(tree);
+                ExcelsiorTokenValidator.Validate(classifications, excelsiorMap, name, uri);
                 parts.Add(new(uri, tree));
             }
 
@@ -34,7 +37,6 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         }
 
         var canonicalBytes = stream.ToArray();
-        var excelsiorMap = ExcelsiorTableMap.Build(typeof(TModel), name);
         var registered = new RegisteredDocxTemplate(name, typeof(TModel), canonicalBytes, ExtractPartsFromBytes(name, canonicalBytes), excelsiorMap);
         templates[name] = registered;
         logger.LogInformation("Registered docx template {Name} for {ModelType}", name, typeof(TModel).Name);

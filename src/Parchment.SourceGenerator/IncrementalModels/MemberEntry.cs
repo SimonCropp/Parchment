@@ -1,3 +1,4 @@
 sealed record MemberEntry(
     string Name,
-    string TypeFullyQualifiedName);
+    string TypeFullyQualifiedName,
+    bool IsExcelsiorTable = false);

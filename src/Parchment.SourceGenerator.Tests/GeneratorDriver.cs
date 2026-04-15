@@ -18,6 +18,9 @@ static class GeneratorDriver
             }
 
             public sealed class TemplateStore { }
+
+            [System.AttributeUsage(System.AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+            public sealed class ExcelsiorTableAttribute : System.Attribute { }
         }
         """;
 
