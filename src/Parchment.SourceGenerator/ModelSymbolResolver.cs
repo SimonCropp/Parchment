@@ -1,4 +1,4 @@
-internal static class ModelSymbolResolver
+static class ModelSymbolResolver
 {
     public static ITypeSymbol? ResolveMember(ITypeSymbol type, string name)
     {

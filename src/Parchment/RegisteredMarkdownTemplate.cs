@@ -5,18 +5,15 @@ class RegisteredMarkdownTemplate(
     IFluidTemplate parsedTemplate) :
     RegisteredTemplate(name, modelType)
 {
-    public byte[] StyleSourceBytes { get; } = styleSourceBytes;
-    public IFluidTemplate ParsedTemplate { get; } = parsedTemplate;
-
     public override async Task Render(object model, Stream output, Cancel cancel)
     {
         var context = new TemplateContext(model, SharedFluid.Options, allowModelMembers: true);
         await using var writer = new StringWriter();
-        await ParsedTemplate.RenderAsync(writer, System.Text.Encodings.Web.HtmlEncoder.Default, context);
+        await parsedTemplate.RenderAsync(writer, System.Text.Encodings.Web.HtmlEncoder.Default, context);
         var markdownText = writer.ToString();
         cancel.ThrowIfCancellationRequested();
 
-        using var stream = DocxCloner.ToWritableStream(StyleSourceBytes);
+        using var stream = DocxCloner.ToWritableStream(styleSourceBytes);
         using (var doc = WordprocessingDocument.Open(stream, true))
         {
             var mainPart = doc.MainDocumentPart

@@ -5,12 +5,9 @@ class RegisteredDocxTemplate(
     IReadOnlyList<PartScopeTree> parts) :
     RegisteredTemplate(name, modelType)
 {
-    public byte[] CanonicalBytes { get; } = canonicalBytes;
-    public IReadOnlyList<PartScopeTree> Parts { get; } = parts;
-
     public override async Task Render(object model, Stream output, Cancel cancel)
     {
-        using var stream = DocxCloner.ToWritableStream(CanonicalBytes);
+        using var stream = DocxCloner.ToWritableStream(canonicalBytes);
         using (var doc = WordprocessingDocument.Open(stream, true))
         {
             var mainPart = doc.MainDocumentPart
@@ -20,7 +17,7 @@ class RegisteredDocxTemplate(
 
             var context = new TemplateContext(model, SharedFluid.Options, allowModelMembers: true);
 
-            foreach (var part in Parts)
+            foreach (var part in parts)
             {
                 cancel.ThrowIfCancellationRequested();
                 await RenderPartAsync(doc, mainPart, part, context);
