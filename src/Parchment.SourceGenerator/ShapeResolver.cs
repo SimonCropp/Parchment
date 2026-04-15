@@ -1,5 +1,3 @@
-namespace Parchment.SourceGenerator;
-
 /// <summary>
 /// Validation-time counterpart to <see cref="ShapeBuilder"/>. Resolves liquid member paths
 /// against a pre-baked <see cref="ModelShape"/> instead of live symbols.

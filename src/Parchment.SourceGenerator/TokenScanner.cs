@@ -1,8 +1,6 @@
-namespace Parchment.SourceGenerator;
-
 public static class TokenScanner
 {
-    static readonly Regex BlockTagRegex = new(
+    static readonly Regex blockTagRegex = new(
         @"^\{%\s*(?<tag>\w+)(?:\s+(?<expr>.*?))?\s*%\}$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
@@ -51,7 +49,7 @@ public static class TokenScanner
 
     static Token ParseBlockTag(string source, string paragraph, bool hasOtherContent)
     {
-        var match = BlockTagRegex.Match(source);
+        var match = blockTagRegex.Match(source);
         if (!match.Success)
         {
             return new(TokenKind.UnknownBlock, source, [], null, null, paragraph, hasOtherContent);

@@ -1,5 +1,3 @@
-namespace Parchment.SourceGenerator;
-
 /// <summary>
 /// Builds a primitive-only <see cref="ModelShape"/> from a live <see cref="INamedTypeSymbol"/>
 /// at extract time. Consuming the shape downstream (instead of the symbol) is what makes the

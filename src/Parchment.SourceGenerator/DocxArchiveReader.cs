@@ -1,8 +1,6 @@
-namespace Parchment.SourceGenerator;
-
-internal static class DocxArchiveReader
+static class DocxArchiveReader
 {
-    static readonly XNamespace W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    static readonly XNamespace w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
     public static List<string> ReadParagraphTexts(string filePath)
     {
@@ -26,10 +24,10 @@ internal static class DocxArchiveReader
                 continue;
             }
 
-            foreach (var paragraph in doc.Descendants(W + "p"))
+            foreach (var paragraph in doc.Descendants(w + "p"))
             {
                 var builder = new StringBuilder();
-                foreach (var t in paragraph.Descendants(W + "t"))
+                foreach (var t in paragraph.Descendants(w + "t"))
                 {
                     builder.Append(t.Value);
                 }

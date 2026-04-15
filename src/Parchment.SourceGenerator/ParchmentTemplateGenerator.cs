@@ -1,5 +1,3 @@
-namespace Parchment.SourceGenerator;
-
 [Generator]
 public sealed class ParchmentTemplateGenerator :
     IIncrementalGenerator

@@ -1,6 +1,4 @@
-namespace Parchment.SourceGenerator;
-
-internal static class Diagnostics
+static class Diagnostics
 {
     public static readonly DiagnosticDescriptor MissingMember = new(
         id: "PARCH001",

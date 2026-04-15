@@ -1,5 +1,3 @@
-namespace Parchment.SourceGenerator;
-
 internal static class ModelSymbolResolver
 {
     public static ITypeSymbol? ResolveMember(ITypeSymbol type, string name)

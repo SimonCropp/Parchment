@@ -1,6 +1,4 @@
-﻿namespace Parchment.SourceGenerator;
-
-public enum TokenKind
+﻿public enum TokenKind
 {
     Substitution,
     ForOpen,

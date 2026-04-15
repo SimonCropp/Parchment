@@ -1,6 +1,4 @@
-﻿namespace Parchment.SourceGenerator;
-
-internal sealed record TemplateTarget(
+﻿sealed record TemplateTarget(
     INamedTypeSymbol Declaring,
     INamedTypeSymbol ModelType,
     string TemplatePath,
