@@ -54,6 +54,11 @@ static class DocxTemplateBuilder
         var current = new StringBuilder();
         foreach (var line in lines)
         {
+            if (line.TrimStart().StartsWith("//"))
+            {
+                continue;
+            }
+
             if (line.Length == 0 || string.IsNullOrWhiteSpace(line))
             {
                 if (current.Length > 0)

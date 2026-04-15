@@ -1,6 +1,6 @@
 namespace ParchmentModel;
 
-// begin-snippet: ReportModel
+#region ReportModel
 public class ReportContext
 {
     public required Report Report { get; init; }
@@ -29,4 +29,4 @@ public class ActionItem
     public required string Title { get; init; }
     public required string Detail { get; init; }
 }
-// end-snippet
+#endregion

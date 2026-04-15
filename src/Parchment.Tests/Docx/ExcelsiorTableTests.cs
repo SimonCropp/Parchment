@@ -11,7 +11,7 @@ public class ExcelsiorTableTests
             "Scenarios",
             scenarioName));
 
-    // begin-snippet: ExcelsiorTableModel
+    #region ExcelsiorTableModel
     public class Quote
     {
         public required string Reference { get; init; }
@@ -31,7 +31,7 @@ public class ExcelsiorTableTests
         [Column(Order = 3, Format = "C0")]
         public required decimal UnitPrice { get; init; }
     }
-    // end-snippet
+    #endregion
 
     public class Order
     {
@@ -141,7 +141,7 @@ public class ExcelsiorTableTests
     [Test]
     public async Task Render()
     {
-        // begin-snippet: ExcelsiorTableUsage
+        #region ExcelsiorTableUsage
         var templateBytes = await File.ReadAllBytesAsync(
             Path.Combine(ScenarioPath("excelsior-table"), "input.docx"));
 
@@ -161,7 +161,7 @@ public class ExcelsiorTableTests
 
         using var stream = new MemoryStream();
         await store.Render("excelsior-quote", model, stream);
-        // end-snippet
+        #endregion
 
         // Land the Verify artifacts next to input.docx so the scenario directory is a
         // self-contained folder of inputs and outputs that the readme can link to directly.

@@ -23,25 +23,48 @@ Parchment supports two complementary template formats:
 
 ## Docx template
 
+
+### Input docx content
+
+<!-- snippet: SubstitutionInput -->
+<a id='snippet-SubstitutionInput'></a>
+```cs
+Invoice {{ Number }}
+
+Customer: {{ Customer.Name }}
+
+Total: {{ Total }} {{ Currency }}
+```
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L8-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-SubstitutionInput' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-SubstitutionInput-1'></a>
+```txt
+Invoice INV-2026-0042
+Customer: Globex Corporation
+Total: 10978.0 USD
+```
+<sup><a href='/src/Parchment.Tests/UsageTests.Substitution%2300.verified.txt#L3-L7' title='Snippet source file'>snippet source</a> | <a href='#snippet-SubstitutionInput-1' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-SubstitutionInput-2'></a>
+```txt
+Invoice INV-2026-0042
+Customer: Globex Corporation
+Total: 10978.0 USD
+```
+<sup><a href='/src/Parchment.Tests/UsageTests.Substitution%2301.verified.txt#L1-L5' title='Snippet source file'>snippet source</a> | <a href='#snippet-SubstitutionInput-2' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+### Render
+
 <!-- snippet: Substitution -->
 <a id='snippet-Substitution'></a>
 ```cs
-var template = DocxTemplateBuilder.Build(
-    """
-    Invoice {{ Number }}
-
-    Customer: {{ Customer.Name }}
-
-    Total: {{ Total }} {{ Currency }}
-    """);
-
 var store = new TemplateStore();
 store.RegisterDocxTemplate<Invoice>("substitution", template);
 
 using var stream = new MemoryStream();
 await store.Render("substitution", SampleData.Invoice(), stream);
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L6-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-Substitution' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L17-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-Substitution' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -191,7 +214,7 @@ A markdown template is a `.md` file containing the full body of the document plu
 > No outstanding risks.
 {% endif %}
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L30-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L32-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The model the template binds against:
@@ -248,7 +271,7 @@ store.RegisterMarkdownTemplate<ReportContext>(
 using var stream = new MemoryStream();
 await store.Render("report", reportModel, stream);
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L61-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L63-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The rendered docx (page 1):
