@@ -1,13 +1,6 @@
 namespace Parchment.Tokens;
 
-internal enum ParagraphKind
-{
-    Static,
-    Substitution,
-    Block
-}
-
-internal sealed record ParagraphClassification(
+sealed record ParagraphClassification(
     Paragraph Paragraph,
     string AnchorName,
     ParagraphKind Kind,

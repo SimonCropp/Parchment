@@ -1,6 +1,6 @@
 namespace Parchment.Tokens;
 
-internal sealed record DocxTokenSite(
+sealed record DocxTokenSite(
     int Offset,
     int Length,
     string Source,

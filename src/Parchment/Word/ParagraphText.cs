@@ -121,4 +121,4 @@ class ParagraphText
     readonly record struct SpanRef(int index);
 }
 
-internal sealed record TextSpan(int Offset, int Length, Text Text);
+sealed record TextSpan(int Offset, int Length, Text Text);

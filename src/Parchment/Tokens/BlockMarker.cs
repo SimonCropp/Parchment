@@ -1,16 +1,6 @@
 namespace Parchment.Tokens;
 
-internal enum BlockTagKind
-{
-    For,
-    EndFor,
-    If,
-    ElsIf,
-    Else,
-    EndIf
-}
-
-internal sealed record BlockMarker(
+sealed record BlockMarker(
     BlockTagKind Kind,
     string Source,
     string? Expression,
