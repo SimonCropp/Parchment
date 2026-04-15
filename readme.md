@@ -73,6 +73,82 @@ A token can resolve to one of three values:
 You can also use the bundled `bullet_list` and `numbered_list` filters to render an `IEnumerable<string>` as a real Word list.
 
 
+### Excelsior tables
+
+Mark any collection property on the model with `[ExcelsiorTable]` and the matching `{{ ... }}` substitution is rendered as a fully-formatted Word table by [Excelsior](https://github.com/SimonCropp/Excelsior) at render time. Headings, column ordering, formatting, null display, and custom render callbacks all come from Excelsior's `[Column]` attribute on the element type — the same configuration surface used for spreadsheets.
+
+Mark the collection on the model:
+
+<!-- snippet: ExcelsiorTableModel -->
+<a id='snippet-ExcelsiorTableModel'></a>
+```cs
+public class Quote
+{
+    public required string Reference { get; init; }
+
+    [ExcelsiorTable]
+    public required IReadOnlyList<QuoteLine> Lines { get; init; }
+}
+
+public class QuoteLine
+{
+    [Column(Heading = "Item", Order = 1)]
+    public required string Description { get; init; }
+
+    [Column(Heading = "Qty", Order = 2)]
+    public required int Quantity { get; init; }
+
+    [Column(Order = 3, Format = "C0")]
+    public required decimal UnitPrice { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L17-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Drop a `{{ Lines }}` substitution into the template on its own line. The template:
+
+![Template before render](/src/Parchment.Tests/Scenarios/excelsior-table/input.png)
+
+Register and render normally:
+
+<!-- snippet: ExcelsiorTableUsage -->
+<a id='snippet-ExcelsiorTableUsage'></a>
+```cs
+var templateBytes = await File.ReadAllBytesAsync(
+    Path.Combine(ScenarioPath("excelsior-table"), "input.docx"));
+
+var store = new TemplateStore();
+store.RegisterDocxTemplate<Quote>("excelsior-quote", templateBytes);
+
+var model = new Quote
+{
+    Reference = "Q-2026-0042",
+    Lines =
+    [
+        new() { Description = "Strategy workshop", Quantity = 2, UnitPrice = 4500m },
+        new() { Description = "Implementation support", Quantity = 8, UnitPrice = 1750m },
+        new() { Description = "Documentation review", Quantity = 1, UnitPrice = 950m }
+    ]
+};
+
+using var stream = new MemoryStream();
+await store.Render("excelsior-quote", model, stream);
+```
+<sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L134-L154' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableUsage' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The rendered output:
+
+![Rendered output](/src/Parchment.Tests/Scenarios/excelsior-table/output%23page01.verified.png)
+
+Rules:
+
+- The substitution must sit alone in its own paragraph — structural table replacement swaps the entire host paragraph, so surrounding text would be discarded. The runtime throws at registration (`ParchmentRegistrationException`) and the source generator emits `PARCH007` if this is violated.
+- The substitution must be a plain member-access expression — filters (`{{ Lines | reverse }}`) and arithmetic are rejected because the Excelsior path walks the model object directly and bypasses Fluid evaluation. Diagnostic `PARCH008` covers this at compile time.
+- Nested paths like `{{ Customer.Lines }}` work — the registration walks the model type recursively at build time, so `[ExcelsiorTable]` can sit on any reachable collection property.
+- Currency and date formatting in the rendered table honor `Excelsior.ValueRenderer.Culture` (defaults to `CultureInfo.CurrentCulture`). Set it once in a module initializer to override the default locale.
+
+
 ## Markdown template
 
 A markdown template is a `.md` file containing the full body of the document plus liquid tokens for substitution, looping, and conditional content. The template below combines headings, emphasis, a pipe table driven by a loop, an ordered list driven by a loop, and a blockquote chosen by an `{% if %}`:
@@ -229,6 +305,8 @@ The generator emits the following diagnostics:
 - `PARCH004` — template path isn't listed in `<AdditionalFiles>`
 - `PARCH005` — block tag shares a paragraph with other content (block tags must sit on their own line)
 - `PARCH006` — template file couldn't be read
+- `PARCH007` — `[ExcelsiorTable]` token shares a paragraph with other content (structural table replacement swaps the whole paragraph)
+- `PARCH008` — `[ExcelsiorTable]` token has filters or a complex expression (Excelsior dispatch bypasses Fluid)
 
 It also generates a `RegisterWith(store)` helper so registration is one line at runtime.
 

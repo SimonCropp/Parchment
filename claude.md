@@ -85,15 +85,102 @@ Filters (`Liquid/Filters.cs`): `markdown`, `escape_xml`, `bullet_list`, `numbere
 3. Unzips with `System.IO.Compression.ZipArchive` and walks `word/document.xml`, `word/header*.xml`, `word/footer*.xml`, `word/footnotes.xml`, `word/endnotes.xml` via `XDocument`.
 4. Tokenizes paragraph `InnerText` into `{{ ... }}` / `{% ... %}` sites with a small splitter regex, then hands each token to `Fluid.FluidParser` and walks the resulting AST with an `IdentifierVisitor : Fluid.Ast.AstVisitor` to collect member-access paths — same approach as the runtime library. Fluid.Core and its full transitive closure (Parlot, Microsoft.Extensions.FileProviders.Abstractions, TimeZoneConverter, plus System.Text.Json + Microsoft.Bcl.HashCode on netstandard2.0) are merged into `Parchment.SourceGenerator.dll` at build time via `PackageShader.MsBuild` (marked `Shade="true"` in the SG csproj), so the analyzer ships as a single self-contained DLL under `analyzers/dotnet/roslyn*/cs`. The SG keeps a parallel `TokenScanner.cs` rather than sharing source with the runtime library because the runtime types are internal and depend on `DocumentFormat.OpenXml`, which doesn't work in a netstandard2.0 Roslyn analyzer.
 5. Validates references against the model's `ITypeSymbol` (Roslyn semantic model, not reflection).
-6. Emits diagnostics `PARCH001`–`PARCH006` and a generated partial class with a `RegisterWith(TemplateStore store)` helper.
+6. Emits diagnostics `PARCH001`–`PARCH008` and a generated partial class with a `RegisterWith(TemplateStore store)` helper.
 
 The generator deliberately **does not** embed docx bytes into the assembly — it generates a runtime helper that reads the file from disk. Users deploy the docx alongside their app.
 
 `Parchment.SourceGenerator.csproj` has `<InternalsVisibleTo Include="Parchment.SourceGenerator.Tests"/>` — but signed assemblies don't honor IVT without a public-key match, so the test-facing types (`TokenScanner`, `TokenKind`, `Token`) are `public`. Records use `init`, which requires the `IsExternalInit` polyfill in `Polyfills.cs` for the `netstandard2.0` target.
 
+### Excelsior table dispatch (`[ExcelsiorTable]`)
+
+A hook that lets a `{{ Property }}` substitution resolve to a fully-formatted Word table rendered by [Excelsior](https://github.com/SimonCropp/Excelsior) instead of the default string substitution. Parchment takes a hard `PackageReference` on `Excelsior` (>= 2.3.0); the attribute lives in Parchment (`Parchment.ExcelsiorTableAttribute`), so the dep direction is Parchment → Excelsior.
+
+**Runtime path** (`src/Parchment/Excelsior/`):
+
+1. `TemplateStore.RegisterDocxTemplate<TModel>` calls `ExcelsiorTableMap.Build(typeof(TModel), name)` BEFORE scanning parts. The map recursively walks `TModel`'s property graph, collecting every `[ExcelsiorTable]`-marked collection property under its dotted path from the root (e.g. `"Customer.Lines"`). Each entry stores `(DottedPath, ElementType, Func<object, object?> Getter)` where the getter is a chained closure that walks the corresponding object path with null-short-circuiting at every step.
+2. `ExcelsiorTokenValidator.Validate` runs immediately after `ReferenceValidator.ValidateTree`. For each substitution token whose first identifier path matches a map entry, it enforces two rules: (a) the token must sit alone in its host paragraph (offset 0, length == paragraph length, no sibling tokens), and (b) the parsed Fluid `OutputStatement.Expression` must be exactly a `MemberExpression` (no filters, no arithmetic, no literals). Both violations throw `ParchmentRegistrationException`.
+3. `RegisteredDocxTemplate` stores the map and passes both it AND the original `object model` to every `ScopeTreeRunner` (including cloned runners inside loops/conditionals).
+4. `ScopeTreeRunner.EvaluateTokenAsync` consults `TryResolveExcelsiorTable` FIRST, before normal Fluid evaluation. If the token matches, the helper calls `entry.Getter(rootModel)` to fetch the collection as its original CLR type, then synthesizes a `TokenValue.OpenXml(ctx => [ExcelsiorTableBridge.BuildTable(elementType, data, mainPart)])`. The existing `TokenValue.OpenXml` structural-replacement path handles the rest — which is why the token must sit alone in its paragraph.
+5. `ExcelsiorTableBridge` uses `ConcurrentDictionary<Type, BuilderInvoker>` to cache reflection-built delegates per element type. Each invoker calls `new WordTableBuilder<T>(data).Build(mainPart)` via `ConstructorInfo.Invoke` + `MethodInfo.Invoke`, returning a `DocumentFormat.OpenXml.Wordprocessing.Table`. The reflection cost is amortized per element type, not per render.
+
+**SG path** (`src/Parchment.SourceGenerator/`):
+
+1. `ShapeBuilder.HasExcelsiorTableAttribute` matches the attribute by full-qualified name string (`"global::Parchment.ExcelsiorTableAttribute"`) — the SG can't `typeof()` it because it doesn't reference Parchment.dll.
+2. `MemberEntry` gained an `IsExcelsiorTable` bool flag. It stays primitive for the incremental pipeline's cacheability.
+3. `TokenScanner.ParseSubstitution` sets a new `Token.IsPlainIdentifier` flag via `IsPlainMemberAccess`, which checks whether the parsed template is a single `OutputStatement` wrapping a bare `MemberExpression`.
+4. `ShapeResolver.IsExcelsiorTableMember` walks a segment path (honoring loop scope) and returns true if the final member carries the `IsExcelsiorTable` flag.
+5. `ParchmentTemplateGenerator.ValidateExcelsiorToken` is called from the Substitution case of `ValidateTokens`. It gates on `IsExcelsiorTableMember`, then emits `PARCH007` when `HasOtherContent` is true and `PARCH008` when `IsPlainIdentifier` is false.
+
+The runtime and SG enforce the same two rules but via different mechanisms: runtime inspects the Fluid AST directly at registration; SG reads a boolean that `TokenScanner` baked in when parsing. Both paths are covered by `ExcelsiorTableTests` (Parchment.Tests) and `ExcelsiorToken_*` tests (Parchment.SourceGenerator.Tests).
+
 ### Determinism guarantee
 
 Same template + same model → byte-identical output. Avoid `w:rsid` randomness, never set `PackageProperties.Created`, no timestamps anywhere. `DeterminismTests.cs` renders a sample twice and asserts byte equality. Users hash outputs for caching/dedup, so don't break this.
+
+### Scenario directories (`src/Parchment.Tests/Scenarios/`)
+
+Self-contained example folders used by the readme to show before/after of a feature. One subdirectory per scenario (e.g. `Scenarios/excelsior-table/`), each holding every artifact needed to illustrate the feature. Layout:
+
+```
+src/Parchment.Tests/Scenarios/
+├── ScenarioInputRenderer.cs          # [Explicit] — regenerates all input.png files
+└── <scenario-name>/
+    ├── input.docx                    # committed binary — the template
+    ├── input.png                     # "before" render of input.docx (generated)
+    ├── output.verified.docx          # Verify snapshot of the rendered output
+    ├── output#page01.verified.png    # "after" render of output.verified.docx (from Verify.OpenXml + Morph)
+    ├── output#00.verified.txt        # Verify text extraction
+    └── output#01.verified.txt
+```
+
+**Why the pattern exists**: so the readme can reference `scenarios/<name>/input.png` and `scenarios/<name>/output#page01.verified.png` as a clean before/after pair without scattering the images across the test tree. Every file in the directory belongs to that one example.
+
+**How a scenario test is wired up** (see `ExcelsiorTableTests.Render`):
+
+1. The `.cs` test file lives under `src/Parchment.Tests/Docx/` (or wherever feature tests live), not inside the scenario directory — the scenario dir is an asset folder, not a code folder.
+2. The test reads `input.docx` from disk via a `[CallerFilePath]`-anchored helper:
+   ```csharp
+   static string SourcePath([CallerFilePath] string path = "") => path;
+   static string ScenarioPath(string name) =>
+       Path.GetFullPath(Path.Combine(Path.GetDirectoryName(SourcePath())!, "..", "Scenarios", name));
+   ```
+3. It calls `File.ReadAllBytesAsync(Path.Combine(ScenarioPath("..."), "input.docx"))`, registers, renders.
+4. It directs Verify's output into the scenario dir with a custom filename prefix:
+   ```csharp
+   var settings = new VerifySettings();
+   settings.UseDirectory(ScenarioPath("excelsior-table"));
+   settings.UseFileName("output");
+   await Verify(stream, "docx", settings);
+   ```
+   The `UseFileName("output")` keeps the snapshot files clean — just `output.verified.docx` / `output#page01.verified.png` rather than the usual `ClassName.MethodName.*` naming.
+
+**How `input.png` is generated** (`ScenarioInputRenderer.cs`):
+
+Marked `[Test, Explicit]` so it does NOT run in the default `dotnet run` path (83-test Parchment.Tests run). It globs `Scenarios/**/input.docx`, runs each through Morph's SkiaSharp renderer, and writes the first page's PNG bytes next to the source docx:
+
+```csharp
+var converter = new WordRender.Skia.DocumentConverter();
+var options = new WordRender.ConversionOptions();
+var pages = converter.ConvertToImageData(stream, options); // IReadOnlyList<byte[]>
+File.WriteAllBytesAsync(pngPath, pages[0]);
+```
+
+Invoke it on demand when a scenario's template changes:
+
+```bash
+dotnet run --project src/Parchment.Tests --configuration Release -- \
+    --treenode-filter "/*/*/ScenarioInputRenderer/RenderAllInputDocxesToPng"
+```
+
+TUnit's `[Explicit]` attribute excludes the test from default runs; only an explicit filter targeting it will execute it. This is why `input.png` is *committed* alongside `input.docx` — the explicit test regenerates it on demand, but the committed file is what the readme references.
+
+**Adding a new scenario**:
+
+1. `mkdir src/Parchment.Tests/Scenarios/<name>` and drop `input.docx` in it (via a one-shot generator test, or hand-authored in Word).
+2. Mark the binary: `*.docx binary` is already in `.gitattributes`.
+3. Write a feature test that loads `input.docx`, renders it, and calls `UseDirectory(ScenarioPath("<name>")) + UseFileName("output")` so the snapshot lands in the scenario dir.
+4. Run the explicit `ScenarioInputRenderer` test once to produce `input.png`.
+5. Reference both PNGs from `readme.md` with `/src/Parchment.Tests/Scenarios/<name>/input.png` and `/src/Parchment.Tests/Scenarios/<name>/output%23page01.verified.png` (note the `#` → `%23` URL escape).
 
 ## Non-obvious things that will trip you up
 
@@ -106,3 +193,15 @@ Same template + same model → byte-identical output. Avoid `w:rsid` randomness,
 - **`appveyor.yml` font validation step** — every TTF/OTF in `src/Fonts/` is loaded through `System.Drawing.Text.PrivateFontCollection` BEFORE being copied to `%WINDIR%\Fonts`. This catches Git CRLF corruption upfront. If you add a font, mark it as binary in `.gitattributes` (`*.ttf binary`, `*.otf binary` — already present).
 
 - **`ParchmentModel` is a separate project** (not `Model`) to avoid name clashes with common test fixture names in IDE autocomplete.
+
+- **Excelsior dispatch bypasses Fluid, deliberately**: `ExcelsiorTableBridge` walks the CLR model directly via a cached `Func<object, object?>` getter chain, NOT via `Expression.EvaluateAsync` on the parsed token. Routing through Fluid *looks* tempting — it would "enable filters" — but Fluid's `ArrayValue.ToObjectValue()` returns `FluidValue[]`, which erases the `IEnumerable<T>` type that `new WordTableBuilder<T>(data)` needs. This is why `ScopeTreeRunner` takes `rootModel` as a separate constructor parameter instead of pulling the model from `TemplateContext` — the context's collection values have already been wrapped. If someone "simplifies" this by removing the `rootModel` parameter, the Excelsior path breaks on the first filtered or loop-nested token.
+
+- **Per-branch visited set in `ExcelsiorTableMap.WalkType`**: cycle prevention uses a `HashSet<Type>` that's mutated with `visited.Add` on descend and `visited.Remove` on return. The same type can appear at multiple unrelated paths (e.g. `Order.Buyer.Addresses` + `Order.Seller.Addresses` — both walked into Buyer's/Seller's type), but a self-reference (`Node.Next` → `Node`) is pruned. Converting this to a global visited set that never removes entries would silently drop the second sibling branch — tests may still pass if only one branch is exercised, but registration would start missing `[ExcelsiorTable]` properties in reachable-twice models.
+
+- **SG `[ExcelsiorTable]` detection matches by full-qualified-name string** (`"global::Parchment.ExcelsiorTableAttribute"` in `ShapeBuilder.HasExcelsiorTableAttribute`). The SG can't `typeof()` the attribute because it doesn't reference Parchment.dll (the SG runs inside Roslyn, the runtime library doesn't ship into the analyzer). Renaming or moving the attribute silently breaks `PARCH007`/`PARCH008` until the string literal is updated — there's no compile-time safety net.
+
+- **Excelsior runtime and SG validators must stay in lockstep**: `ExcelsiorTokenValidator` (runtime) and `ValidateExcelsiorToken` + `ShapeResolver.IsExcelsiorTableMember` (SG) enforce the same two rules — solo-in-paragraph and plain-member-access. The runtime checks the Fluid AST directly (`output.Expression is MemberExpression`); the SG piggybacks on a `Token.IsPlainIdentifier` bool set by `TokenScanner.IsPlainMemberAccess`. If you tighten or loosen one rule, update the other in the same PR. The relevant tests are `ExcelsiorTableTests` (runtime) and `ExcelsiorToken_*` (SG).
+
+- **`MemberEntry.IsExcelsiorTable` must stay primitive** — it's a `bool` on a `sealed record` that flows through the incremental generator pipeline, so its equality is structural. Adding a `bool` was safe; adding a `List<T>`, an `ISymbol` reference, or any mutable field would defeat the pipeline's cacheability and force ShapeBuilder to re-run on every compilation.
+
+- **Package dependency direction is Parchment → Excelsior, hard** (not the other way around). The `[ExcelsiorTable]` attribute deliberately lives in Parchment, not Excelsior. Moving it to Excelsior would invert the dep: every Excel-only Excelsior consumer would pull Parchment, and every Parchment user would have to reference an attribute-only stub package. Don't.

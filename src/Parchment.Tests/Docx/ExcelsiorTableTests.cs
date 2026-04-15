@@ -1,9 +1,19 @@
 namespace Parchment.Tests.Docx;
 
+using System.Runtime.CompilerServices;
 using Excelsior;
 
 public class ExcelsiorTableTests
 {
+    static string SourcePath([CallerFilePath] string path = "") => path;
+
+    static string ScenarioPath(string scenarioName) =>
+        Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(SourcePath())!,
+            "..",
+            "Scenarios",
+            scenarioName));
+
     // begin-snippet: ExcelsiorTableModel
     public class Quote
     {
@@ -119,17 +129,14 @@ public class ExcelsiorTableTests
     }
 
     [Test]
-    public async Task LinesPropertyRendersAsExcelsiorTable()
+    public async Task Render()
     {
-        // The {{ Lines }} substitution is in its own paragraph so the structural-replacement
-        // path can swap it out for the table elements produced by Excelsior.
-        var template = DocxTemplateBuilder.Build(
-            "Quote {{ Reference }}",
-            "{{ Lines }}",
-            "Thank you for your business.");
+        // begin-snippet: ExcelsiorTableUsage
+        var templateBytes = await File.ReadAllBytesAsync(
+            Path.Combine(ScenarioPath("excelsior-table"), "input.docx"));
 
         var store = new TemplateStore();
-        store.RegisterDocxTemplate<Quote>("excelsior-quote", template);
+        store.RegisterDocxTemplate<Quote>("excelsior-quote", templateBytes);
 
         var model = new Quote
         {
@@ -144,7 +151,15 @@ public class ExcelsiorTableTests
 
         using var stream = new MemoryStream();
         await store.Render("excelsior-quote", model, stream);
+        // end-snippet
+
+        // Land the Verify artifacts next to input.docx so the scenario directory is a
+        // self-contained folder of inputs and outputs that the readme can link to directly.
+        var settings = new VerifySettings();
+        settings.UseDirectory(ScenarioPath("excelsior-table"));
+        settings.UseFileName("output");
+
         stream.Position = 0;
-        await Verify(stream, "docx");
+        await Verify(stream, "docx", settings);
     }
 }
