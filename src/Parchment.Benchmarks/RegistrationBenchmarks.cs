@@ -48,7 +48,7 @@ public class RegistrationBenchmarks
         using (var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
         {
             var mainPart = doc.AddMainDocumentPart();
-            mainPart.Document = new Document(new Body(
+            mainPart.Document = new(new Body(
                 new Paragraph(new Run(new Text("Invoice {{ Number }}") { Space = SpaceProcessingModeValues.Preserve })),
                 new Paragraph(new Run(new Text("Customer: {{ Customer.Name }}") { Space = SpaceProcessingModeValues.Preserve })),
                 new Paragraph(new Run(new Text("Total: {{ Total }} {{ Currency }}") { Space = SpaceProcessingModeValues.Preserve }))));

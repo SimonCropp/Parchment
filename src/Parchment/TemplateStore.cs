@@ -21,6 +21,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         var excelsiorMap = ExcelsiorTableMap.Build(typeof(TModel), name);
 
         using var stream = DocxCloner.ToWritableStream(template);
+        IReadOnlyList<PartScopeTree> parts;
         using (var doc = WordprocessingDocument.Open(stream, true))
         {
             foreach (var (uri, root) in DocxCloner.EnumerateParts(doc))
@@ -38,10 +39,12 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
             }
 
             doc.Save();
+
+            parts = ExtractParts(doc, name);
         }
 
         var canonicalBytes = stream.ToArray();
-        var registered = new RegisteredDocxTemplate(name, typeof(TModel), canonicalBytes, ExtractPartsFromBytes(name, canonicalBytes), excelsiorMap);
+        var registered = new RegisteredDocxTemplate(name, typeof(TModel), canonicalBytes, parts, excelsiorMap);
         templates[name] = registered;
         logger.LogInformation("Registered docx template {Name} for {ModelType}", name, typeof(TModel).Name);
     }
@@ -156,10 +159,8 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
     public static void AddFilter(string name, FilterDelegate filter) =>
         SharedFluid.Options.Filters.AddFilter(name, filter);
 
-    static IReadOnlyList<PartScopeTree> ExtractPartsFromBytes(string name, byte[] bytes)
+    static IReadOnlyList<PartScopeTree> ExtractParts(WordprocessingDocument doc, string name)
     {
-        using var stream = DocxCloner.ToWritableStream(bytes);
-        using var doc = WordprocessingDocument.Open(stream, false);
         var parts = new List<PartScopeTree>();
         foreach (var (uri, root) in DocxCloner.EnumerateParts(doc))
         {

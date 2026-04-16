@@ -745,24 +745,24 @@ AMD Ryzen 9 5900X, 1 CPU, 24 logical and 12 physical cores
 
 ### Registration
 
-| Method | Mean | Op/s | Allocated |
-|---|---|---|---|
-| RegisterFromMemoryStream | 858.0 us | 1,166 | 365.0 KB |
-| RegisterFromBufferedStream | 858.8 us | 1,164 | 363.3 KB |
-| RegisterFromFilePath | 1,888.2 us | 530 | 363.8 KB |
+| Method | Mean | Allocated |
+|---|---|---|
+| RegisterFromMemoryStream | 0.23 ms | 181 KB |
+| RegisterFromBufferedStream | 0.22 ms | 180 KB |
+| RegisterFromFilePath | 1.32 ms | 180 KB |
 
 ### Rendering
 
 ItemCount varies the number of loop iterations (line items for docx, findings/actions for markdown).
 
-| Method | ItemCount | Mean | Op/s | Allocated |
-|---|---|---|---|---|
-| DocxTemplate | 3 | 234.8 us | 4,259 | 195.8 KB |
-| MarkdownTemplate | 3 | 501.7 us | 1,993 | 371.2 KB |
-| DocxTemplate | 50 | 559.7 us | 1,787 | 515.5 KB |
-| MarkdownTemplate | 50 | 1,065.8 us | 938 | 779.7 KB |
-| DocxTemplate | 500 | 10,150.0 us | 99 | 3,634.5 KB |
-| MarkdownTemplate | 500 | 6,706.0 us | 149 | 4,632.6 KB |
+| Method | ItemCount | Mean | Allocated |
+|---|---|---|---|
+| DocxTemplate | 3 | 0.24 ms | 196 KB |
+| MarkdownTemplate | 3 | 0.52 ms | 372 KB |
+| DocxTemplate | 50 | 0.56 ms | 516 KB |
+| MarkdownTemplate | 50 | 1.11 ms | 780 KB |
+| DocxTemplate | 500 | 10.72 ms | 3,635 KB |
+| MarkdownTemplate | 500 | 6.87 ms | 4,633 KB |
 
 Run benchmarks with:
 
