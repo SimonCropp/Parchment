@@ -15,7 +15,6 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
     public void RegisterDocxTemplate<TModel>(string name, Stream template)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ArgumentNullException.ThrowIfNull(template);
 
         SharedFluid.RegisterModel(typeof(TModel));
 
@@ -24,7 +23,6 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         using var stream = DocxCloner.ToWritableStream(template);
         using (var doc = WordprocessingDocument.Open(stream, true))
         {
-            var parts = new List<PartScopeTree>();
             foreach (var (uri, root) in DocxCloner.EnumerateParts(doc))
             {
                 var classifications = TokenScanner.Scan(root, name, uri);
@@ -37,7 +35,6 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
                 var validator = new ReferenceValidator(typeof(TModel), name, uri);
                 validator.ValidateTree(tree);
                 ExcelsiorTokenValidator.Validate(classifications, excelsiorMap, name, uri);
-                parts.Add(new(uri, tree));
             }
 
             doc.Save();
@@ -52,7 +49,6 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
     public void RegisterMarkdownTemplate<TModel>(string name, string markdown, Stream? styleSource = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ArgumentNullException.ThrowIfNull(markdown);
 
         SharedFluid.RegisterModel(typeof(TModel));
 
