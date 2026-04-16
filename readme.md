@@ -734,6 +734,43 @@ Add the docx as an additional file:
 ```
 
 
+## Benchmarks
+
+``` ini
+BenchmarkDotNet v0.14.0, Windows 11 (10.0.26200.8246)
+AMD Ryzen 9 5900X, 1 CPU, 24 logical and 12 physical cores
+.NET SDK 11.0.100-preview.2.26159.112
+  [Host] : .NET 10.0.6 (10.0.626.17701), X64 RyuJIT AVX2
+```
+
+### Registration
+
+| Method | Mean | Op/s | Allocated |
+|---|---|---|---|
+| RegisterFromMemoryStream | 858.0 us | 1,166 | 365.0 KB |
+| RegisterFromBufferedStream | 858.8 us | 1,164 | 363.3 KB |
+| RegisterFromFilePath | 1,888.2 us | 530 | 363.8 KB |
+
+### Rendering
+
+ItemCount varies the number of loop iterations (line items for docx, findings/actions for markdown).
+
+| Method | ItemCount | Mean | Op/s | Allocated |
+|---|---|---|---|---|
+| DocxTemplate | 3 | 234.8 us | 4,259 | 195.8 KB |
+| MarkdownTemplate | 3 | 501.7 us | 1,993 | 371.2 KB |
+| DocxTemplate | 50 | 559.7 us | 1,787 | 515.5 KB |
+| MarkdownTemplate | 50 | 1,065.8 us | 938 | 779.7 KB |
+| DocxTemplate | 500 | 10,150.0 us | 99 | 3,634.5 KB |
+| MarkdownTemplate | 500 | 6,706.0 us | 149 | 4,632.6 KB |
+
+Run benchmarks with:
+
+```
+dotnet run --project src/Parchment.Benchmarks --configuration Release
+```
+
+
 ## Determinism
 
 Rendering the same template with the same model produces a byte-identical output. Useful for hash-based caching, dedup, and legal sign-off workflows.

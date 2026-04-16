@@ -1,3 +1,4 @@
+using System.Linq;
 using BenchmarkDotNet.Attributes;
 
 [Config(typeof(BenchmarkConfig))]
@@ -5,14 +6,17 @@ public class RenderBenchmarks
 {
     TemplateStore docxStore = null!;
     TemplateStore markdownStore = null!;
-    Invoice invoice = null!;
-    ReportContext report = null!;
+    Invoice docxModel = null!;
+    ReportContext markdownModel = null!;
+
+    [Params(3, 50, 500)]
+    public int ItemCount { get; set; }
 
     [GlobalSetup]
     public void Setup()
     {
-        invoice = SampleData.Invoice();
-        report = SampleData.Report();
+        docxModel = BuildInvoice(ItemCount);
+        markdownModel = BuildReport(ItemCount);
 
         docxStore = new TemplateStore();
         using var docxTemplate = new MemoryStream(BuildDocxTemplate());
@@ -24,18 +28,72 @@ public class RenderBenchmarks
     }
 
     [Benchmark]
-    public async Task RenderDocxTemplate()
+    public async Task DocxTemplate()
     {
         using var output = new MemoryStream();
-        await docxStore.Render("docx", invoice, output);
+        await docxStore.Render("docx", docxModel, output);
     }
 
     [Benchmark]
-    public async Task RenderMarkdownTemplate()
+    public async Task MarkdownTemplate()
     {
         using var output = new MemoryStream();
-        await markdownStore.Render("md", report, output);
+        await markdownStore.Render("md", markdownModel, output);
     }
+
+    static Invoice BuildInvoice(int lineCount) =>
+        new()
+        {
+            Number = "INV-2026-0042",
+            IssueDate = new(2026, 4, 1),
+            DueDate = new(2026, 4, 30),
+            Currency = "USD",
+            Notes = "Thanks for your business.",
+            Tags = ["priority", "net-30"],
+            Customer = new()
+            {
+                Name = "Globex Corporation",
+                Email = "ap@globex.test",
+                Address = "123 Commerce Way, Springfield, IL 62704",
+                IsPreferred = true
+            },
+            Lines = Enumerable.Range(1, lineCount)
+                .Select(i => new LineItem
+                {
+                    Description = $"Service line item {i}",
+                    Quantity = i % 10 + 1,
+                    UnitPrice = 100m + i
+                })
+                .ToList()
+        };
+
+    static ReportContext BuildReport(int findingCount) =>
+        new()
+        {
+            Report = new()
+            {
+                Title = "Quarterly Review",
+                Author = "Alex Chen",
+                Date = new(2026, 7, 1),
+                Summary = "Platform reliability trended upward this quarter.",
+                Findings = Enumerable.Range(1, findingCount)
+                    .Select(i => new Finding
+                    {
+                        Area = $"Area-{i}",
+                        Status = i % 3 == 0 ? "Watch" : "Improved",
+                        Owner = $"Team-{i % 5}"
+                    })
+                    .ToList(),
+                Actions = Enumerable.Range(1, Math.Max(1, findingCount / 5))
+                    .Select(i => new ActionItem
+                    {
+                        Title = $"Action item {i}",
+                        Detail = $"Details for action {i}."
+                    })
+                    .ToList(),
+                HasRisks = findingCount > 10
+            }
+        };
 
     const string MarkdownSource = """
         # {{ Report.Title }}
@@ -59,6 +117,12 @@ public class RenderBenchmarks
         {% for item in Report.Actions %}
         1. **{{ item.Title }}** — {{ item.Detail }}
         {% endfor %}
+
+        {% if Report.HasRisks %}
+        > Outstanding risks remain. See appendix for mitigation plan.
+        {% else %}
+        > No outstanding risks.
+        {% endif %}
         """;
 
     static byte[] BuildDocxTemplate()
@@ -68,12 +132,15 @@ public class RenderBenchmarks
         {
             var mainPart = doc.AddMainDocumentPart();
             var body = new Body(
-                new Paragraph(new Run(new Text("Invoice {{ Number }}") { Space = SpaceProcessingModeValues.Preserve })),
-                new Paragraph(new Run(new Text("Customer: {{ Customer.Name }}") { Space = SpaceProcessingModeValues.Preserve })),
-                new Paragraph(new Run(new Text("{% for line in Lines %}") { Space = SpaceProcessingModeValues.Preserve })),
-                new Paragraph(new Run(new Text("{{ line.Description }}: {{ line.Quantity }} x {{ line.UnitPrice }}") { Space = SpaceProcessingModeValues.Preserve })),
-                new Paragraph(new Run(new Text("{% endfor %}") { Space = SpaceProcessingModeValues.Preserve })),
-                new Paragraph(new Run(new Text("Total: {{ Total }} {{ Currency }}") { Space = SpaceProcessingModeValues.Preserve })));
+                Para("Invoice {{ Number }}"),
+                Para("Customer: {{ Customer.Name }}"),
+                Para("{% if Customer.IsPreferred %}"),
+                Para("Preferred customer discount applied."),
+                Para("{% endif %}"),
+                Para("{% for line in Lines %}"),
+                Para("{{ line.Description }}: {{ line.Quantity }} x {{ line.UnitPrice }}"),
+                Para("{% endfor %}"),
+                Para("Total: {{ Total }} {{ Currency }}"));
             mainPart.Document = new Document(body);
 
             var stylesPart = mainPart.AddNewPart<StyleDefinitionsPart>();
@@ -85,6 +152,9 @@ public class RenderBenchmarks
 
         return stream.ToArray();
     }
+
+    static Paragraph Para(string text) =>
+        new(new Run(new Text(text) { Space = SpaceProcessingModeValues.Preserve }));
 
     static byte[] BuildStyleSource()
     {
