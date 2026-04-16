@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
-    <PackageVersion Include="TUnit" Version="1.34.5" />
+    <PackageVersion Include="TUnit" Version="1.35.2" />
     <PackageVersion Include="DocumentFormat.OpenXml" Version="3.5.1" />
     <PackageVersion Include="Parchment" Version="$(Version)" />
   </ItemGroup>

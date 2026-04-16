@@ -82,6 +82,7 @@ A token can resolve to one of three values:
 - `TokenValue.Text(string)` — plain string substitution (the default for raw model values).
 - `TokenValue.Markdown(string)` — the value is rendered as markdown via Markdig and spliced into the host paragraph.
 - `TokenValue.OpenXml(Func<IOpenXmlContext, IEnumerable<OpenXmlElement>>)` — the value is a function that emits raw OpenXML elements. Useful for rich tables, generated charts, custom-styled lists.
+- `TokenValue.Mutate(Action<Paragraph, IOpenXmlContext>)` — the callback receives the host paragraph and mutates it in place. The token text is cleared before the callback runs. Useful for adding runs with custom formatting, injecting bookmarks, or tweaking paragraph properties while preserving the original paragraph.
 
 You can also use the bundled `bullet_list` and `numbered_list` filters to render an `IEnumerable<string>` as a real Word list.
 
@@ -235,6 +236,55 @@ await store.Render(
     targetStream);
 ```
 <sup><a href='/src/Parchment.Tests/Markdown/MarkdownFlowTests.cs#L78-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplatePropertyUsage' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+#### Mutate paragraph
+
+Use `TokenValue.Mutate` to receive the host paragraph and modify it in place. The token text is cleared before the callback runs, so the original paragraph structure (properties, styles) is preserved:
+
+<!-- snippet: MutateModel -->
+<a id='snippet-MutateModel'></a>
+```cs
+public class StyledModel
+{
+    public required string Label { get; init; }
+    public required TokenValue Highlight { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L81-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+<!-- snippet: MutateUsage -->
+<a id='snippet-MutateUsage'></a>
+```cs
+var template = DocxTemplateBuilder.Build(
+    """
+    {{ Label }}
+
+    {{ Highlight }}
+    """);
+
+var store = new TemplateStore();
+store.RegisterDocxTemplate<StyledModel>("mutate", template);
+using var stream = new MemoryStream();
+await store.Render("mutate", new StyledModel
+{
+    Label = "Before",
+    Highlight = TokenValue.Mutate((paragraph, context) =>
+    {
+        paragraph.Append(
+            new Run(
+                new RunProperties(
+                    new Bold()),
+                new Text("Custom content")
+                {
+                    Space = SpaceProcessingModeValues.Preserve
+                }));
+    })
+}, stream);
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L92-L118' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 

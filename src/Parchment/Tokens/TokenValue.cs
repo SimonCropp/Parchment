@@ -11,6 +11,9 @@ public abstract class TokenValue
     public static TokenValue OpenXml(Func<IOpenXmlContext, IEnumerable<OpenXmlElement>> render) =>
         new OpenXmlToken(render);
 
+    public static TokenValue Mutate(Action<Paragraph, IOpenXmlContext> mutate) =>
+        new MutateToken(mutate);
+
     public static implicit operator TokenValue(string text) =>
         Text(text);
 
@@ -30,5 +33,11 @@ public abstract class TokenValue
         TokenValue
     {
         public Func<IOpenXmlContext, IEnumerable<OpenXmlElement>> Render { get; } = render;
+    }
+
+    public class MutateToken(Action<Paragraph, IOpenXmlContext> mutate) :
+        TokenValue
+    {
+        public Action<Paragraph, IOpenXmlContext> Apply { get; } = mutate;
     }
 }

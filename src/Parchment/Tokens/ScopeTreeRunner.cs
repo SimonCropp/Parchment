@@ -74,6 +74,18 @@ class ScopeTreeRunner(
                 continue;
             }
 
+            if (evaluated is TokenValue.MutateToken mutate)
+            {
+                // Clear the token text, then hand the paragraph to the caller for in-place mutation.
+                ParagraphText.Build(host).Replace(token.Offset, token.Length, string.Empty);
+                var ctx = new OpenXmlContextImpl(
+                    mainPart,
+                    new(mainPart),
+                    StyleSet.Read(mainPart));
+                mutate.Apply(host, ctx);
+                continue;
+            }
+
             var replacement = ToDisplayString(evaluated);
             var text = ParagraphText.Build(host);
             text.Replace(token.Offset, token.Length, replacement);

@@ -78,6 +78,48 @@ public class TokenOverrideTests
         await Verify(stream, "docx");
     }
 
+    #region MutateModel
+    public class StyledModel
+    {
+        public required string Label { get; init; }
+        public required TokenValue Highlight { get; init; }
+    }
+    #endregion
+
+    [Test]
+    public async Task MutateParagraph()
+    {
+        #region MutateUsage
+        var template = DocxTemplateBuilder.Build(
+            """
+            {{ Label }}
+
+            {{ Highlight }}
+            """);
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<StyledModel>("mutate", template);
+        using var stream = new MemoryStream();
+        await store.Render("mutate", new StyledModel
+        {
+            Label = "Before",
+            Highlight = TokenValue.Mutate((paragraph, context) =>
+            {
+                paragraph.Append(
+                    new Run(
+                        new RunProperties(
+                            new Bold()),
+                        new Text("Custom content")
+                        {
+                            Space = SpaceProcessingModeValues.Preserve
+                        }));
+            })
+        }, stream);
+        #endregion
+        stream.Position = 0;
+        await Verify(stream, "docx");
+    }
+
     [Test]
     public async Task BulletListFilter()
     {
