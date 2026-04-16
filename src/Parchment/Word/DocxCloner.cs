@@ -10,17 +10,15 @@ static class DocxCloner
 
     public static MemoryStream ToWritableStream(Stream source)
     {
+        if (source is MemoryStream ms)
+        {
+            return ToWritableStream(ms.ToArray());
+        }
+
         var stream = new MemoryStream();
         source.CopyTo(stream);
         stream.Position = 0;
         return stream;
-    }
-
-    public static byte[] Save(WordprocessingDocument doc, MemoryStream stream)
-    {
-        doc.Save();
-        doc.Dispose();
-        return stream.ToArray();
     }
 
     public static IEnumerable<(string uri, OpenXmlCompositeElement root)> EnumerateParts(WordprocessingDocument doc)

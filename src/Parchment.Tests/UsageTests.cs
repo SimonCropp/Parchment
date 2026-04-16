@@ -26,6 +26,30 @@ public class UsageTests
     }
 
     [Test]
+    public async Task SubstitutionFromNonMemoryStream()
+    {
+        using var template = DocxTemplateBuilder.Build(
+            """
+            Invoice {{ Number }}
+
+            Customer: {{ Customer.Name }}
+
+            Total: {{ Total }} {{ Currency }}
+            """);
+
+        // Wrap in BufferedStream so the registration hits the non-MemoryStream path
+        using var wrapped = new BufferedStream(template);
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<Invoice>("substitution-buffered", wrapped);
+
+        using var stream = new MemoryStream();
+        await store.Render("substitution-buffered", SampleData.Invoice(), stream);
+        stream.Position = 0;
+        await Verify(stream, "docx");
+    }
+
+    [Test]
     public async Task Markdown()
     {
         var markdownSource = """
@@ -76,6 +100,31 @@ public class UsageTests
 
         #endregion
 
+        stream.Position = 0;
+        await Verify(stream, "docx");
+    }
+
+    [Test]
+    public async Task MarkdownFromNonMemoryStream()
+    {
+        var markdownSource = """
+                             # {{ Report.Title }}
+
+                             {{ Report.Summary }}
+                             """;
+
+        using var styleSource = DocxTemplateBuilder.Build();
+        // Wrap in BufferedStream so the registration hits the non-MemoryStream path
+        using var wrapped = new BufferedStream(styleSource);
+
+        var store = new TemplateStore();
+        store.RegisterMarkdownTemplate<ReportContext>(
+            "report-buffered",
+            markdownSource,
+            styleSource: wrapped);
+
+        using var stream = new MemoryStream();
+        await store.Render("report-buffered", SampleData.Report(), stream);
         stream.Position = 0;
         await Verify(stream, "docx");
     }

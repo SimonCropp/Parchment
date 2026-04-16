@@ -425,7 +425,7 @@ A markdown template is a `.md` file containing the full body of the document plu
 > No outstanding risks.
 {% endif %}
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L32-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L56-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The model the template binds against:
@@ -482,7 +482,7 @@ store.RegisterMarkdownTemplate<ReportContext>(
 using var stream = new MemoryStream();
 await store.Render("report", reportModel, stream);
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L63-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L87-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The rendered docx (page 1):

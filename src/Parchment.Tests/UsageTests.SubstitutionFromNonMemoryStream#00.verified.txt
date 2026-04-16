@@ -1,0 +1,6 @@
+﻿{
+  Text:
+Invoice INV-2026-0042
+Customer: Globex Corporation
+Total: 10978.0 USD
+}

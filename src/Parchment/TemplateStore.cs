@@ -82,7 +82,11 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         }
 
         byte[] bytes;
-        if (styleSource != null)
+        if (styleSource is MemoryStream existingMs)
+        {
+            bytes = existingMs.ToArray();
+        }
+        else if (styleSource != null)
         {
             using var ms = new MemoryStream();
             styleSource.CopyTo(ms);
