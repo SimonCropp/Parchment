@@ -36,20 +36,6 @@ Customer: {{ Customer.Name }}
 Total: {{ Total }} {{ Currency }}
 ```
 <sup><a href='/src/Parchment.Tests/UsageTests.cs#L8-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-SubstitutionInput' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-SubstitutionInput-1'></a>
-```txt
-Invoice INV-2026-0042
-Customer: Globex Corporation
-Total: 10978.0 USD
-```
-<sup><a href='/src/Parchment.Tests/UsageTests.Substitution%2300.verified.txt#L3-L7' title='Snippet source file'>snippet source</a> | <a href='#snippet-SubstitutionInput-1' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-SubstitutionInput-2'></a>
-```txt
-Invoice INV-2026-0042
-Customer: Globex Corporation
-Total: 10978.0 USD
-```
-<sup><a href='/src/Parchment.Tests/UsageTests.Substitution%2301.verified.txt#L1-L5' title='Snippet source file'>snippet source</a> | <a href='#snippet-SubstitutionInput-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
