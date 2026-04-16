@@ -267,16 +267,98 @@ The rendered docx (page 1):
 The optional `styleSource` is a docx whose styles, headers, footers, theme, and section properties (page size, margins, header/footer references) are inherited by the output. If omitted, a built-in blank template is used.
 
 
-### Supported Markdig extensions:
+### Supported Markdig extensions
 
-- [Emphasis extras](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/EmphasisExtraSpecs.md): `~~strike~~`, `~sub~`, `^sup^`, `++ins++`, `==mark==`
-- [Grid tables](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/GridTableSpecs.md)
-- [Auto links](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/AutoLinks.md)
-- [List extras](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/ListExtraSpecs.md): alpha and roman lists
-- [Smarty pants](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/SmartyPantsSpecs.md): curly quotes, em-dashes
-- [Generic attributes](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/GenericAttributesSpecs.md): attach a Word style with `{.StyleName}` syntax
+#### [Emphasis extras](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/EmphasisExtraSpecs.md)
 
-Example with style attribute:
+Extended emphasis syntax beyond standard bold/italic:
+
+```markdown
+~~strikethrough~~
+~subscript~
+^superscript^
+++underline++
+==highlight==
+```
+
+Standard `*italic*`, `**bold**`, and `_italic_` work as usual.
+
+#### [Pipe tables](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/PipeTableSpecs.md)
+
+```markdown
+| A | B |
+|---|---|
+| 1 | 2 |
+| 3 | 4 |
+```
+
+Header cells are bold and centered. Rendered output:
+
+![Pipe table output](/src/Parchment.Tests/Markdown/Renderers/TableRendererTests.PipeTableEmitsTableWithGridRowsAndHeaderFormatting%23page01.verified.png)
+
+#### [Grid tables](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/GridTableSpecs.md)
+
+Grid tables use `+---+` borders and `+===+` to separate the header row:
+
+```markdown
++---+---+
+| A | B |
++===+===+
+| 1 | 2 |
++---+---+
+| 3 | 4 |
++---+---+
+```
+
+Rendered output:
+
+![Grid table output](/src/Parchment.Tests/Markdown/Renderers/TableRendererTests.GridTableEmitsTableWithCorrectStructure%23page01.verified.png)
+
+#### [Auto links](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/AutoLinks.md)
+
+Bare URLs and email addresses are automatically converted to hyperlinks with the `Hyperlink` character style:
+
+```markdown
+Visit https://example.com or email user@example.com
+```
+
+#### [List extras](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/ListExtraSpecs.md)
+
+Alpha and roman numeral list markers beyond standard `1.` numbering:
+
+```markdown
+a. lower alpha
+b. items
+
+A. upper alpha
+B. items
+
+i. lower roman
+ii. items
+
+I. upper roman
+II. items
+```
+
+Each format produces the corresponding Word numbering definition. Rendered output (lower alpha):
+
+![Lower alpha list output](/src/Parchment.Tests/Markdown/Renderers/ListBlockRendererTests.LowerAlphaListUsesLowerLetterFormat%23page01.verified.png)
+
+#### [Smarty pants](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/SmartyPantsSpecs.md)
+
+ASCII quotes and dashes are replaced with typographic equivalents:
+
+| Input | Output |
+|---|---|
+| `'text'` | \u2018text\u2019 (curly single quotes) |
+| `"text"` | \u201Ctext\u201D (curly double quotes) |
+| `--` | \u2013 (en-dash) |
+| `---` | \u2014 (em-dash) |
+| `...` | \u2026 (ellipsis) |
+
+#### [Generic attributes](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/GenericAttributesSpecs.md)
+
+Attach a Word style to a heading or paragraph with `{.StyleName}` syntax. The first class attribute is used as the paragraph's `ParagraphStyleId`:
 
 ```markdown
 ## Section heading {.MyCustomHeading}
