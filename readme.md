@@ -86,6 +86,100 @@ A token can resolve to one of three values:
 You can also use the bundled `bullet_list` and `numbered_list` filters to render an `IEnumerable<string>` as a real Word list.
 
 
+#### Markdown property
+
+Declare a model property as `TokenValue` and return `TokenValue.Markdown(...)` to inject rendered markdown at the substitution site:
+
+<!-- snippet: MarkdownPropertyModel -->
+<a id='snippet-MarkdownPropertyModel'></a>
+```cs
+public class NoteModel
+{
+    public required string Title { get; init; }
+    public required TokenValue Body { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L3-L9' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+<!-- snippet: MarkdownPropertyUsage -->
+<a id='snippet-MarkdownPropertyUsage'></a>
+```cs
+var template = DocxTemplateBuilder.Build(
+    """
+    # {{ Title }}
+
+    {{ Body }}
+    """);
+
+var store = new TemplateStore();
+store.RegisterDocxTemplate<NoteModel>("markdown-hatch", template);
+using var stream = new MemoryStream();
+await store.Render("markdown-hatch", new NoteModel
+{
+    Title = "Weekly summary",
+    Body = TokenValue.Markdown(
+        """
+        ## Highlights
+
+        - Shipped the **new feature**
+        - Closed _several_ bugs
+        - Ran a code review
+
+        > Stay the course
+        """)
+}, stream);
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L14-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyUsage' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+#### Markdown filter
+
+Alternatively, use the `| markdown` filter on a plain `string` property:
+
+<!-- snippet: MarkdownFilterModel -->
+<a id='snippet-MarkdownFilterModel'></a>
+```cs
+public class ArticleModel
+{
+    public required string Heading { get; init; }
+    public required string Content { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L44-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+<!-- snippet: MarkdownFilterUsage -->
+<a id='snippet-MarkdownFilterUsage'></a>
+```cs
+var template = DocxTemplateBuilder.Build(
+    """
+    # {{ Heading }}
+
+    {{ Content | markdown }}
+    """);
+
+var store = new TemplateStore();
+store.RegisterDocxTemplate<ArticleModel>("markdown-filter", template);
+using var stream = new MemoryStream();
+await store.Render("markdown-filter", new ArticleModel
+{
+    Heading = "Release notes",
+    Content = """
+        ### Bug fixes
+
+        - Fixed crash on **empty input**
+        - Resolved _timeout_ in batch mode
+        """
+}, stream);
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L55-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterUsage' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Both approaches produce the same structural replacement — the host paragraph is swapped with the rendered markdown elements. The token must sit alone in its paragraph.
+
+
 ### Excelsior tables
 
 Mark any collection property on the model with `[ExcelsiorTable]` and the matching `{{ ... }}` substitution is rendered as a fully-formatted Word table by [Excelsior](https://github.com/SimonCropp/Excelsior) at render time. Headings, column ordering, formatting, null display, and custom render callbacks all come from Excelsior's `[Column]` attribute on the element type — the same configuration surface used for spreadsheets.

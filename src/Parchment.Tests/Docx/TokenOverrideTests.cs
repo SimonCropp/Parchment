@@ -1,14 +1,17 @@
 public class TokenOverrideTests
 {
+    #region MarkdownPropertyModel
     public class NoteModel
     {
         public required string Title { get; init; }
         public required TokenValue Body { get; init; }
     }
+    #endregion
 
     [Test]
-    public async Task MarkdownHatch()
+    public async Task MarkdownProperty()
     {
+        #region MarkdownPropertyUsage
         var template = DocxTemplateBuilder.Build(
             """
             # {{ Title }}
@@ -33,6 +36,44 @@ public class TokenOverrideTests
                 > Stay the course
                 """)
         }, stream);
+        #endregion
+        stream.Position = 0;
+        await Verify(stream, "docx");
+    }
+
+    #region MarkdownFilterModel
+    public class ArticleModel
+    {
+        public required string Heading { get; init; }
+        public required string Content { get; init; }
+    }
+    #endregion
+
+    [Test]
+    public async Task MarkdownFilter()
+    {
+        #region MarkdownFilterUsage
+        var template = DocxTemplateBuilder.Build(
+            """
+            # {{ Heading }}
+
+            {{ Content | markdown }}
+            """);
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<ArticleModel>("markdown-filter", template);
+        using var stream = new MemoryStream();
+        await store.Render("markdown-filter", new ArticleModel
+        {
+            Heading = "Release notes",
+            Content = """
+                ### Bug fixes
+
+                - Fixed crash on **empty input**
+                - Resolved _timeout_ in batch mode
+                """
+        }, stream);
+        #endregion
         stream.Position = 0;
         await Verify(stream, "docx");
     }
