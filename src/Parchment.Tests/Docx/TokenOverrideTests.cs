@@ -11,17 +11,19 @@ public class TokenOverrideTests
     [Test]
     public async Task MarkdownProperty()
     {
-        #region MarkdownPropertyUsage
+        using var stream = new MemoryStream();
         var template = DocxTemplateBuilder.Build(
             """
+            // begin-snippet: MarkdownPropertyContent
             # {{ Title }}
 
             {{ Body }}
+            // end-snippet
             """);
 
+        #region MarkdownPropertyRender
         var store = new TemplateStore();
         store.RegisterDocxTemplate<NoteModel>("markdown-hatch", template);
-        using var stream = new MemoryStream();
         await store.Render("markdown-hatch", new NoteModel
         {
             Title = "Weekly summary",
@@ -37,6 +39,7 @@ public class TokenOverrideTests
                 """)
         }, stream);
         #endregion
+
         stream.Position = 0;
         await Verify(stream, "docx");
     }
@@ -52,17 +55,19 @@ public class TokenOverrideTests
     [Test]
     public async Task MarkdownFilter()
     {
-        #region MarkdownFilterUsage
+        using var stream = new MemoryStream();
         var template = DocxTemplateBuilder.Build(
             """
+            // begin-snippet: MarkdownFilterContent
             # {{ Heading }}
 
             {{ Content | markdown }}
+            // end-snippet
             """);
 
+        #region MarkdownFilterRender
         var store = new TemplateStore();
         store.RegisterDocxTemplate<ArticleModel>("markdown-filter", template);
-        using var stream = new MemoryStream();
         await store.Render("markdown-filter", new ArticleModel
         {
             Heading = "Release notes",
@@ -74,6 +79,7 @@ public class TokenOverrideTests
                 """
         }, stream);
         #endregion
+
         stream.Position = 0;
         await Verify(stream, "docx");
     }
@@ -89,17 +95,19 @@ public class TokenOverrideTests
     [Test]
     public async Task MutateParagraph()
     {
-        #region MutateUsage
+        using var stream = new MemoryStream();
         var template = DocxTemplateBuilder.Build(
             """
+            // begin-snippet: MutateContent
             {{ Label }}
 
             {{ Highlight }}
+            // end-snippet
             """);
 
+        #region MutateRender
         var store = new TemplateStore();
         store.RegisterDocxTemplate<StyledModel>("mutate", template);
-        using var stream = new MemoryStream();
         await store.Render("mutate", new StyledModel
         {
             Label = "Before",
@@ -116,6 +124,7 @@ public class TokenOverrideTests
             })
         }, stream);
         #endregion
+
         stream.Position = 0;
         await Verify(stream, "docx");
     }
