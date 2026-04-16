@@ -5,9 +5,9 @@
 /// </summary>
 static class DocxTemplateBuilder
 {
-    public static byte[] Build(string content = "")
+    public static MemoryStream Build(string content = "")
     {
-        using var stream = new MemoryStream();
+        var stream = new MemoryStream();
         using (var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
         {
             var mainPart = doc.AddMainDocumentPart();
@@ -39,7 +39,8 @@ static class DocxTemplateBuilder
                     }));
         }
 
-        return stream.ToArray();
+        stream.Position = 0;
+        return stream;
     }
 
     static IEnumerable<string> SplitParagraphs(string content)

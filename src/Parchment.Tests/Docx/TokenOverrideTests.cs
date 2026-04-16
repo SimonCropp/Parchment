@@ -12,7 +12,7 @@ public class TokenOverrideTests
     public async Task MarkdownProperty()
     {
         using var stream = new MemoryStream();
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             // begin-snippet: MarkdownPropertyContent
             # {{ Title }}
@@ -56,7 +56,7 @@ public class TokenOverrideTests
     public async Task MarkdownFilter()
     {
         using var stream = new MemoryStream();
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             // begin-snippet: MarkdownFilterContent
             # {{ Heading }}
@@ -96,7 +96,7 @@ public class TokenOverrideTests
     public async Task MutateParagraph()
     {
         using var stream = new MemoryStream();
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             // begin-snippet: MutateContent
             {{ Label }}
@@ -132,7 +132,7 @@ public class TokenOverrideTests
     [Test]
     public async Task BulletListFilter()
     {
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             Tags:
 

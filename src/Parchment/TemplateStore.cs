@@ -5,16 +5,23 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
     ConcurrentDictionary<string, RegisteredTemplate> templates = new(StringComparer.Ordinal);
     ILogger logger = (ILogger?)logger ?? NullLogger.Instance;
 
-    public void RegisterDocxTemplate<TModel>(string name, byte[] templateBytes)
+    public void RegisterDocxTemplate<TModel>(string name, string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        using var file = File.OpenRead(path);
+        RegisterDocxTemplate<TModel>(name, file);
+    }
+
+    public void RegisterDocxTemplate<TModel>(string name, Stream template)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ArgumentNullException.ThrowIfNull(templateBytes);
+        ArgumentNullException.ThrowIfNull(template);
 
         SharedFluid.RegisterModel(typeof(TModel));
 
         var excelsiorMap = ExcelsiorTableMap.Build(typeof(TModel), name);
 
-        using var stream = DocxCloner.ToWritableStream(templateBytes);
+        using var stream = DocxCloner.ToWritableStream(template);
         using (var doc = WordprocessingDocument.Open(stream, true))
         {
             var parts = new List<PartScopeTree>();
@@ -42,7 +49,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         logger.LogInformation("Registered docx template {Name} for {ModelType}", name, typeof(TModel).Name);
     }
 
-    public void RegisterMarkdownTemplate<TModel>(string name, string markdown, byte[]? styleSource = null)
+    public void RegisterMarkdownTemplate<TModel>(string name, string markdown, Stream? styleSource = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(markdown);
@@ -74,7 +81,18 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
             ModelValidator.Validate(typeof(TModel), reference, null, name, null, null);
         }
 
-        var bytes = styleSource ?? BlankDocxTemplate;
+        byte[] bytes;
+        if (styleSource != null)
+        {
+            using var ms = new MemoryStream();
+            styleSource.CopyTo(ms);
+            bytes = ms.ToArray();
+        }
+        else
+        {
+            bytes = BlankDocxTemplate;
+        }
+
         var registered = new RegisteredMarkdownTemplate(name, typeof(TModel), bytes, template);
         templates[name] = registered;
         logger.LogInformation("Registered markdown template {Name} for {ModelType}", name, typeof(TModel).Name);

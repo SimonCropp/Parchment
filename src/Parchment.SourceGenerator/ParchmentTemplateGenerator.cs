@@ -360,8 +360,7 @@ public sealed class ParchmentTemplateGenerator :
                   public static void RegisterWith(global::Parchment.TemplateStore store, string? basePath = null)
                   {
                       var path = basePath is null ? TemplatePath : global::System.IO.Path.Combine(basePath, TemplatePath);
-                      var bytes = global::System.IO.File.ReadAllBytes(path);
-                      store.RegisterDocxTemplate<{{target.ModelFullyQualifiedName}}>(TemplateName, bytes);
+                      store.RegisterDocxTemplate<{{target.ModelFullyQualifiedName}}>(TemplateName, path);
                   }
               }
               """);

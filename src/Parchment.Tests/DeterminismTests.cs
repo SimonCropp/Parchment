@@ -3,7 +3,7 @@ public class DeterminismTests
     [Test]
     public async Task DocxRenderIsByteIdentical()
     {
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             Invoice {{ Number }}
 

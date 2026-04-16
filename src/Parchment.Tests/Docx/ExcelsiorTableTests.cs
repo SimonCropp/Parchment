@@ -62,7 +62,7 @@ public class ExcelsiorTableTests
         // The [ExcelsiorTable] is on Buyer.Addresses, not on the root Order. The substitution
         // {{ Buyer.Addresses }} must walk the nested path at registration time and the runner
         // must dispatch on the dotted-path lookup.
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             Order {{ Number }}
 
@@ -101,7 +101,7 @@ public class ExcelsiorTableTests
     {
         // "Prefix {{ Lines }}" — the token doesn't cover the whole paragraph. Structural
         // replacement would drop "Prefix ", so registration must fail up-front.
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             Quote {{ Reference }}
 
@@ -122,7 +122,7 @@ public class ExcelsiorTableTests
     {
         // {{ Lines | reverse }} — the Excelsior renderer walks the model object directly
         // and bypasses Fluid, so a filter would be silently dropped. Registration must fail.
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             Quote {{ Reference }}
 
@@ -142,11 +142,10 @@ public class ExcelsiorTableTests
     public async Task Render()
     {
         #region ExcelsiorTableUsage
-        var templateBytes = await File.ReadAllBytesAsync(
-            Path.Combine(ScenarioPath("excelsior-table"), "input.docx"));
+        var templatePath = Path.Combine(ScenarioPath("excelsior-table"), "input.docx");
 
         var store = new TemplateStore();
-        store.RegisterDocxTemplate<Quote>("excelsior-quote", templateBytes);
+        store.RegisterDocxTemplate<Quote>("excelsior-quote", templatePath);
 
         var model = new Quote
         {

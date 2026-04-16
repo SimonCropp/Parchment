@@ -3,7 +3,7 @@ public class UsageTests
     [Test]
     public async Task Substitution()
     {
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             // begin-snippet: SubstitutionInput
             Invoice {{ Number }}
@@ -62,14 +62,14 @@ public class UsageTests
 
         #region Markdown
 
-        var brandDocxBytes = DocxTemplateBuilder.Build();
+        using var brandDocx = DocxTemplateBuilder.Build();
         var reportModel = SampleData.Report();
 
         var store = new TemplateStore();
         store.RegisterMarkdownTemplate<ReportContext>(
             "report",
             markdownSource,
-            styleSource: brandDocxBytes);
+            styleSource: brandDocx);
 
         using var stream = new MemoryStream();
         await store.Render("report", reportModel, stream);

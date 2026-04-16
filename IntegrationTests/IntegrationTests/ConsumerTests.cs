@@ -14,7 +14,7 @@ public class ConsumerTests
     [Test]
     public async Task RegisterAndRender()
     {
-        var template = BuildTemplate();
+        using var template = BuildTemplate();
         var store = new TemplateStore();
         store.RegisterDocxTemplate<InvoiceModel>("invoice", template);
 
@@ -31,7 +31,7 @@ public class ConsumerTests
     [Test]
     public async Task LoopsAndConditionals()
     {
-        var template = BuildLoopTemplate();
+        using var template = BuildLoopTemplate();
         var store = new TemplateStore();
         store.RegisterDocxTemplate<LoopModel>("loop", template);
 
@@ -49,9 +49,9 @@ public class ConsumerTests
         public required IReadOnlyList<string> Items { get; init; }
     }
 
-    static byte[] BuildLoopTemplate()
+    static MemoryStream BuildLoopTemplate()
     {
-        using var stream = new MemoryStream();
+        var stream = new MemoryStream();
         using (var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
         {
             var mainPart = doc.AddMainDocumentPart();
@@ -66,12 +66,13 @@ public class ConsumerTests
             stylesPart.Styles = styles;
         }
 
-        return stream.ToArray();
+        stream.Position = 0;
+        return stream;
     }
 
-    static byte[] BuildTemplate()
+    static MemoryStream BuildTemplate()
     {
-        using var stream = new MemoryStream();
+        var stream = new MemoryStream();
         using (var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
         {
             var mainPart = doc.AddMainDocumentPart();
@@ -85,6 +86,7 @@ public class ConsumerTests
             stylesPart.Styles = styles;
         }
 
-        return stream.ToArray();
+        stream.Position = 0;
+        return stream;
     }
 }

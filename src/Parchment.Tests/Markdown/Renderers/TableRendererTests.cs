@@ -89,7 +89,7 @@ public class TableRendererTests
 
     static async Task VerifyDocument(string markdown)
     {
-        var styleSource = DocxTemplateBuilder.Build();
+        using var styleSource = DocxTemplateBuilder.Build();
         var store = new TemplateStore();
         store.RegisterMarkdownTemplate<EmptyModel>("table", markdown, styleSource);
         using var stream = new MemoryStream();

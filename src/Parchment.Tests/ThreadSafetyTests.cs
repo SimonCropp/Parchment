@@ -3,7 +3,7 @@ public class ThreadSafetyTests
     [Test]
     public async Task ParallelRendersProduceIdenticalOutput()
     {
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             Invoice {{ Number }}
 

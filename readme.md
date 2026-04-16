@@ -353,11 +353,10 @@ Register and render normally:
 <!-- snippet: ExcelsiorTableUsage -->
 <a id='snippet-ExcelsiorTableUsage'></a>
 ```cs
-var templateBytes = await File.ReadAllBytesAsync(
-    Path.Combine(ScenarioPath("excelsior-table"), "input.docx"));
+var templatePath = Path.Combine(ScenarioPath("excelsior-table"), "input.docx");
 
 var store = new TemplateStore();
-store.RegisterDocxTemplate<Quote>("excelsior-quote", templateBytes);
+store.RegisterDocxTemplate<Quote>("excelsior-quote", templatePath);
 
 var model = new Quote
 {
@@ -373,7 +372,7 @@ var model = new Quote
 using var stream = new MemoryStream();
 await store.Render("excelsior-quote", model, stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L144-L164' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableUsage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L144-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The rendered output:
@@ -471,14 +470,14 @@ Render it like any other template:
 <!-- snippet: Markdown -->
 <a id='snippet-Markdown'></a>
 ```cs
-var brandDocxBytes = DocxTemplateBuilder.Build();
+using var brandDocx = DocxTemplateBuilder.Build();
 var reportModel = SampleData.Report();
 
 var store = new TemplateStore();
 store.RegisterMarkdownTemplate<ReportContext>(
     "report",
     markdownSource,
-    styleSource: brandDocxBytes);
+    styleSource: brandDocx);
 
 using var stream = new MemoryStream();
 await store.Render("report", reportModel, stream);

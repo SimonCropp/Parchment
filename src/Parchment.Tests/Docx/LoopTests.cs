@@ -3,7 +3,7 @@ public class LoopTests
     [Test]
     public async Task ParagraphScopeLoop()
     {
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             Items:
 
@@ -29,7 +29,7 @@ public class LoopTests
     public async Task NestedLoopsAreNotSupportedInV1()
     {
         // Sanity: a single-level loop binds `line` in scope and resolves line.Description correctly.
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             {% for line in Lines %}
 

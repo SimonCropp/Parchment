@@ -3,7 +3,7 @@ public class ConditionalTests
     [Test]
     public async Task IfTrue()
     {
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             Start
 
@@ -37,7 +37,7 @@ public class ConditionalTests
     [Test]
     public async Task ElseBranchRenders()
     {
-        var template = DocxTemplateBuilder.Build(
+        using var template = DocxTemplateBuilder.Build(
             """
             Start
 

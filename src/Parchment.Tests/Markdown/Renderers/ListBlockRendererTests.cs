@@ -98,7 +98,7 @@ public class ListBlockRendererTests
 
     static async Task VerifyDocument(string markdown)
     {
-        var styleSource = DocxTemplateBuilder.Build();
+        using var styleSource = DocxTemplateBuilder.Build();
         var store = new TemplateStore();
         store.RegisterMarkdownTemplate<EmptyModel>("list", markdown, styleSource);
         using var stream = new MemoryStream();

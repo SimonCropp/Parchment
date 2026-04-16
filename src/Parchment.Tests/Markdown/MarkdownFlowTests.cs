@@ -24,7 +24,7 @@ public class MarkdownFlowTests
                        > Review complete.
                        """;
 
-        var styleSource = DocxTemplateBuilder.Build();
+        using var styleSource = DocxTemplateBuilder.Build();
 
         var store = new TemplateStore();
         store.RegisterMarkdownTemplate<ReportModel>("report", markdown, styleSource);
@@ -73,7 +73,7 @@ public class MarkdownFlowTests
                        <!-- end-snippet -->
                        """;
 
-        var styleSource = DocxTemplateBuilder.Build();
+        using var styleSource = DocxTemplateBuilder.Build();
 
         #region MarkdownTemplatePropertyUsage
 
@@ -126,9 +126,10 @@ public class MarkdownFlowTests
                               Body text follows the heading.
                               """;
 
-        var styleSource = DocxTemplateBuilder.Build();
+        using var styleSource = DocxTemplateBuilder.Build();
         var store = new TemplateStore();
         store.RegisterMarkdownTemplate<TitleModel>("with-comments", withComments, styleSource);
+        styleSource.Position = 0;
         store.RegisterMarkdownTemplate<TitleModel>("without-comments", withoutComments, styleSource);
 
         var model = new TitleModel { Title = "Sample" };
