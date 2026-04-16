@@ -179,6 +179,64 @@ await store.Render("markdown-filter", new ArticleModel
 
 Both approaches produce the same structural replacement — the host paragraph is swapped with the rendered markdown elements. The token must sit alone in its paragraph.
 
+**Markdown templates**: Neither `TokenValue.Markdown` nor `| markdown` is needed when using `RegisterMarkdownTemplate`. The entire template is already markdown — a plain `string` property containing markdown syntax is interpolated into the source before Markdig parses it, so formatting just works:
+
+Model:
+
+<!-- snippet: MarkdownTemplatePropertyModel -->
+<a id='snippet-MarkdownTemplatePropertyModel'></a>
+```cs
+public class BriefModel
+{
+    public required string Title { get; init; }
+    public required string Details { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Markdown/MarkdownFlowTests.cs#L56-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplatePropertyModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Model:
+
+<!-- snippet: MarkdownTemplatePropertyContent -->
+<a id='snippet-MarkdownTemplatePropertyContent'></a>
+```handlebars
+# {{ Title }}
+
+{{ Details }}
+```
+<sup><a href='/src/Parchment.Tests/Markdown/MarkdownFlowTests.cs#L69-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplatePropertyContent' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Render:
+
+<!-- snippet: MarkdownTemplatePropertyUsage -->
+<a id='snippet-MarkdownTemplatePropertyUsage'></a>
+```cs
+var store = new TemplateStore();
+store.RegisterMarkdownTemplate<BriefModel>(
+    "brief",
+    markdown,
+    styleSource);
+
+await store.Render(
+    "brief",
+    new BriefModel
+    {
+        Title = "Sprint recap",
+        Details = """
+                  ## Done
+
+                  - Landed the **search** feature
+                  - Fixed _three_ regressions
+
+                  > Ship it.
+                  """
+    },
+    targetStream);
+```
+<sup><a href='/src/Parchment.Tests/Markdown/MarkdownFlowTests.cs#L78-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplatePropertyUsage' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 
 ### Excelsior tables
 

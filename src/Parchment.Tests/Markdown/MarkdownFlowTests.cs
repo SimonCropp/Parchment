@@ -53,6 +53,58 @@ public class MarkdownFlowTests
         public required string Title { get; init; }
     }
 
+    #region MarkdownTemplatePropertyModel
+    public class BriefModel
+    {
+        public required string Title { get; init; }
+        public required string Details { get; init; }
+    }
+    #endregion
+
+    [Test]
+    public async Task PropertyContainingMarkdown()
+    {
+        using var targetStream = new MemoryStream();
+        var markdown = """
+                       <!-- begin-snippet: MarkdownTemplatePropertyContent(lang=handlebars) -->
+                       # {{ Title }}
+
+                       {{ Details }}
+                       <!-- end-snippet -->
+                       """;
+
+        var styleSource = DocxTemplateBuilder.Build();
+
+        #region MarkdownTemplatePropertyUsage
+
+        var store = new TemplateStore();
+        store.RegisterMarkdownTemplate<BriefModel>(
+            "brief",
+            markdown,
+            styleSource);
+
+        await store.Render(
+            "brief",
+            new BriefModel
+            {
+                Title = "Sprint recap",
+                Details = """
+                          ## Done
+
+                          - Landed the **search** feature
+                          - Fixed _three_ regressions
+
+                          > Ship it.
+                          """
+            },
+            targetStream);
+
+        #endregion
+
+        targetStream.Position = 0;
+        await Verify(targetStream, "docx");
+    }
+
     [Test]
     public async Task HtmlCommentsAreStripped()
     {
