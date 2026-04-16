@@ -266,6 +266,7 @@ The rendered docx (page 1):
 
 The optional `styleSource` is a docx whose styles, headers, footers, theme, and section properties (page size, margins, header/footer references) are inherited by the output. If omitted, a built-in blank template is used.
 
+
 ### Supported Markdig extensions:
 
 - [Emphasis extras](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/EmphasisExtraSpecs.md): `~~strike~~`, `~sub~`, `^sup^`, `++ins++`, `==mark==`
@@ -283,17 +284,16 @@ Example with style attribute:
 Some intro paragraph. {.IntroBlock}
 ```
 
+
 ### HTML comments are stripped
 
 HTML comment blocks (`<!-- ... -->`) are dropped during rendering rather than passed through as empty paragraphs. This lets you embed snippet markers, authoring notes, or TODOs in template sources without bleeding visible whitespace into the output docx:
 
 ```markdown
-<!-- begin-snippet: report -->
 # {{ Title }}
 
 <!-- TODO: add executive summary -->
 Body text follows the heading.
-<!-- end-snippet -->
 ```
 
 Only standalone comment *blocks* are removed; inline HTML, scripts, styles, and any other HTML constructs render normally via [OpenXmlHtml](https://github.com/SimonCropp/OpenXmlHtml).
@@ -312,14 +312,109 @@ public partial class InvoiceReport
 
 The generator emits the following diagnostics:
 
-- `PARCH001` — token references a member that doesn't exist on the model
-- `PARCH002` — loop source doesn't resolve to an `IEnumerable<T>`
-- `PARCH003` — unsupported block tag (only `for`/`endfor`/`if`/`elsif`/`else`/`endif` are supported)
-- `PARCH004` — template path isn't listed in `<AdditionalFiles>`
-- `PARCH005` — block tag shares a paragraph with other content (block tags must sit on their own line)
-- `PARCH006` — template file couldn't be read
-- `PARCH007` — `[ExcelsiorTable]` token shares a paragraph with other content (structural table replacement swaps the whole paragraph)
-- `PARCH008` — `[ExcelsiorTable]` token has filters or a complex expression (Excelsior dispatch bypasses Fluid)
+
+### `PARCH001` — unknown model member
+
+A `{{ }}` token references a property that doesn't exist on the model type.
+
+```
+// Model
+public class Letter
+{
+    public Customer Customer { get; set; }
+}
+
+public class Customer
+{
+    public string Name { get; set; }
+}
+
+// Template paragraph — "Missing" does not exist on Customer
+{{ Customer.Missing }}
+```
+
+
+### `PARCH002` — loop source is not enumerable
+
+A `{% for %}` tag targets a property that doesn't implement `IEnumerable<T>`. Note that `string` is explicitly rejected even though it implements `IEnumerable<char>`.
+
+```
+// Model — Customer is not a collection
+public class Letter
+{
+    public Customer Customer { get; set; }
+}
+
+// Template paragraphs
+{% for item in Customer %}
+...
+{% endfor %}
+```
+
+
+### `PARCH003` — unsupported block tag
+
+Only `for`/`endfor`/`if`/`elsif`/`else`/`endif` are supported as block tags.
+
+```
+// Template paragraph — "foobar" is not a recognised tag
+{% foobar %}
+```
+
+
+### `PARCH004` — template file not in `<AdditionalFiles>`
+
+The path in `[ParchmentTemplate("...", typeof(T))]` wasn't found among the project's `<AdditionalFiles>`. Add the docx to the csproj:
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Templates\invoice.docx" />
+</ItemGroup>
+```
+
+
+### `PARCH005` — block tag shares a paragraph
+
+Block tags (`{% for %}`, `{% if %}`, etc.) must sit alone in their own paragraph. Mixing a block tag with other text on the same line is rejected.
+
+```
+// Template paragraphs — "prefix" is on the same line as the for tag
+prefix {% for line in Lines %}
+{{ line.Description }}
+{% endfor %}
+```
+
+
+### `PARCH006` — template file unreadable
+
+The docx at the template path exists in `<AdditionalFiles>` but couldn't be opened — typically a corrupt or truncated file.
+
+
+### `PARCH007` — `[ExcelsiorTable]` token not alone in paragraph
+
+An `[ExcelsiorTable]` substitution replaces the entire host paragraph with a Word table. If the paragraph contains other text, that text would be discarded. The token must be the only content in its paragraph.
+
+```
+// Model
+public class Invoice
+{
+    [ExcelsiorTable]
+    public List<Line> Lines { get; set; }
+}
+
+// Template paragraph — "Prefix" shares the paragraph with {{ Lines }}
+Prefix {{ Lines }}
+```
+
+
+### `PARCH008` — `[ExcelsiorTable]` token with filters or complex expression
+
+The Excelsior render path walks the CLR model directly and bypasses Fluid evaluation, so filters and complex expressions would be silently ignored. Only plain member-access (`{{ Lines }}` or `{{ Customer.Lines }}`) is allowed.
+
+```
+// Template paragraph — the | reverse filter would be silently dropped
+{{ Lines | reverse }}
+```
 
 It also generates a `RegisterWith(store)` helper so registration is one line at runtime.
 
