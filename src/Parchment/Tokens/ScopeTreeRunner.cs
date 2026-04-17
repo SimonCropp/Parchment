@@ -212,6 +212,14 @@ class ScopeTreeRunner(
         var bodyElements = CaptureBetween(open, close);
         OpenXmlElement insertAnchor = open;
 
+        // Detach the body elements and cache them. Cloning from detached copies avoids
+        // walking the live document DOM and keeps namespace declarations clean on insertion.
+        var bodyTemplates = new OpenXmlElement[bodyElements.Count];
+        for (var i = 0; i < bodyElements.Count; i++)
+        {
+            bodyTemplates[i] = bodyElements[i].CloneNode(true);
+        }
+
         var nameMap = new Dictionary<string, string>(StringComparer.Ordinal);
         var cloneAnchors = new Dictionary<string, Paragraph>(StringComparer.Ordinal);
         var clones = new List<OpenXmlElement>(bodyElements.Count);
@@ -221,9 +229,9 @@ class ScopeTreeRunner(
         {
             context.SetValue(loop.LoopVariable, item);
             clones.Clear();
-            foreach (var element in bodyElements)
+            foreach (var template in bodyTemplates)
             {
-                clones.Add(element.CloneNode(true));
+                clones.Add(template.CloneNode(true));
             }
 
             nameMap.Clear();
@@ -504,4 +512,5 @@ class ScopeTreeRunner(
     }
 
     sealed record StructuralReplacement(Paragraph Host, IReadOnlyList<OpenXmlElement> Produced);
+
 }

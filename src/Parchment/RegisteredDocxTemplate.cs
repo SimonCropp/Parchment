@@ -8,15 +8,14 @@ class RegisteredDocxTemplate(
 {
     public override async Task Render(object model, Stream output, Cancel cancel)
     {
+        cancel.ThrowIfCancellationRequested();
+
+        var context = new TemplateContext(model, SharedFluid.Options, allowModelMembers: true);
         using var stream = DocxCloner.ToWritableStream(canonicalBytes);
         using (var doc = WordprocessingDocument.Open(stream, true))
         {
             var mainPart = doc.MainDocumentPart
-                ?? throw new ParchmentRenderException(Name, "Document has no main part");
-
-            cancel.ThrowIfCancellationRequested();
-
-            var context = new TemplateContext(model, SharedFluid.Options, allowModelMembers: true);
+                           ?? throw new ParchmentRenderException(Name, "Document has no main part");
 
             foreach (var part in parts)
             {

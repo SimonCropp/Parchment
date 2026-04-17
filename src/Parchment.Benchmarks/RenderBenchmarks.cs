@@ -18,13 +18,13 @@ public class RenderBenchmarks
         docxModel = BuildInvoice(ItemCount);
         markdownModel = BuildReport(ItemCount);
 
-        docxStore = new TemplateStore();
+        docxStore = new();
         using var docxTemplate = new MemoryStream(BuildDocxTemplate());
         docxStore.RegisterDocxTemplate<Invoice>("docx", docxTemplate);
 
-        markdownStore = new TemplateStore();
+        markdownStore = new();
         using var styleSource = new MemoryStream(BuildStyleSource());
-        markdownStore.RegisterMarkdownTemplate<ReportContext>("md", MarkdownSource, styleSource);
+        markdownStore.RegisterMarkdownTemplate<ReportContext>("md", markdownSource, styleSource);
     }
 
     [Benchmark]
@@ -95,7 +95,7 @@ public class RenderBenchmarks
             }
         };
 
-    const string MarkdownSource = """
+    const string markdownSource = """
         # {{ Report.Title }}
 
         *Prepared by **{{ Report.Author }}** on {{ Report.Date }}*
@@ -141,7 +141,7 @@ public class RenderBenchmarks
                 Para("{{ line.Description }}: {{ line.Quantity }} x {{ line.UnitPrice }}"),
                 Para("{% endfor %}"),
                 Para("Total: {{ Total }} {{ Currency }}"));
-            mainPart.Document = new Document(body);
+            mainPart.Document = new(body);
 
             var stylesPart = mainPart.AddNewPart<StyleDefinitionsPart>();
             var styles = new Styles();
@@ -162,7 +162,7 @@ public class RenderBenchmarks
         using (var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
         {
             var mainPart = doc.AddMainDocumentPart();
-            mainPart.Document = new Document(new Body(new Paragraph()));
+            mainPart.Document = new(new Body(new Paragraph()));
 
             var stylesPart = mainPart.AddNewPart<StyleDefinitionsPart>();
             var styles = new Styles();

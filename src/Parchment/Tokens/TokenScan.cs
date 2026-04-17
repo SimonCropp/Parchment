@@ -1,10 +1,10 @@
-internal enum TokenSiteKind
+enum TokenSiteKind
 {
     Substitution,
     Block
 }
 
-internal readonly struct TokenSite(int offset, int length, TokenSiteKind kind)
+readonly struct TokenSite(int offset, int length, TokenSiteKind kind)
 {
     public int Offset { get; } = offset;
     public int Length { get; } = length;

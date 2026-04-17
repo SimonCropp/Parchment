@@ -111,7 +111,7 @@ public class TokenOverrideTests
         await store.Render("mutate", new StyledModel
         {
             Label = "Before",
-            Highlight = TokenValue.Mutate((paragraph, context) =>
+            Highlight = TokenValue.Mutate((paragraph, _) =>
             {
                 paragraph.Append(
                     new Run(

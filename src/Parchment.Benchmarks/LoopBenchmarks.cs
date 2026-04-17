@@ -13,7 +13,7 @@ public class LoopBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        model = new Invoice
+        model = new()
         {
             Number = "INV-001",
             IssueDate = new(2026, 1, 1),
@@ -35,7 +35,7 @@ public class LoopBenchmarks
                 .ToList()
         };
 
-        store = new TemplateStore();
+        store = new();
         using var template = BuildTemplate();
         store.RegisterDocxTemplate<Invoice>("loop", template);
     }
@@ -53,7 +53,7 @@ public class LoopBenchmarks
         using (var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
         {
             var mainPart = doc.AddMainDocumentPart();
-            mainPart.Document = new Document(new Body(
+            mainPart.Document = new(new Body(
                 Para("{% for line in Lines %}"),
                 Para("{{ line.Description }}: {{ line.Quantity }} x {{ line.UnitPrice }}"),
                 Para("{% endfor %}")));

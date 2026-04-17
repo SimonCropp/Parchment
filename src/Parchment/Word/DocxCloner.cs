@@ -60,15 +60,4 @@ static class DocxCloner
             yield return (main.EndnotesPart.Uri.ToString(), endnotes);
         }
     }
-
-    public static IEnumerable<(string uri, Paragraph paragraph)> EnumerateParagraphs(WordprocessingDocument doc)
-    {
-        foreach (var (uri, root) in EnumerateParts(doc))
-        {
-            foreach (var paragraph in root.Descendants<Paragraph>())
-            {
-                yield return (uri, paragraph);
-            }
-        }
-    }
 }

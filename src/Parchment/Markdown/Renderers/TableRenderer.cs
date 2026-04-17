@@ -26,7 +26,12 @@ class TableRenderer :
                 new LeftBorder { Val = BorderValues.Single, Size = 4 },
                 new RightBorder { Val = BorderValues.Single, Size = 4 },
                 new InsideHorizontalBorder { Val = BorderValues.Single, Size = 4 },
-                new InsideVerticalBorder { Val = BorderValues.Single, Size = 4 }));
+                new InsideVerticalBorder { Val = BorderValues.Single, Size = 4 }),
+            new TableCellMarginDefault(
+                new TopMargin { Width = "0", Type = TableWidthUnitValues.Dxa },
+                new StartMargin { Width = "108", Type = TableWidthUnitValues.Dxa },
+                new BottomMargin { Width = "0", Type = TableWidthUnitValues.Dxa },
+                new EndMargin { Width = "108", Type = TableWidthUnitValues.Dxa }));
 
     static TableGrid BuildTableGrid(Markdig.Extensions.Tables.Table table)
     {

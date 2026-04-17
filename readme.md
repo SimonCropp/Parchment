@@ -295,7 +295,7 @@ store.RegisterDocxTemplate<StyledModel>("mutate", template);
 await store.Render("mutate", new StyledModel
 {
     Label = "Before",
-    Highlight = TokenValue.Mutate((paragraph, context) =>
+    Highlight = TokenValue.Mutate((paragraph, _) =>
     {
         paragraph.Append(
             new Run(
@@ -747,9 +747,9 @@ AMD Ryzen 9 5900X, 1 CPU, 24 logical and 12 physical cores
 
 | Method | Mean | Allocated |
 |---|---|---|
-| RegisterFromMemoryStream | 0.23 ms | 181 KB |
+| RegisterFromMemoryStream | 0.22 ms | 181 KB |
 | RegisterFromBufferedStream | 0.22 ms | 180 KB |
-| RegisterFromFilePath | 1.32 ms | 180 KB |
+| RegisterFromFilePath | 1.27 ms | 180 KB |
 
 ### Rendering
 
@@ -757,12 +757,12 @@ ItemCount varies the number of loop iterations (line items for docx, findings/ac
 
 | Method | ItemCount | Mean | Allocated |
 |---|---|---|---|
-| DocxTemplate | 3 | 0.24 ms | 196 KB |
-| MarkdownTemplate | 3 | 0.52 ms | 372 KB |
-| DocxTemplate | 50 | 0.56 ms | 516 KB |
-| MarkdownTemplate | 50 | 1.11 ms | 780 KB |
-| DocxTemplate | 500 | 10.72 ms | 3,635 KB |
-| MarkdownTemplate | 500 | 6.87 ms | 4,633 KB |
+| DocxTemplate | 3 | 0.22 ms | 194 KB |
+| MarkdownTemplate | 3 | 0.50 ms | 371 KB |
+| DocxTemplate | 50 | 0.54 ms | 467 KB |
+| MarkdownTemplate | 50 | 1.09 ms | 780 KB |
+| DocxTemplate | 500 | 10.36 ms | 3,132 KB |
+| MarkdownTemplate | 500 | 6.65 ms | 4,633 KB |
 
 Run benchmarks with:
 
