@@ -9,11 +9,11 @@
 /// </summary>
 static class ShapeBuilder
 {
-    const string ExcelsiorTableAttributeFullName = "Parchment.ExcelsiorTableAttribute";
+    public const string ExcelsiorTableAttributeFullName = "Parchment.ExcelsiorTableAttribute";
 
     static readonly SymbolDisplayFormat format = SymbolDisplayFormat.FullyQualifiedFormat;
 
-    public static ModelShape Build(INamedTypeSymbol root, Cancel cancel)
+    public static ModelShape Build(INamedTypeSymbol root, INamedTypeSymbol? excelsiorTableType, Cancel cancel)
     {
         var entries = ImmutableArray.CreateBuilder<TypeEntry>();
         var visited = new HashSet<string>(StringComparer.Ordinal);
@@ -24,13 +24,13 @@ static class ShapeBuilder
         {
             cancel.ThrowIfCancellationRequested();
             var type = queue.Dequeue();
-            entries.Add(BuildEntry(type, visited, queue));
+            entries.Add(BuildEntry(type, excelsiorTableType, visited, queue));
         }
 
         return new(Fqn(root), new(entries.ToImmutable()));
     }
 
-    static TypeEntry BuildEntry(ITypeSymbol type, HashSet<string> visited, Queue<ITypeSymbol> queue)
+    static TypeEntry BuildEntry(ITypeSymbol type, INamedTypeSymbol? excelsiorTableType, HashSet<string> visited, Queue<ITypeSymbol> queue)
     {
         string? elementFqn = null;
         if (type.SpecialType != SpecialType.System_String)
@@ -62,7 +62,7 @@ static class ShapeBuilder
                         continue;
                     }
 
-                    var isExcelsior = HasExcelsiorTableAttribute(member);
+                    var isExcelsior = HasExcelsiorTableAttribute(member, excelsiorTableType);
                     members.Add(new(memberName, Fqn(memberType), isExcelsior));
                     Enqueue(memberType, visited, queue);
                 }
@@ -74,12 +74,16 @@ static class ShapeBuilder
         return new(Fqn(type), elementFqn, new(members.ToImmutable()));
     }
 
-    static bool HasExcelsiorTableAttribute(ISymbol member)
+    static bool HasExcelsiorTableAttribute(ISymbol member, INamedTypeSymbol? excelsiorTableType)
     {
+        if (excelsiorTableType is null)
+        {
+            return false;
+        }
+
         foreach (var attribute in member.GetAttributes())
         {
-            var attrClass = attribute.AttributeClass;
-            if (attrClass != null && Fqn(attrClass) == "global::" + ExcelsiorTableAttributeFullName)
+            if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, excelsiorTableType))
             {
                 return true;
             }
