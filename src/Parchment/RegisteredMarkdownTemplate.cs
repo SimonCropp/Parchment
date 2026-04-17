@@ -14,13 +14,10 @@ class RegisteredMarkdownTemplate(
         cancel.ThrowIfCancellationRequested();
 
         using var stream = DocxCloner.ToWritableStream(styleSourceBytes);
-        using (var doc = WordprocessingDocument.Open(stream, true))
+        using (var doc = WordprocessingDocument.Open(stream, true, SharedOpenSettings.Instance))
         {
-            var mainPart = doc.MainDocumentPart
-                ?? throw new ParchmentRenderException(Name, "Document has no main part");
-            var document = mainPart.Document
-                ?? throw new ParchmentRenderException(Name, "Document has no document part");
-            var body = document.Body
+            var mainPart = doc.MainDocumentPart!;
+            var body = mainPart.Document!.Body
                 ?? throw new ParchmentRenderException(Name, "Document has no body");
 
             var sectPr = body.Elements<SectionProperties>().LastOrDefault()

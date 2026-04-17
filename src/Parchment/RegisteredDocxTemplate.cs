@@ -12,10 +12,9 @@ class RegisteredDocxTemplate(
 
         var context = new TemplateContext(model, SharedFluid.Options, allowModelMembers: true);
         using var stream = DocxCloner.ToWritableStream(canonicalBytes);
-        using (var doc = WordprocessingDocument.Open(stream, true))
+        using (var doc = WordprocessingDocument.Open(stream, true, SharedOpenSettings.Instance))
         {
-            var mainPart = doc.MainDocumentPart
-                           ?? throw new ParchmentRenderException(Name, "Document has no main part");
+            var mainPart = doc.MainDocumentPart!;
 
             foreach (var part in parts)
             {
