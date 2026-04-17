@@ -14,7 +14,7 @@ class RegisteredMarkdownTemplate(
         cancel.ThrowIfCancellationRequested();
 
         using var stream = DocxCloner.ToWritableStream(styleSourceBytes);
-        using (var doc = WordprocessingDocument.Open(stream, true, SharedOpenSettings.Instance))
+        using (var doc = WordprocessingDocument.Open(stream, true))
         {
             var mainPart = doc.MainDocumentPart!;
             var body = mainPart.Document!.Body

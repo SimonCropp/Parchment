@@ -22,7 +22,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
 
         using var stream = DocxCloner.ToWritableStream(template);
         IReadOnlyList<PartScopeTree> parts;
-        using (var doc = WordprocessingDocument.Open(stream, true, SharedOpenSettings.Instance))
+        using (var doc = WordprocessingDocument.Open(stream, true))
         {
             foreach (var (uri, root) in DocxCloner.EnumerateParts(doc))
             {
