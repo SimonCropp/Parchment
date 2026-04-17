@@ -212,20 +212,32 @@ class ScopeTreeRunner(
         var bodyElements = CaptureBetween(open, close);
         OpenXmlElement insertAnchor = open;
 
+        var nameMap = new Dictionary<string, string>(StringComparer.Ordinal);
+        var cloneAnchors = new Dictionary<string, Paragraph>(StringComparer.Ordinal);
+        var clones = new List<OpenXmlElement>(bodyElements.Count);
+        var clonedBody = new RangeNode[loop.Body.Count];
+
         foreach (var item in items)
         {
             context.SetValue(loop.LoopVariable, item);
-            var clones = bodyElements.Select(x => x.CloneNode(true)).ToList();
-            var nameMap = RefreshAnchorNames(clones);
+            clones.Clear();
+            foreach (var element in bodyElements)
+            {
+                clones.Add(element.CloneNode(true));
+            }
+
+            nameMap.Clear();
+            cloneAnchors.Clear();
+            RefreshAnchorsAndBuildMap(clones, nameMap, cloneAnchors);
             var clonedRunner = new ScopeTreeRunner(
                 templateName,
                 partUri,
-                BuildCloneAnchorMap(clones),
+                cloneAnchors,
                 context,
                 mainPart,
                 rootModel,
                 excelsiorTables);
-            var clonedBody = RemapBody(loop.Body, nameMap);
+            RemapBodyInto(loop.Body, nameMap, clonedBody);
             await clonedRunner.RunAsync(clonedBody);
             clonedRunner.ApplyStructural();
 
@@ -257,9 +269,11 @@ class ScopeTreeRunner(
         return result;
     }
 
-    static Dictionary<string, string> RefreshAnchorNames(IReadOnlyList<OpenXmlElement> clones)
+    static void RefreshAnchorsAndBuildMap(
+        IReadOnlyList<OpenXmlElement> clones,
+        Dictionary<string, string> nameMap,
+        Dictionary<string, Paragraph> anchorMap)
     {
-        var map = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var clone in clones)
         {
             foreach (var start in clone.Descendants<BookmarkStart>())
@@ -270,41 +284,32 @@ class ScopeTreeRunner(
                     continue;
                 }
 
-                if (!map.TryGetValue(name, out var replacement))
+                if (!nameMap.TryGetValue(name, out var replacement))
                 {
                     replacement = Anchors.Prefix + Guid.NewGuid().ToString("N");
-                    map[name] = replacement;
+                    nameMap[name] = replacement;
                 }
 
                 start.Name = replacement;
-            }
-        }
-
-        return map;
-    }
-
-    static Dictionary<string, Paragraph> BuildCloneAnchorMap(IReadOnlyList<OpenXmlElement> clones)
-    {
-        var map = new Dictionary<string, Paragraph>(StringComparer.Ordinal);
-        foreach (var clone in clones)
-        {
-            foreach (var start in clone.Descendants<BookmarkStart>())
-            {
-                var name = start.Name?.Value;
-                if (name == null || !name.StartsWith(Anchors.Prefix, StringComparison.Ordinal))
-                {
-                    continue;
-                }
 
                 var host = start.Ancestors<Paragraph>().FirstOrDefault();
                 if (host != null)
                 {
-                    map[name] = host;
+                    anchorMap[replacement] = host;
                 }
             }
         }
+    }
 
-        return map;
+    static void RemapBodyInto(
+        IReadOnlyList<RangeNode> body,
+        Dictionary<string, string> nameMap,
+        RangeNode[] target)
+    {
+        for (var i = 0; i < body.Count; i++)
+        {
+            target[i] = Remap(body[i], nameMap);
+        }
     }
 
     static IReadOnlyList<RangeNode> RemapBody(
