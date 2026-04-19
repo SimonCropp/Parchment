@@ -10,7 +10,7 @@ class CodeBlockRenderer :
                 new ParagraphProperties(new ParagraphStyleId { Val = "Code" }),
                 new Run(
                     new RunProperties(new RunFonts { Ascii = "Consolas", HighAnsi = "Consolas" }),
-                    new Text(text) { Space = SpaceProcessingModeValues.Preserve }));
+                    new Text(XmlCharSanitizer.Strip(text)) { Space = SpaceProcessingModeValues.Preserve }));
             renderer.AddBlock(paragraph);
         }
     }

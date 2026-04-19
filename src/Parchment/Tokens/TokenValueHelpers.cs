@@ -28,7 +28,7 @@ public static class TokenValueHelpers
         };
         paragraph.Append(props);
         paragraph.Append(new Run(
-            new Text(text)
+            new Text(XmlCharSanitizer.Strip(text))
             {
                 Space = SpaceProcessingModeValues.Preserve
             }));

@@ -38,6 +38,8 @@ class ParagraphText
     /// </summary>
     public void Replace(int offset, int length, string replacement)
     {
+        replacement = XmlCharSanitizer.Strip(replacement);
+
         if (length < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(length));

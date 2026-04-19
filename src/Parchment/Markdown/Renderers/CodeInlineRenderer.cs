@@ -5,7 +5,7 @@ class CodeInlineRenderer :
     {
         var run = new Run(
             new RunProperties(new RunFonts { Ascii = "Consolas", HighAnsi = "Consolas" }),
-            new Text(inline.Content) { Space = SpaceProcessingModeValues.Preserve });
+            new Text(XmlCharSanitizer.Strip(inline.Content)) { Space = SpaceProcessingModeValues.Preserve });
         renderer.AddRun(run);
     }
 }
