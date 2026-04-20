@@ -82,6 +82,20 @@ Regular customer: {{ Customer.Name }}
 ```
 
 
+### Nested loops and conditionals
+
+Loops and conditionals can be nested to arbitrary depth. The outer loop variable stays in scope for inner constructs.
+
+```
+{% for group in Groups %}
+{{ group.Name }}
+{% for item in group.Items %}
+- {{ item }}
+{% endfor %}
+{% endfor %}
+```
+
+
 ### Token override hatches
 
 A token can resolve to one of three values:

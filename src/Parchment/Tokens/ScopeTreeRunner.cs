@@ -237,6 +237,17 @@ class ScopeTreeRunner(
             nameMap.Clear();
             cloneAnchors.Clear();
             RefreshAnchorsAndBuildMap(clones, nameMap, cloneAnchors);
+
+            // Attach clones to a scratch parent before running the nested scope tree. Nested
+            // ProcessLoopAsync / ProcessIfAsync / ApplyStructural all rely on open.Parent and
+            // sibling traversal — on detached clones those return null and the nested scope
+            // silently no-ops, leaving inner block-tag text in the output.
+            var scratch = new Body();
+            foreach (var clone in clones)
+            {
+                scratch.AppendChild(clone);
+            }
+
             var clonedRunner = new ScopeTreeRunner(
                 templateName,
                 partUri,
@@ -249,9 +260,10 @@ class ScopeTreeRunner(
             await clonedRunner.RunAsync(clonedBody);
             clonedRunner.ApplyStructural();
 
-            foreach (var clone in clones)
+            foreach (var produced in scratch.ChildElements.ToList())
             {
-                insertAnchor = parent.InsertAfter(clone, insertAnchor);
+                produced.Remove();
+                insertAnchor = parent.InsertAfter(produced, insertAnchor);
             }
         }
 
