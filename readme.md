@@ -54,6 +54,13 @@ await store.Render("substitution", SampleData.Invoice(), stream);
 <!-- endSnippet -->
 
 
+### Token naming
+
+Tokens match model members case-insensitively via Fluid's default member access strategy, but Parchment uses PascalCase by convention (`{{ Customer.Name }}`), not snake_case. There is no snake-case translation layer — stick with the property name as declared on the model.
+
+Tokens in `MainDocumentPart`, every `HeaderPart` / `FooterPart`, `FootnotesPart`, and `EndnotesPart` are all scanned and substituted, so page headers, footers, and footnotes can use `{{ ... }}` and `{% ... %}` exactly like body paragraphs.
+
+
 ### Loops
 
 A `{% for %}` paragraph and its matching `{% endfor %}` repeat the intervening paragraphs once per item.
@@ -84,7 +91,48 @@ A token can resolve to one of three values:
 - `TokenValue.OpenXml(Func<IOpenXmlContext, IEnumerable<OpenXmlElement>>)` — the value is a function that emits raw OpenXML elements. Useful for rich tables, generated charts, custom-styled lists.
 - `TokenValue.Mutate(Action<Paragraph, IOpenXmlContext>)` — the callback receives the host paragraph and mutates it in place. The token text is cleared before the callback runs. Useful for adding runs with custom formatting, injecting bookmarks, or tweaking paragraph properties while preserving the original paragraph.
 
-You can also use the bundled `bullet_list` and `numbered_list` filters to render an `IEnumerable<string>` as a real Word list.
+#### List filters
+
+`bullet_list` and `numbered_list` render an `IEnumerable<string>` property as a real Word list (`<w:numPr>` with a proper numbering definition), not as literal text. The token must sit alone in its paragraph — the host paragraph is replaced with one `<w:p>` per item.
+
+Content:
+
+<!-- snippet: BulletListFilterContent -->
+<a id='snippet-BulletListFilterContent'></a>
+```cs
+using var template = DocxTemplateBuilder.Build(
+    """
+    Tags:
+
+    {{ Tags | bullet_list }}
+    """);
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L135-L142' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterContent' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Render:
+
+<!-- snippet: BulletListFilterRender -->
+<a id='snippet-BulletListFilterRender'></a>
+```cs
+var store = new TemplateStore();
+store.RegisterDocxTemplate<Invoice>("bullet-filter", template);
+using var stream = new MemoryStream();
+await store.Render("bullet-filter", SampleData.Invoice(), stream);
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L144-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterRender' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`numbered_list` is identical in shape — swap the filter name to produce a decimal-numbered list instead of bullets.
+
+
+#### `escape_xml` filter
+
+Escapes `<`, `>`, `&`, `"`, and `'` in a string value. Useful when a token's value is spliced into a context where raw markup would be interpreted — e.g. feeding a user-supplied string into a `TokenValue.Markdown` that contains HTML blocks:
+
+```
+{{ UserSuppliedComment | escape_xml }}
+```
 
 
 #### Markdown property
@@ -604,6 +652,11 @@ Body text follows the heading.
 ```
 
 Only standalone comment *blocks* are removed; inline HTML, scripts, styles, and any other HTML constructs render normally via [OpenXmlHtml](https://github.com/SimonCropp/OpenXmlHtml).
+
+
+## Registration-time validation
+
+Whether you register by hand (`RegisterDocxTemplate<T>(...)`) or through the source generator's `RegisterWith(store)` helper, the template is fully validated against `T` at registration — before any render runs. Missing members, block tags targeting non-enumerable properties, or `[ExcelsiorTable]` tokens that break the solo-in-paragraph / plain-member-access rules throw `ParchmentRegistrationException` immediately. Register templates at app startup and any binding mismatch surfaces there, not on the first render.
 
 
 ## Source generator (compile-time validation)
