@@ -82,7 +82,9 @@ public sealed class ParchmentTemplateGenerator :
             ? null
             : typeSymbol.ContainingNamespace.ToDisplayString();
 
-        var shape = ShapeBuilder.Build(modelType, cancel);
+        var excelsiorTableType = context.SemanticModel.Compilation
+            .GetTypeByMetadataName(ShapeBuilder.ExcelsiorTableAttributeFullName);
+        var shape = ShapeBuilder.Build(modelType, excelsiorTableType, cancel);
 
         return new(
             declaringNamespace,

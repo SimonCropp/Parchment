@@ -1,6 +1,0 @@
-﻿{
-  Text:
-Consulting services — API design
-Consulting services — implementation
-Project management
-}

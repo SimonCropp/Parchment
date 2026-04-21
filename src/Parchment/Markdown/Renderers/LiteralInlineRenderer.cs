@@ -10,7 +10,7 @@ class LiteralInlineRenderer :
         }
 
         var run = new Run(
-            new Text(text)
+            new Text(XmlCharSanitizer.Strip(text))
             {
                 Space = SpaceProcessingModeValues.Preserve
             });

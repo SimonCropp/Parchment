@@ -26,23 +26,49 @@ public class LoopTests
     }
 
     [Test]
-    public async Task NestedLoopsAreNotSupportedInV1()
+    public async Task NestedLoop()
     {
-        // Sanity: a single-level loop binds `line` in scope and resolves line.Description correctly.
         using var template = DocxTemplateBuilder.Build(
             """
-            {% for line in Lines %}
+            {% for group in Groups %}
 
-            {{ line.Description }}
+            {{ group.Name }}
+
+            {% for item in group.Items %}
+
+            - {{ item }}
+
+            {% endfor %}
 
             {% endfor %}
             """);
 
         var store = new TemplateStore();
-        store.RegisterDocxTemplate<Invoice>("loop-only", template);
+        store.RegisterDocxTemplate<NestedModel>("nested-loop", template);
         using var stream = new MemoryStream();
-        await store.Render("loop-only", SampleData.Invoice(), stream);
+        await store.Render(
+            "nested-loop",
+            new NestedModel
+            {
+                Groups =
+                [
+                    new() { Name = "Fruit", Items = ["apple", "pear"] },
+                    new() { Name = "Tools", Items = ["hammer", "saw", "drill"] }
+                ]
+            },
+            stream);
         stream.Position = 0;
         await Verify(stream, "docx");
+    }
+
+    public class NestedModel
+    {
+        public required IReadOnlyList<NestedGroup> Groups { get; init; }
+    }
+
+    public class NestedGroup
+    {
+        public required string Name { get; init; }
+        public required IReadOnlyList<string> Items { get; init; }
     }
 }

@@ -17,6 +17,7 @@
     <PackageReference Include="DiffEngine" />
     <PackageReference Include="EmptyFiles" />
     <PackageReference Include="SimpleInfoName" />
+    <PackageReference Include="NaughtyStrings" />
     <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
     <ProjectReference Include="..\Parchment\Parchment.csproj" />
     <ProjectReference Include="..\ParchmentModel\ParchmentModel.csproj" />

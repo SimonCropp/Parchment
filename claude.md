@@ -188,6 +188,8 @@ TUnit's `[Explicit]` attribute excludes the test from default runs; only an expl
 
 - **PascalCase tokens**: Liquid in Parchment uses PascalCase (`{{ Customer.Name }}`), not snake_case. Fluid's default member access compares case-insensitively against the actual property name. There is no snake-case → PascalCase translation layer; an earlier attempt to wire `MemberNameStrategies.SnakeCase` was abandoned because that API doesn't exist in Fluid 2.15.
 
+- **`ScopeTreeRunner.ProcessLoopAsync` attaches each iteration's clones to a scratch `Body` before running the nested scope tree**. Without this, nested `{% for %}` / `{% if %}` silently no-op: `open.Parent` and `NextSibling()` return null on a detached clone, so `CaptureBetween(open, close)` captures nothing and `open.Remove()` does nothing, and the inner block-tag paragraph text lands in the output as literal `{% for ... %}`. If you "simplify" this by reverting to `parent.InsertAfter(clone, insertAnchor)` for each clone *before* the nested run, you break nested loops in a way that only the `LoopTests.NestedLoop` test catches.
+
 - **`OpenXmlMarkdownRenderer` is not thread-safe** — one instance per render. The `Stack<ContainerState>` and `ObjectRenderers` collection are mutable. The `RegisteredTemplate` (cached canonical bytes + scope tree) IS immutable and safe to share, so concurrent renders work — they just each get their own renderer.
 
 - **`appveyor.yml` font validation step** — every TTF/OTF in `src/Fonts/` is loaded through `System.Drawing.Text.PrivateFontCollection` BEFORE being copied to `%WINDIR%\Fonts`. This catches Git CRLF corruption upfront. If you add a font, mark it as binary in `.gitattributes` (`*.ttf binary`, `*.otf binary` — already present).

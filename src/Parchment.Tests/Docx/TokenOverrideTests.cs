@@ -132,17 +132,21 @@ public class TokenOverrideTests
     [Test]
     public async Task BulletListFilter()
     {
+        #region BulletListFilterContent
         using var template = DocxTemplateBuilder.Build(
             """
             Tags:
 
             {{ Tags | bullet_list }}
             """);
+        #endregion
 
+        #region BulletListFilterRender
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Invoice>("bullet-filter", template);
         using var stream = new MemoryStream();
         await store.Render("bullet-filter", SampleData.Invoice(), stream);
+        #endregion
         stream.Position = 0;
         await Verify(stream, "docx");
     }
