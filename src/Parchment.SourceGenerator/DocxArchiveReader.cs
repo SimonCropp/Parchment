@@ -14,15 +14,7 @@ static class DocxArchiveReader
             }
 
             using var stream = entry.Open();
-            XDocument doc;
-            try
-            {
-                doc = XDocument.Load(stream);
-            }
-            catch
-            {
-                continue;
-            }
+            var doc = XDocument.Load(stream);
 
             foreach (var paragraph in doc.Descendants(w + "p"))
             {
@@ -32,10 +24,9 @@ static class DocxArchiveReader
                     builder.Append(t.Value);
                 }
 
-                var text = builder.ToString();
-                if (text.Length > 0)
+                if (builder.Length > 0)
                 {
-                    result.Add(text);
+                    result.Add(builder.ToString());
                 }
             }
         }
