@@ -147,7 +147,7 @@ public sealed class ParchmentTemplateGenerator :
             return;
         }
 
-        var tokens = TokenScanner.Scan(matched.Paragraphs.AsImmutableArray());
+        var tokens = TokenScanner.Scan(matched.Paragraphs);
         ValidateTokens(context, target, tokens, location);
 
         var source = GenerateRegistration(target);

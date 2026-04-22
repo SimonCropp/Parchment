@@ -6,7 +6,7 @@ public static class TokenScanner
 
     static readonly FluidParser parser = new();
 
-    public static List<Token> Scan(IReadOnlyList<string> paragraphs)
+    public static List<Token> Scan(IEnumerable<string> paragraphs)
     {
         var result = new List<Token>();
         foreach (var paragraph in paragraphs)
@@ -55,7 +55,11 @@ public static class TokenScanner
     {
         var statements = ((FluidTemplate) template).Statements;
         return statements.Count == 1
-               && statements[0] is OutputStatement {Expression: MemberExpression};
+               && statements[0] is
+                   OutputStatement
+                   {
+                       Expression: MemberExpression
+                   };
     }
 
     static Token ParseBlockTag(string source, string paragraph, bool hasOtherContent)
@@ -183,13 +187,3 @@ sealed class IdentifierVisitor :
         return base.VisitMemberExpression(memberExpression);
     }
 }
-
-public sealed record Token(
-    TokenKind Kind,
-    string Source,
-    IReadOnlyList<string[]> References,
-    string? LoopVariable,
-    string? LoopSource,
-    string Paragraph,
-    bool HasOtherContent,
-    bool IsPlainIdentifier = false);
