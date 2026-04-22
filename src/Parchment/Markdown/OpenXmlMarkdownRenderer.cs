@@ -86,9 +86,3 @@ class OpenXmlMarkdownRenderer :
         stack.Peek().Blocks.Add(block);
     }
 }
-
-class ContainerState
-{
-    public List<OpenXmlElement> Blocks { get; } = [];
-    public List<OpenXmlElement> CurrentRuns { get; } = [];
-}

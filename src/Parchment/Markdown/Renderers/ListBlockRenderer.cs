@@ -17,10 +17,19 @@ class ListBlockRenderer :
                     {
                         var properties = new ParagraphProperties
                         {
-                            ParagraphStyleId = new() { Val = "ListParagraph" },
+                            ParagraphStyleId = new()
+                            {
+                                Val = "ListParagraph"
+                            },
                             NumberingProperties = new(
-                                new NumberingLevelReference { Val = 0 },
-                                new NumberingId { Val = numId })
+                                new NumberingLevelReference
+                                {
+                                    Val = 0
+                                },
+                                new NumberingId
+                                {
+                                    Val = numId
+                                })
                         };
                         renderer.WriteLeafInline(leaf);
                         renderer.FlushParagraph(properties);

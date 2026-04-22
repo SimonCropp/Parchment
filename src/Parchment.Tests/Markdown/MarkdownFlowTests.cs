@@ -10,19 +10,20 @@ public class MarkdownFlowTests
     [Test]
     public async Task BasicMarkdown()
     {
-        var markdown = """
-                       # {{ Title }}
+        var markdown =
+            """
+            # {{ Title }}
 
-                       by *{{ Author }}*
+            by *{{ Author }}*
 
-                       ## Key findings
+            ## Key findings
 
-                       {% for finding in Findings %}
-                       - {{ finding }}
-                       {% endfor %}
+            {% for finding in Findings %}
+            - {{ finding }}
+            {% endfor %}
 
-                       > Review complete.
-                       """;
+            > Review complete.
+            """;
 
         using var styleSource = DocxTemplateBuilder.Build();
 
@@ -54,24 +55,27 @@ public class MarkdownFlowTests
     }
 
     #region MarkdownTemplatePropertyModel
+
     public class BriefModel
     {
         public required string Title { get; init; }
         public required string Details { get; init; }
     }
+
     #endregion
 
     [Test]
     public async Task PropertyContainingMarkdown()
     {
         using var targetStream = new MemoryStream();
-        var markdown = """
-                       <!-- begin-snippet: MarkdownTemplatePropertyContent(lang=handlebars) -->
-                       # {{ Title }}
+        var markdown =
+            """
+            <!-- begin-snippet: MarkdownTemplatePropertyContent(lang=handlebars) -->
+            # {{ Title }}
 
-                       {{ Details }}
-                       <!-- end-snippet -->
-                       """;
+            {{ Details }}
+            <!-- end-snippet -->
+            """;
 
         using var styleSource = DocxTemplateBuilder.Build();
 
@@ -88,14 +92,15 @@ public class MarkdownFlowTests
             new BriefModel
             {
                 Title = "Sprint recap",
-                Details = """
-                          ## Done
+                Details =
+                    """
+                    ## Done
 
-                          - Landed the **search** feature
-                          - Fixed _three_ regressions
+                    - Landed the **search** feature
+                    - Fixed _three_ regressions
 
-                          > Ship it.
-                          """
+                    > Ship it.
+                    """
             },
             targetStream);
 
@@ -111,20 +116,22 @@ public class MarkdownFlowTests
         // HTML comment blocks (snippet markers, authoring notes, TODOs) must not bleed into the
         // rendered docx as blank paragraphs. Two markdowns that differ only by surrounding
         // comment lines should produce byte-identical output.
-        var withComments = """
-                           <!-- begin-snippet: report(lang=handlebars) -->
-                           # {{ Title }}
+        var withComments =
+            """
+            <!-- begin-snippet: report(lang=handlebars) -->
+            # {{ Title }}
 
-                           <!-- TODO: add executive summary -->
-                           Body text follows the heading.
-                           <!-- end-snippet -->
-                           """;
+            <!-- TODO: add executive summary -->
+            Body text follows the heading.
+            <!-- end-snippet -->
+            """;
 
-        var withoutComments = """
-                              # {{ Title }}
+        var withoutComments =
+            """
+            # {{ Title }}
 
-                              Body text follows the heading.
-                              """;
+            Body text follows the heading.
+            """;
 
         using var styleSource = DocxTemplateBuilder.Build();
         var store = new TemplateStore();
@@ -132,7 +139,7 @@ public class MarkdownFlowTests
         styleSource.Position = 0;
         store.RegisterMarkdownTemplate<TitleModel>("without-comments", withoutComments, styleSource);
 
-        var model = new TitleModel { Title = "Sample" };
+        var model = new TitleModel {Title = "Sample"};
 
         using var withStream = new MemoryStream();
         await store.Render("with-comments", model, withStream);

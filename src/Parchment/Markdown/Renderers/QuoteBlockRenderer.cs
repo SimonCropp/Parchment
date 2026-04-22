@@ -9,7 +9,10 @@ class QuoteBlockRenderer :
             {
                 var properties = new ParagraphProperties
                 {
-                    ParagraphStyleId = new() { Val = "Quote" }
+                    ParagraphStyleId = new()
+                    {
+                        Val = "Quote"
+                    }
                 };
                 renderer.WriteLeafInline(leaf);
                 renderer.FlushParagraph(properties);

@@ -74,9 +74,10 @@ static class ExcelsiorTokenValidator
 
         throw new ParchmentRegistrationException(
             templateName,
-            $"[ExcelsiorTable] token '{token.Source}' must sit alone in its own paragraph. " +
-            "Structural table replacement swaps the entire host paragraph, so any surrounding text " +
-            "or sibling tokens would be discarded.",
+            $"""
+             [ExcelsiorTable] token '{token.Source}' must sit alone in its own paragraph.
+             Structural table replacement swaps the entire host paragraph, so any surrounding text or sibling tokens would be discarded.
+             """,
             partUri,
             token.Source);
     }
@@ -101,10 +102,10 @@ static class ExcelsiorTokenValidator
 
         throw new ParchmentRegistrationException(
             templateName,
-            $"[ExcelsiorTable] token '{token.Source}' must be a plain member-access expression " +
-            "(for example '{{ Lines }}' or '{{ Buyer.Addresses }}'). Filters, arithmetic, and " +
-            "literal expressions are not supported — the Excelsior rendering path walks the model " +
-            "object directly and bypasses Fluid evaluation.",
+            $$$"""
+               [ExcelsiorTable] token '{{{token.Source}}}' must be a plain member-access expression (for example '{{ Lines }}' or '{{ Buyer.Addresses }}').
+               Filters, arithmetic, and literal expressions are not supported — the Excelsior rendering path walks the model object directly and bypasses Fluid evaluation.
+               """,
             partUri,
             token.Source);
     }

@@ -57,11 +57,14 @@ public class ConditionalTests
         var store = new TemplateStore();
         store.RegisterDocxTemplate<FlagModel>("else-branch", template);
         using var stream = new MemoryStream();
-        await store.Render("else-branch", new FlagModel
-        {
-            Flag = false,
-            Label = "fallback"
-        }, stream);
+        await store.Render(
+            "else-branch",
+            new FlagModel
+            {
+                Flag = false,
+                Label = "fallback"
+            },
+            stream);
         stream.Position = 0;
         await Verify(stream, "docx");
     }

@@ -18,7 +18,7 @@ public class NaughtyStringsTests
         {
             Single = string.Join(" | ", TheNaughtyStrings.All),
             Items = TheNaughtyStrings.All
-                .Select(_ => new NaughtyItem { Value = _ })
+                .Select(_ => new NaughtyItem {Value = _})
                 .ToList()
         };
 
@@ -48,13 +48,14 @@ public class NaughtyStringsTests
     [Test]
     public async Task Markdown()
     {
-        var markdownSource = """
-                             # {{ Single }}
+        var markdownSource =
+            """
+            # {{ Single }}
 
-                             {% for item in Items %}
-                             - {{ item.Value }}
-                             {% endfor %}
-                             """;
+            {% for item in Items %}
+            - {{ item.Value }}
+            {% endfor %}
+            """;
 
         using var styleSource = DocxTemplateBuilder.Build();
 

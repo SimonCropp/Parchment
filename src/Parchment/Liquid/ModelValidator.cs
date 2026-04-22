@@ -82,7 +82,8 @@ static class ModelValidator
 
     static Type? ResolveRoot(Type modelType, string name, IReadOnlyDictionary<string, Type>? scope)
     {
-        if (scope != null && scope.TryGetValue(name, out var scoped))
+        if (scope != null &&
+            scope.TryGetValue(name, out var scoped))
         {
             return scoped;
         }

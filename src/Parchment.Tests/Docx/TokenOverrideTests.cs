@@ -1,11 +1,13 @@
 public class TokenOverrideTests
 {
     #region MarkdownPropertyModel
+
     public class NoteModel
     {
         public required string Title { get; init; }
         public required TokenValue Body { get; init; }
     }
+
     #endregion
 
     [Test]
@@ -22,22 +24,27 @@ public class TokenOverrideTests
             """);
 
         #region MarkdownPropertyRender
+
         var store = new TemplateStore();
         store.RegisterDocxTemplate<NoteModel>("markdown-hatch", template);
-        await store.Render("markdown-hatch", new NoteModel
-        {
-            Title = "Weekly summary",
-            Body = TokenValue.Markdown(
-                """
-                ## Highlights
+        await store.Render(
+            "markdown-hatch",
+            new NoteModel
+            {
+                Title = "Weekly summary",
+                Body = TokenValue.Markdown(
+                    """
+                    ## Highlights
 
-                - Shipped the **new feature**
-                - Closed _several_ bugs
-                - Ran a code review
+                    - Shipped the **new feature**
+                    - Closed _several_ bugs
+                    - Ran a code review
 
-                > Stay the course
-                """)
-        }, stream);
+                    > Stay the course
+                    """)
+            },
+            stream);
+
         #endregion
 
         stream.Position = 0;
@@ -45,11 +52,13 @@ public class TokenOverrideTests
     }
 
     #region MarkdownFilterModel
+
     public class ArticleModel
     {
         public required string Heading { get; init; }
         public required string Content { get; init; }
     }
+
     #endregion
 
     [Test]
@@ -66,18 +75,24 @@ public class TokenOverrideTests
             """);
 
         #region MarkdownFilterRender
+
         var store = new TemplateStore();
         store.RegisterDocxTemplate<ArticleModel>("markdown-filter", template);
-        await store.Render("markdown-filter", new ArticleModel
-        {
-            Heading = "Release notes",
-            Content = """
-                ### Bug fixes
+        await store.Render(
+            "markdown-filter",
+            new ArticleModel
+            {
+                Heading = "Release notes",
+                Content =
+                    """
+                    ### Bug fixes
 
-                - Fixed crash on **empty input**
-                - Resolved _timeout_ in batch mode
-                """
-        }, stream);
+                    - Fixed crash on **empty input**
+                    - Resolved _timeout_ in batch mode
+                    """
+            },
+            stream);
+
         #endregion
 
         stream.Position = 0;
@@ -85,11 +100,13 @@ public class TokenOverrideTests
     }
 
     #region MutateModel
+
     public class StyledModel
     {
         public required string Label { get; init; }
         public required TokenValue Highlight { get; init; }
     }
+
     #endregion
 
     [Test]
@@ -106,23 +123,27 @@ public class TokenOverrideTests
             """);
 
         #region MutateRender
+
         var store = new TemplateStore();
         store.RegisterDocxTemplate<StyledModel>("mutate", template);
-        await store.Render("mutate", new StyledModel
-        {
-            Label = "Before",
-            Highlight = TokenValue.Mutate((paragraph, _) =>
+        await store.Render(
+            "mutate",
+            new StyledModel
             {
-                paragraph.Append(
-                    new Run(
-                        new RunProperties(
-                            new Bold()),
-                        new Text("Custom content")
-                        {
-                            Space = SpaceProcessingModeValues.Preserve
-                        }));
-            })
-        }, stream);
+                Label = "Before",
+                Highlight = TokenValue.Mutate((paragraph, _) =>
+                {
+                    paragraph.Append(
+                        new Run(
+                            new RunProperties(
+                                new Bold()),
+                            new Text("Custom content")
+                            {
+                                Space = SpaceProcessingModeValues.Preserve
+                            }));
+                })
+            }, stream);
+
         #endregion
 
         stream.Position = 0;
@@ -133,20 +154,25 @@ public class TokenOverrideTests
     public async Task BulletListFilter()
     {
         #region BulletListFilterContent
+
         using var template = DocxTemplateBuilder.Build(
             """
             Tags:
 
             {{ Tags | bullet_list }}
             """);
+
         #endregion
 
         #region BulletListFilterRender
+
         var store = new TemplateStore();
         store.RegisterDocxTemplate<Invoice>("bullet-filter", template);
         using var stream = new MemoryStream();
         await store.Render("bullet-filter", SampleData.Invoice(), stream);
+
         #endregion
+
         stream.Position = 0;
         await Verify(stream, "docx");
     }

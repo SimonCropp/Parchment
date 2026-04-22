@@ -1,20 +1,21 @@
 public class ParchmentTemplateGeneratorTests
 {
-    const string letterModel = """
-                               using Parchment;
+    const string letterModel =
+        """
+        using Parchment;
 
-                               namespace Sample;
+        namespace Sample;
 
-                               public class Customer
-                               {
-                                   public string Name { get; set; } = "";
-                               }
+        public class Customer
+        {
+            public string Name { get; set; } = "";
+        }
 
-                               public class Letter
-                               {
-                                   public Customer Customer { get; set; } = new();
-                               }
-                               """;
+        public class Letter
+        {
+            public Customer Customer { get; set; } = new();
+        }
+        """;
 
     [Test]
     public Task Substitution_Valid()
@@ -45,25 +46,26 @@ public class ParchmentTemplateGeneratorTests
     [Test]
     public Task ForLoop_Valid()
     {
-        var source = """
-                     using System.Collections.Generic;
-                     using Parchment;
+        var source =
+            """
+            using System.Collections.Generic;
+            using Parchment;
 
-                     namespace Sample;
+            namespace Sample;
 
-                     public class Line
-                     {
-                         public string Description { get; set; } = "";
-                     }
+            public class Line
+            {
+                public string Description { get; set; } = "";
+            }
 
-                     public class Invoice
-                     {
-                         public List<Line> Lines { get; set; } = new();
-                     }
+            public class Invoice
+            {
+                public List<Line> Lines { get; set; } = new();
+            }
 
-                     [ParchmentTemplate("template.docx", typeof(Invoice))]
-                     public partial class InvoiceDoc;
-                     """;
+            [ParchmentTemplate("template.docx", typeof(Invoice))]
+            public partial class InvoiceDoc;
+            """;
         var result = GeneratorDriver.Run(
             source,
             "{% for line in Lines %}",
@@ -92,16 +94,17 @@ public class ParchmentTemplateGeneratorTests
     [Test]
     public Task UnknownBlockTag()
     {
-        var source = """
-                     using Parchment;
+        var source =
+            """
+            using Parchment;
 
-                     namespace Sample;
+            namespace Sample;
 
-                     public class Empty;
+            public class Empty;
 
-                     [ParchmentTemplate("template.docx", typeof(Empty))]
-                     public partial class WeirdTag;
-                     """;
+            [ParchmentTemplate("template.docx", typeof(Empty))]
+            public partial class WeirdTag;
+            """;
         var result = GeneratorDriver.Run(source, "{% foobar %}");
         return Verify(result);
     }
@@ -109,16 +112,17 @@ public class ParchmentTemplateGeneratorTests
     [Test]
     public Task TemplateFileMissing()
     {
-        var source = """
-                     using Parchment;
+        var source =
+            """
+            using Parchment;
 
-                     namespace Sample;
+            namespace Sample;
 
-                     public class Empty;
+            public class Empty;
 
-                     [ParchmentTemplate("does-not-exist.docx", typeof(Empty))]
-                     public partial class MissingFile;
-                     """;
+            [ParchmentTemplate("does-not-exist.docx", typeof(Empty))]
+            public partial class MissingFile;
+            """;
         var result = GeneratorDriver.Run(source, "ignored");
         return Verify(result);
     }
@@ -146,32 +150,33 @@ public class ParchmentTemplateGeneratorTests
     [Test]
     public Task MultiTarget_MultiDocx()
     {
-        var source = """
-                     using Parchment;
+        var source =
+            """
+            using Parchment;
 
-                     namespace Sample;
+            namespace Sample;
 
-                     public class Customer
-                     {
-                         public string Name { get; set; } = "";
-                     }
+            public class Customer
+            {
+                public string Name { get; set; } = "";
+            }
 
-                     public class Letter
-                     {
-                         public Customer Customer { get; set; } = new();
-                     }
+            public class Letter
+            {
+                public Customer Customer { get; set; } = new();
+            }
 
-                     public class Invoice
-                     {
-                         public decimal Total { get; set; }
-                     }
+            public class Invoice
+            {
+                public decimal Total { get; set; }
+            }
 
-                     [ParchmentTemplate("letter.docx", typeof(Letter))]
-                     public partial class LetterDoc;
+            [ParchmentTemplate("letter.docx", typeof(Letter))]
+            public partial class LetterDoc;
 
-                     [ParchmentTemplate("invoice.docx", typeof(Invoice))]
-                     public partial class InvoiceDoc;
-                     """;
+            [ParchmentTemplate("invoice.docx", typeof(Invoice))]
+            public partial class InvoiceDoc;
+            """;
 
         var setup = GeneratorDriver.CreateDriverWithDocxes(
             source,
@@ -187,16 +192,17 @@ public class ParchmentTemplateGeneratorTests
     {
         // PARCH006: exception message is platform/culture dependent, so assert the diagnostic
         // id directly instead of snapshotting the full message.
-        var source = """
-                     using Parchment;
+        var source =
+            """
+            using Parchment;
 
-                     namespace Sample;
+            namespace Sample;
 
-                     public class Empty;
+            public class Empty;
 
-                     [ParchmentTemplate("template.docx", typeof(Empty))]
-                     public partial class Corrupt;
-                     """;
+            [ParchmentTemplate("template.docx", typeof(Empty))]
+            public partial class Corrupt;
+            """;
 
         var setup = GeneratorDriver.CreateDriverWithDocxes(
             source,
@@ -209,23 +215,24 @@ public class ParchmentTemplateGeneratorTests
         await Assert.That(diagnostics[0].Id).IsEqualTo("PARCH006");
     }
 
-    const string excelsiorModel = """
-                                  using System.Collections.Generic;
-                                  using Parchment;
+    const string excelsiorModel =
+        """
+        using System.Collections.Generic;
+        using Parchment;
 
-                                  namespace Sample;
+        namespace Sample;
 
-                                  public class Line
-                                  {
-                                      public string Description { get; set; } = "";
-                                  }
+        public class Line
+        {
+            public string Description { get; set; } = "";
+        }
 
-                                  public class Invoice
-                                  {
-                                      [ExcelsiorTable]
-                                      public List<Line> Lines { get; set; } = new();
-                                  }
-                                  """;
+        public class Invoice
+        {
+            [ExcelsiorTable]
+            public List<Line> Lines { get; set; } = new();
+        }
+        """;
 
     [Test]
     public async Task ExcelsiorToken_MixedInline_Diagnostic()
@@ -277,25 +284,26 @@ public class ParchmentTemplateGeneratorTests
     [Test]
     public Task MixedInlineBlockTag()
     {
-        var source = """
-                     using System.Collections.Generic;
-                     using Parchment;
+        var source =
+            """
+            using System.Collections.Generic;
+            using Parchment;
 
-                     namespace Sample;
+            namespace Sample;
 
-                     public class Line
-                     {
-                         public string Description { get; set; } = "";
-                     }
+            public class Line
+            {
+                public string Description { get; set; } = "";
+            }
 
-                     public class Invoice
-                     {
-                         public List<Line> Lines { get; set; } = new();
-                     }
+            public class Invoice
+            {
+                public List<Line> Lines { get; set; } = new();
+            }
 
-                     [ParchmentTemplate("template.docx", typeof(Invoice))]
-                     public partial class Mixed;
-                     """;
+            [ParchmentTemplate("template.docx", typeof(Invoice))]
+            public partial class Mixed;
+            """;
         var result = GeneratorDriver.Run(
             source,
             "prefix {% for line in Lines %}",

@@ -9,7 +9,12 @@ class LineBreakInlineRenderer :
         }
         else
         {
-            renderer.AddRun(new Run(new Text(" ") { Space = SpaceProcessingModeValues.Preserve }));
+            renderer.AddRun(
+                new Run(
+                    new Text(" ")
+                    {
+                        Space = SpaceProcessingModeValues.Preserve
+                    }));
         }
     }
 }

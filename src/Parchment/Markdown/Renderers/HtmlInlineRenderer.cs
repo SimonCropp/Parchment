@@ -9,7 +9,11 @@ class HtmlInlineRenderer :
             return;
         }
 
-        var run = new Run(new Text(tag) { Space = SpaceProcessingModeValues.Preserve });
+        var run = new Run(
+            new Text(tag)
+            {
+                Space = SpaceProcessingModeValues.Preserve
+            });
         renderer.AddRun(run);
     }
 }

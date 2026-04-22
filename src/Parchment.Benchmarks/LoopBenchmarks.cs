@@ -1,6 +1,3 @@
-using System.Linq;
-using BenchmarkDotNet.Attributes;
-
 [Config(typeof(BenchmarkConfig))]
 public class LoopBenchmarks
 {
@@ -26,10 +23,11 @@ public class LoopBenchmarks
                 Address = "1 Main St"
             },
             Lines = Enumerable.Range(1, LoopItems)
-                .Select(i => new LineItem
+                .Select(
+                    _ => new LineItem
                 {
-                    Description = $"Item {i}",
-                    Quantity = i,
+                    Description = $"Item {_}",
+                    Quantity = _,
                     UnitPrice = 10m
                 })
                 .ToList()
@@ -53,15 +51,27 @@ public class LoopBenchmarks
         using (var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
         {
             var mainPart = doc.AddMainDocumentPart();
-            mainPart.Document = new(new Body(
-                Para("{% for line in Lines %}"),
-                Para("{{ line.Description }}: {{ line.Quantity }} x {{ line.UnitPrice }}"),
-                Para("{% endfor %}")));
+            mainPart.Document = new(
+                new Body(
+                    Para("{% for line in Lines %}"),
+                    Para("{{ line.Description }}: {{ line.Quantity }} x {{ line.UnitPrice }}"),
+                    Para("{% endfor %}")));
 
             var stylesPart = mainPart.AddNewPart<StyleDefinitionsPart>();
             var styles = new Styles();
-            styles.Append(new Style { Type = StyleValues.Paragraph, StyleId = "Normal", Default = true }
-                .AppendChild(new StyleName { Val = "Normal" }).Parent!);
+            styles.Append(
+                new Style
+                    {
+                        Type = StyleValues.Paragraph,
+                        StyleId = "Normal",
+                        Default = true
+                    }
+                    .AppendChild(
+                        new StyleName
+                        {
+                            Val = "Normal"
+                        })
+                    .Parent!);
             stylesPart.Styles = styles;
         }
 
@@ -70,5 +80,10 @@ public class LoopBenchmarks
     }
 
     static Paragraph Para(string text) =>
-        new(new Run(new Text(text) { Space = SpaceProcessingModeValues.Preserve }));
+        new(
+            new Run(
+                new Text(text)
+                {
+                    Space = SpaceProcessingModeValues.Preserve
+                }));
 }

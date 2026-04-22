@@ -1,6 +1,3 @@
-using System.Linq;
-using BenchmarkDotNet.Attributes;
-
 [Config(typeof(BenchmarkConfig))]
 public class RenderBenchmarks
 {
@@ -58,11 +55,11 @@ public class RenderBenchmarks
                 IsPreferred = true
             },
             Lines = Enumerable.Range(1, lineCount)
-                .Select(i => new LineItem
+                .Select(_ => new LineItem
                 {
-                    Description = $"Service line item {i}",
-                    Quantity = i % 10 + 1,
-                    UnitPrice = 100m + i
+                    Description = $"Service line item {_}",
+                    Quantity = _ % 10 + 1,
+                    UnitPrice = 100m + _
                 })
                 .ToList()
         };
@@ -77,25 +74,26 @@ public class RenderBenchmarks
                 Date = new(2026, 7, 1),
                 Summary = "Platform reliability trended upward this quarter.",
                 Findings = Enumerable.Range(1, findingCount)
-                    .Select(i => new Finding
+                    .Select(_ => new Finding
                     {
-                        Area = $"Area-{i}",
-                        Status = i % 3 == 0 ? "Watch" : "Improved",
-                        Owner = $"Team-{i % 5}"
+                        Area = $"Area-{_}",
+                        Status = _ % 3 == 0 ? "Watch" : "Improved",
+                        Owner = $"Team-{_ % 5}"
                     })
                     .ToList(),
                 Actions = Enumerable.Range(1, Math.Max(1, findingCount / 5))
-                    .Select(i => new ActionItem
+                    .Select(_ => new ActionItem
                     {
-                        Title = $"Action item {i}",
-                        Detail = $"Details for action {i}."
+                        Title = $"Action item {_}",
+                        Detail = $"Details for action {_}."
                     })
                     .ToList(),
                 HasRisks = findingCount > 10
             }
         };
 
-    const string markdownSource = """
+    const string markdownSource =
+        """
         # {{ Report.Title }}
 
         *Prepared by **{{ Report.Author }}** on {{ Report.Date }}*
@@ -145,8 +143,19 @@ public class RenderBenchmarks
 
             var stylesPart = mainPart.AddNewPart<StyleDefinitionsPart>();
             var styles = new Styles();
-            styles.Append(new Style { Type = StyleValues.Paragraph, StyleId = "Normal", Default = true }
-                .AppendChild(new StyleName { Val = "Normal" }).Parent!);
+            styles.Append(
+                new Style
+                    {
+                        Type = StyleValues.Paragraph,
+                        StyleId = "Normal",
+                        Default = true
+                    }
+                    .AppendChild(
+                        new StyleName
+                        {
+                            Val = "Normal"
+                        })
+                    .Parent!);
             stylesPart.Styles = styles;
         }
 
@@ -154,7 +163,12 @@ public class RenderBenchmarks
     }
 
     static Paragraph Para(string text) =>
-        new(new Run(new Text(text) { Space = SpaceProcessingModeValues.Preserve }));
+        new(
+            new Run(
+                new Text(text)
+                {
+                    Space = SpaceProcessingModeValues.Preserve
+                }));
 
     static byte[] BuildStyleSource()
     {
@@ -166,18 +180,59 @@ public class RenderBenchmarks
 
             var stylesPart = mainPart.AddNewPart<StyleDefinitionsPart>();
             var styles = new Styles();
-            styles.Append(new Style { Type = StyleValues.Paragraph, StyleId = "Normal", Default = true }
-                .AppendChild(new StyleName { Val = "Normal" }).Parent!);
+            styles.Append(
+                new Style
+                    {
+                        Type = StyleValues.Paragraph,
+                        StyleId = "Normal",
+                        Default = true
+                    }
+                    .AppendChild(
+                        new StyleName
+                        {
+                            Val = "Normal"
+                        })
+                    .Parent!);
             for (var i = 1; i <= 6; i++)
             {
-                styles.Append(new Style { Type = StyleValues.Paragraph, StyleId = $"Heading{i}" }
-                    .AppendChild(new StyleName { Val = $"Heading{i}" }).Parent!);
+                styles.Append(
+                    new Style
+                        {
+                            Type = StyleValues.Paragraph,
+                            StyleId = $"Heading{i}"
+                        }
+                        .AppendChild(
+                            new StyleName
+                            {
+                                Val = $"Heading{i}"
+                            })
+                        .Parent!);
             }
 
-            styles.Append(new Style { Type = StyleValues.Paragraph, StyleId = "ListParagraph" }
-                .AppendChild(new StyleName { Val = "List Paragraph" }).Parent!);
-            styles.Append(new Style { Type = StyleValues.Paragraph, StyleId = "Quote" }
-                .AppendChild(new StyleName { Val = "Quote" }).Parent!);
+            styles.Append(
+                new Style
+                    {
+                        Type = StyleValues.Paragraph,
+                        StyleId = "ListParagraph"
+                    }
+                    .AppendChild(
+                        new StyleName
+                        {
+                            Val = "List Paragraph"
+                        })
+                    .Parent!);
+            styles.Append(
+                new Style
+                    {
+                        Type = StyleValues.Paragraph,
+                        StyleId = "Quote"
+                    }
+                    .AppendChild(
+                        new StyleName
+                        {
+                            Val = "Quote"
+                        })
+                    .Parent!);
             stylesPart.Styles = styles;
         }
 

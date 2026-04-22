@@ -7,10 +7,23 @@ class CodeBlockRenderer :
         {
             var text = line.ToString();
             var paragraph = new Paragraph(
-                new ParagraphProperties(new ParagraphStyleId { Val = "Code" }),
+                new ParagraphProperties(
+                    new ParagraphStyleId
+                    {
+                        Val = "Code"
+                    }),
                 new Run(
-                    new RunProperties(new RunFonts { Ascii = "Consolas", HighAnsi = "Consolas" }),
-                    new Text(XmlCharSanitizer.Strip(text)) { Space = SpaceProcessingModeValues.Preserve }));
+                    new RunProperties(
+                        new RunFonts
+                        {
+                            Ascii = "Consolas",
+                            HighAnsi = "Consolas"
+                        }),
+                    new Text(
+                        XmlCharSanitizer.Strip(text))
+                    {
+                        Space = SpaceProcessingModeValues.Preserve
+                    }));
             renderer.AddBlock(paragraph);
         }
     }

@@ -39,18 +39,34 @@ class EmphasisInlineRenderer :
                 }
                 else
                 {
-                    run.RunProperties.Append(new VerticalTextAlignment { Val = VerticalPositionValues.Subscript });
+                    run.RunProperties.Append(
+                        new VerticalTextAlignment
+                        {
+                            Val = VerticalPositionValues.Subscript
+                        });
                 }
 
                 break;
             case '^':
-                run.RunProperties.Append(new VerticalTextAlignment { Val = VerticalPositionValues.Superscript });
+                run.RunProperties.Append(
+                    new VerticalTextAlignment
+                    {
+                        Val = VerticalPositionValues.Superscript
+                    });
                 break;
             case '+':
-                run.RunProperties.Append(new Underline { Val = UnderlineValues.Single });
+                run.RunProperties.Append(
+                    new Underline
+                    {
+                        Val = UnderlineValues.Single
+                    });
                 break;
             case '=':
-                run.RunProperties.Append(new Highlight { Val = HighlightColorValues.Yellow });
+                run.RunProperties.Append(
+                    new Highlight
+                    {
+                        Val = HighlightColorValues.Yellow
+                    });
                 break;
         }
     }

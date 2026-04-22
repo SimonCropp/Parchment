@@ -11,17 +11,17 @@ static class ScopeTreeBuilder
     {
         var queue = new Queue<ParagraphClassification>(classifications);
         var nodes = BuildBlock(queue, null, templateName, partUri);
-        if (queue.Count != 0)
+        if (queue.Count == 0)
         {
-            var extra = queue.Peek();
-            throw new ParchmentRegistrationException(
-                templateName,
-                $"Unexpected block tag '{extra.Block?.Source}' without a matching opening.",
-                partUri,
-                extra.Block?.Source);
+            return nodes;
         }
 
-        return nodes;
+        var extra = queue.Peek();
+        throw new ParchmentRegistrationException(
+            templateName,
+            $"Unexpected block tag '{extra.Block?.Source}' without a matching opening.",
+            partUri,
+            extra.Block?.Source);
     }
 
     static IReadOnlyList<RangeNode> BuildBlock(
@@ -77,15 +77,15 @@ static class ScopeTreeBuilder
             }
         }
 
-        if (closer != null)
+        if (closer == null)
         {
-            throw new ParchmentRegistrationException(
-                templateName,
-                $"Missing closing tag '{closer.Value.ToString().ToLowerInvariant()}'.",
-                partUri);
+            return result;
         }
 
-        return result;
+        throw new ParchmentRegistrationException(
+            templateName,
+            $"Missing closing tag '{closer.Value.ToString().ToLowerInvariant()}'.",
+            partUri);
     }
 
     static LoopNode BuildFor(
@@ -95,7 +95,8 @@ static class ScopeTreeBuilder
         string partUri)
     {
         var body = BuildBlock(queue, BlockTagKind.EndFor, templateName, partUri);
-        if (queue.Count == 0 || queue.Peek().Block?.Kind != BlockTagKind.EndFor)
+        if (queue.Count == 0 ||
+            queue.Peek().Block?.Kind != BlockTagKind.EndFor)
         {
             throw new ParchmentRegistrationException(
                 templateName,
@@ -128,7 +129,9 @@ static class ScopeTreeBuilder
         branches.Add(new(opening.AnchorName, opening.Block!.Condition!, firstBody));
 
         // Collect elsif / else branches until endif
-        while (queue.Count > 0 && (queue.Peek().Block?.Kind == BlockTagKind.ElsIf || queue.Peek().Block?.Kind == BlockTagKind.Else))
+        while (queue.Count > 0 &&
+               (queue.Peek().Block?.Kind == BlockTagKind.ElsIf ||
+                queue.Peek().Block?.Kind == BlockTagKind.Else))
         {
             var branchOpening = queue.Dequeue();
             var branchBody = BuildBlock(queue, BlockTagKind.EndIf, templateName, partUri);
@@ -142,7 +145,8 @@ static class ScopeTreeBuilder
             }
         }
 
-        if (queue.Count == 0 || queue.Peek().Block?.Kind != BlockTagKind.EndIf)
+        if (queue.Count == 0 ||
+            queue.Peek().Block?.Kind != BlockTagKind.EndIf)
         {
             throw new ParchmentRegistrationException(
                 templateName,

@@ -280,7 +280,8 @@ class ScopeTreeRunner(
     {
         var result = new List<OpenXmlElement>();
         var cursor = start.NextSibling();
-        while (cursor != null && cursor != end)
+        while (cursor != null &&
+               cursor != end)
         {
             result.Add(cursor);
             cursor = cursor.NextSibling();
@@ -335,25 +336,25 @@ class ScopeTreeRunner(
     static IReadOnlyList<RangeNode> RemapBody(
         IReadOnlyList<RangeNode> body,
         Dictionary<string, string> nameMap) =>
-        body.Select(node => Remap(node, nameMap)).ToList();
+        body.Select(_ => Remap(_, nameMap)).ToList();
 
     static RangeNode Remap(RangeNode node, Dictionary<string, string> nameMap) =>
         node switch
         {
-            SubstitutionNode s => new SubstitutionNode(Rename(s.AnchorName, nameMap), s.Tokens),
-            StaticNode s => new StaticNode(Rename(s.AnchorName, nameMap)),
-            LoopNode l => new LoopNode(
-                Rename(l.OpenAnchorName, nameMap),
-                Rename(l.CloseAnchorName, nameMap),
-                l.Scope,
-                l.LoopVariable,
-                l.LoopSource,
-                RemapBody(l.Body, nameMap)),
-            IfNode i => new IfNode(
-                Rename(i.OpenAnchorName, nameMap),
-                Rename(i.CloseAnchorName, nameMap),
-                i.Branches.Select(b => new IfBranch(Rename(b.AnchorName, nameMap), b.Condition, RemapBody(b.Body, nameMap))).ToList(),
-                RemapBody(i.ElseBody, nameMap)),
+            SubstitutionNode substitutionNode => new SubstitutionNode(Rename(substitutionNode.AnchorName, nameMap), substitutionNode.Tokens),
+            StaticNode staticNode => new StaticNode(Rename(staticNode.AnchorName, nameMap)),
+            LoopNode loopNode => new LoopNode(
+                Rename(loopNode.OpenAnchorName, nameMap),
+                Rename(loopNode.CloseAnchorName, nameMap),
+                loopNode.Scope,
+                loopNode.LoopVariable,
+                loopNode.LoopSource,
+                RemapBody(loopNode.Body, nameMap)),
+            IfNode ifNode => new IfNode(
+                Rename(ifNode.OpenAnchorName, nameMap),
+                Rename(ifNode.CloseAnchorName, nameMap),
+                ifNode.Branches.Select(_ => new IfBranch(Rename(_.AnchorName, nameMap), _.Condition, RemapBody(_.Body, nameMap))).ToList(),
+                RemapBody(ifNode.ElseBody, nameMap)),
             _ => node
         };
 

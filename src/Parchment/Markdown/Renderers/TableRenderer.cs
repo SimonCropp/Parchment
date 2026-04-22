@@ -21,17 +21,57 @@ class TableRenderer :
     static TableProperties BuildTableProperties() =>
         new(
             new TableBorders(
-                new TopBorder { Val = BorderValues.Single, Size = 4 },
-                new BottomBorder { Val = BorderValues.Single, Size = 4 },
-                new LeftBorder { Val = BorderValues.Single, Size = 4 },
-                new RightBorder { Val = BorderValues.Single, Size = 4 },
-                new InsideHorizontalBorder { Val = BorderValues.Single, Size = 4 },
-                new InsideVerticalBorder { Val = BorderValues.Single, Size = 4 }),
+                new TopBorder
+                {
+                    Val = BorderValues.Single,
+                    Size = 4
+                },
+                new BottomBorder
+                {
+                    Val = BorderValues.Single,
+                    Size = 4
+                },
+                new LeftBorder
+                {
+                    Val = BorderValues.Single,
+                    Size = 4
+                },
+                new RightBorder
+                {
+                    Val = BorderValues.Single,
+                    Size = 4
+                },
+                new InsideHorizontalBorder
+                {
+                    Val = BorderValues.Single,
+                    Size = 4
+                },
+                new InsideVerticalBorder
+                {
+                    Val = BorderValues.Single,
+                    Size = 4
+                }),
             new TableCellMarginDefault(
-                new TopMargin { Width = "0", Type = TableWidthUnitValues.Dxa },
-                new StartMargin { Width = "108", Type = TableWidthUnitValues.Dxa },
-                new BottomMargin { Width = "0", Type = TableWidthUnitValues.Dxa },
-                new EndMargin { Width = "108", Type = TableWidthUnitValues.Dxa }));
+                new TopMargin
+                {
+                    Width = "0",
+                    Type = TableWidthUnitValues.Dxa
+                },
+                new StartMargin
+                {
+                    Width = "108",
+                    Type = TableWidthUnitValues.Dxa
+                },
+                new BottomMargin
+                {
+                    Width = "0",
+                    Type = TableWidthUnitValues.Dxa
+                },
+                new EndMargin
+                {
+                    Width = "108",
+                    Type = TableWidthUnitValues.Dxa
+                }));
 
     static TableGrid BuildTableGrid(Markdig.Extensions.Tables.Table table)
     {
@@ -87,7 +127,11 @@ class TableRenderer :
             if (block is Paragraph p && isHeader)
             {
                 p.ParagraphProperties ??= new();
-                p.ParagraphProperties.Append(new Justification { Val = JustificationValues.Center });
+                p.ParagraphProperties.Append(
+                    new Justification
+                    {
+                        Val = JustificationValues.Center
+                    });
                 foreach (var run in p.Elements<Run>())
                 {
                     run.RunProperties ??= new();

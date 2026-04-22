@@ -20,6 +20,11 @@ class SmartyPantInlineRenderer :
             return;
         }
 
-        renderer.AddRun(new Run(new Text(glyph) { Space = SpaceProcessingModeValues.Preserve }));
+        renderer.AddRun(
+            new Run(
+                new Text(glyph)
+                {
+                    Space = SpaceProcessingModeValues.Preserve
+                }));
     }
 }

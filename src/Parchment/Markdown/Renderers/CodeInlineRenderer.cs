@@ -4,8 +4,16 @@ class CodeInlineRenderer :
     protected override void Write(OpenXmlMarkdownRenderer renderer, CodeInline inline)
     {
         var run = new Run(
-            new RunProperties(new RunFonts { Ascii = "Consolas", HighAnsi = "Consolas" }),
-            new Text(XmlCharSanitizer.Strip(inline.Content)) { Space = SpaceProcessingModeValues.Preserve });
+            new RunProperties(
+                new RunFonts
+                {
+                    Ascii = "Consolas",
+                    HighAnsi = "Consolas"
+                }),
+            new Text(XmlCharSanitizer.Strip(inline.Content))
+            {
+                Space = SpaceProcessingModeValues.Preserve
+            });
         renderer.AddRun(run);
     }
 }

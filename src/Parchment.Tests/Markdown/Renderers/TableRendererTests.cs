@@ -7,19 +7,20 @@ public class TableRendererTests
     [Test]
     public async Task PipeTableEmitsTableWithGridRowsAndHeaderFormatting()
     {
-        const string md = """
-                          | A | B |
-                          |---|---|
-                          | 1 | 2 |
-                          | 3 | 4 |
-                          """;
+        const string md =
+            """
+            | A | B |
+            |---|---|
+            | 1 | 2 |
+            | 3 | 4 |
+            """;
 
         var tableBlock = RendererHarness.FirstBlock<MarkdigTable>(md);
         var renderer = RendererHarness.BuildRenderer();
 
         renderer.Render(tableBlock);
 
-        var table = (Table)renderer.Drain().Single();
+        var table = (Table) renderer.Drain().Single();
 
         var grid = table.GetFirstChild<TableGrid>()!;
         await Assert.That(grid.Elements<GridColumn>().Count()).IsEqualTo(2);
@@ -46,22 +47,23 @@ public class TableRendererTests
     [Test]
     public async Task GridTableEmitsTableWithCorrectStructure()
     {
-        const string md = """
-                          +---+---+
-                          | A | B |
-                          +===+===+
-                          | 1 | 2 |
-                          +---+---+
-                          | 3 | 4 |
-                          +---+---+
-                          """;
+        const string md =
+            """
+            +---+---+
+            | A | B |
+            +===+===+
+            | 1 | 2 |
+            +---+---+
+            | 3 | 4 |
+            +---+---+
+            """;
 
         var tableBlock = RendererHarness.FirstBlock<MarkdigTable>(md);
         var renderer = RendererHarness.BuildRenderer();
 
         renderer.Render(tableBlock);
 
-        var table = (Table)renderer.Drain().Single();
+        var table = (Table) renderer.Drain().Single();
 
         var grid = table.GetFirstChild<TableGrid>()!;
         await Assert.That(grid.Elements<GridColumn>().Count()).IsEqualTo(2);

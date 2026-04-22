@@ -16,13 +16,20 @@ class LinkInlineRenderer :
         renderer.WriteChildren(inline);
         var produced = renderer.Top.CurrentRuns.Skip(before).ToList();
 
-        var hyperlink = new Hyperlink { Id = relId };
+        var hyperlink = new Hyperlink
+        {
+            Id = relId
+        };
         foreach (var run in produced)
         {
             if (run is Run runElement)
             {
                 runElement.RunProperties ??= new();
-                runElement.RunProperties.Append(new RunStyle { Val = "Hyperlink" });
+                runElement.RunProperties.Append(
+                    new RunStyle
+                    {
+                        Val = "Hyperlink"
+                    });
                 hyperlink.Append(runElement);
             }
             else

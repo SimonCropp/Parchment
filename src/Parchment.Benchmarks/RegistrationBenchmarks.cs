@@ -1,5 +1,3 @@
-using BenchmarkDotNet.Attributes;
-
 [Config(typeof(BenchmarkConfig))]
 public class RegistrationBenchmarks
 {

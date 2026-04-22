@@ -50,7 +50,7 @@ store.RegisterDocxTemplate<Invoice>("substitution", template);
 using var stream = new MemoryStream();
 await store.Render("substitution", SampleData.Invoice(), stream);
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L17-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-Substitution' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L17-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-Substitution' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -121,7 +121,7 @@ using var template = DocxTemplateBuilder.Build(
     {{ Tags | bullet_list }}
     """);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L135-L142' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterContent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L156-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterContent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Render:
@@ -134,7 +134,7 @@ store.RegisterDocxTemplate<Invoice>("bullet-filter", template);
 using var stream = new MemoryStream();
 await store.Render("bullet-filter", SampleData.Invoice(), stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L144-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterRender' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L167-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterRender' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `numbered_list` is identical in shape — swap the filter name to produce a decimal-numbered list instead of bullets.
@@ -164,7 +164,7 @@ public class NoteModel
     public required TokenValue Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L3-L9' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L3-L11' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Content:
@@ -176,7 +176,7 @@ Content:
 
 {{ Body }}
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L17-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyContent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L19-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyContent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Render:
@@ -186,22 +186,25 @@ Render:
 ```cs
 var store = new TemplateStore();
 store.RegisterDocxTemplate<NoteModel>("markdown-hatch", template);
-await store.Render("markdown-hatch", new NoteModel
-{
-    Title = "Weekly summary",
-    Body = TokenValue.Markdown(
-        """
-        ## Highlights
+await store.Render(
+    "markdown-hatch",
+    new NoteModel
+    {
+        Title = "Weekly summary",
+        Body = TokenValue.Markdown(
+            """
+            ## Highlights
 
-        - Shipped the **new feature**
-        - Closed _several_ bugs
-        - Ran a code review
+            - Shipped the **new feature**
+            - Closed _several_ bugs
+            - Ran a code review
 
-        > Stay the course
-        """)
-}, stream);
+            > Stay the course
+            """)
+    },
+    stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L24-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyRender' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L26-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyRender' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -220,7 +223,7 @@ public class ArticleModel
     public required string Content { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L47-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L54-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Content:
@@ -232,7 +235,7 @@ Content:
 
 {{ Content | markdown }}
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L61-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterContent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L70-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterContent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Render:
@@ -242,18 +245,22 @@ Render:
 ```cs
 var store = new TemplateStore();
 store.RegisterDocxTemplate<ArticleModel>("markdown-filter", template);
-await store.Render("markdown-filter", new ArticleModel
-{
-    Heading = "Release notes",
-    Content = """
-        ### Bug fixes
+await store.Render(
+    "markdown-filter",
+    new ArticleModel
+    {
+        Heading = "Release notes",
+        Content =
+            """
+            ### Bug fixes
 
-        - Fixed crash on **empty input**
-        - Resolved _timeout_ in batch mode
-        """
-}, stream);
+            - Fixed crash on **empty input**
+            - Resolved _timeout_ in batch mode
+            """
+    },
+    stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L68-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterRender' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L77-L96' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterRender' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Both approaches produce the same structural replacement — the host paragraph is swapped with the rendered markdown elements. The token must sit alone in its paragraph.
@@ -271,7 +278,7 @@ public class BriefModel
     public required string Details { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Markdown/MarkdownFlowTests.cs#L56-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplatePropertyModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Markdown/MarkdownFlowTests.cs#L57-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplatePropertyModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Content:
@@ -283,7 +290,7 @@ Content:
 
 {{ Details }}
 ```
-<sup><a href='/src/Parchment.Tests/Markdown/MarkdownFlowTests.cs#L69-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplatePropertyContent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Markdown/MarkdownFlowTests.cs#L73-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplatePropertyContent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Render:
@@ -302,18 +309,19 @@ await store.Render(
     new BriefModel
     {
         Title = "Sprint recap",
-        Details = """
-                  ## Done
+        Details =
+            """
+            ## Done
 
-                  - Landed the **search** feature
-                  - Fixed _three_ regressions
+            - Landed the **search** feature
+            - Fixed _three_ regressions
 
-                  > Ship it.
-                  """
+            > Ship it.
+            """
     },
     targetStream);
 ```
-<sup><a href='/src/Parchment.Tests/Markdown/MarkdownFlowTests.cs#L78-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplatePropertyUsage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Markdown/MarkdownFlowTests.cs#L82-L107' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplatePropertyUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -332,7 +340,7 @@ public class StyledModel
     public required TokenValue Highlight { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L87-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L102-L110' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Content:
@@ -344,7 +352,7 @@ Content:
 
 {{ Highlight }}
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L101-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateContent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L118-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateContent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Render:
@@ -354,23 +362,25 @@ Render:
 ```cs
 var store = new TemplateStore();
 store.RegisterDocxTemplate<StyledModel>("mutate", template);
-await store.Render("mutate", new StyledModel
-{
-    Label = "Before",
-    Highlight = TokenValue.Mutate((paragraph, _) =>
+await store.Render(
+    "mutate",
+    new StyledModel
     {
-        paragraph.Append(
-            new Run(
-                new RunProperties(
-                    new Bold()),
-                new Text("Custom content")
-                {
-                    Space = SpaceProcessingModeValues.Preserve
-                }));
-    })
-}, stream);
+        Label = "Before",
+        Highlight = TokenValue.Mutate((paragraph, _) =>
+        {
+            paragraph.Append(
+                new Run(
+                    new RunProperties(
+                        new Bold()),
+                    new Text("Custom content")
+                    {
+                        Space = SpaceProcessingModeValues.Preserve
+                    }));
+        })
+    }, stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L108-L126' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateRender' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L125-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateRender' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -487,7 +497,7 @@ A markdown template is a `.md` file containing the full body of the document plu
 > No outstanding risks.
 {% endif %}
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L56-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L60-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The model the template binds against:
@@ -544,7 +554,7 @@ store.RegisterMarkdownTemplate<ReportContext>(
 using var stream = new MemoryStream();
 await store.Render("report", reportModel, stream);
 ```
-<sup><a href='/src/Parchment.Tests/UsageTests.cs#L87-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/UsageTests.cs#L91-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-Markdown' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The rendered docx (page 1):
