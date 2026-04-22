@@ -72,11 +72,12 @@ public sealed class ParchmentTemplateGenerator :
             return null;
         }
 
-        var rawLocation = attribute.ApplicationSyntaxReference != null
-            ? Location.Create(
-                attribute.ApplicationSyntaxReference.SyntaxTree,
-                attribute.ApplicationSyntaxReference.Span)
-            : Location.None;
+        var syntaxReference = attribute.ApplicationSyntaxReference;
+        var rawLocation = syntaxReference == null
+            ? Location.None
+            : Location.Create(
+                syntaxReference.SyntaxTree,
+                syntaxReference.Span);
 
         var declaringNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
             ? null
@@ -117,7 +118,8 @@ public sealed class ParchmentTemplateGenerator :
         DocxData? matched = null;
         foreach (var doc in docs)
         {
-            if (doc.Path.Replace('\\', '/').EndsWith(normalized, StringComparison.OrdinalIgnoreCase))
+            if (doc.Path.Replace('\\', '/')
+                .EndsWith(normalized, StringComparison.OrdinalIgnoreCase))
             {
                 matched = doc;
                 break;
@@ -126,20 +128,22 @@ public sealed class ParchmentTemplateGenerator :
 
         if (matched == null)
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                Diagnostics.TemplateFileMissing,
-                location,
-                target.TemplatePath));
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.TemplateFileMissing,
+                    location,
+                    target.TemplatePath));
             return;
         }
 
         if (matched.ReadError != null)
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                Diagnostics.TemplateReadError,
-                location,
-                target.TemplatePath,
-                matched.ReadError));
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.TemplateReadError,
+                    location,
+                    target.TemplatePath,
+                    matched.ReadError));
             return;
         }
 
@@ -176,11 +180,12 @@ public sealed class ParchmentTemplateGenerator :
                 case TokenKind.ForOpen:
                     if (token.HasOtherContent)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(
-                            Diagnostics.MixedInlineBlockTag,
-                            location,
-                            target.TemplatePath,
-                            token.Source));
+                        context.ReportDiagnostic(
+                            Diagnostic.Create(
+                                Diagnostics.MixedInlineBlockTag,
+                                location,
+                                target.TemplatePath,
+                                token.Source));
                     }
 
                     if (token.LoopVariable == null || token.References.Count == 0)
@@ -191,24 +196,26 @@ public sealed class ParchmentTemplateGenerator :
                     var sourceFqn = ShapeResolver.Resolve(target.Shape, token.References[0], scope);
                     if (sourceFqn == null)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(
-                            Diagnostics.MissingMember,
-                            location,
-                            target.TemplatePath,
-                            token.Source,
-                            string.Join(".", token.References[0]),
-                            target.ModelSimpleName));
+                        context.ReportDiagnostic(
+                            Diagnostic.Create(
+                                Diagnostics.MissingMember,
+                                location,
+                                target.TemplatePath,
+                                token.Source,
+                                string.Join('.', token.References[0]),
+                                target.ModelSimpleName));
                         break;
                     }
 
                     var elementFqn = ShapeResolver.GetElementType(target.Shape, sourceFqn);
                     if (elementFqn == null)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(
-                            Diagnostics.LoopSourceNotEnumerable,
-                            location,
-                            target.TemplatePath,
-                            token.Source));
+                        context.ReportDiagnostic(
+                            Diagnostic.Create(
+                                Diagnostics.LoopSourceNotEnumerable,
+                                location,
+                                target.TemplatePath,
+                                token.Source));
                         break;
                     }
 
@@ -219,11 +226,12 @@ public sealed class ParchmentTemplateGenerator :
                 case TokenKind.ForClose:
                     if (token.HasOtherContent)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(
-                            Diagnostics.MixedInlineBlockTag,
-                            location,
-                            target.TemplatePath,
-                            token.Source));
+                        context.ReportDiagnostic(
+                            Diagnostic.Create(
+                                Diagnostics.MixedInlineBlockTag,
+                                location,
+                                target.TemplatePath,
+                                token.Source));
                     }
 
                     if (loopStack.Count > 0)
@@ -237,11 +245,12 @@ public sealed class ParchmentTemplateGenerator :
                 case TokenKind.ElsIf:
                     if (token.HasOtherContent)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(
-                            Diagnostics.MixedInlineBlockTag,
-                            location,
-                            target.TemplatePath,
-                            token.Source));
+                        context.ReportDiagnostic(
+                            Diagnostic.Create(
+                                Diagnostics.MixedInlineBlockTag,
+                                location,
+                                target.TemplatePath,
+                                token.Source));
                     }
 
                     ValidateReferences(context, target, location, token.References, scope, token.Source);
@@ -251,21 +260,23 @@ public sealed class ParchmentTemplateGenerator :
                 case TokenKind.IfClose:
                     if (token.HasOtherContent)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(
-                            Diagnostics.MixedInlineBlockTag,
-                            location,
-                            target.TemplatePath,
-                            token.Source));
+                        context.ReportDiagnostic(
+                            Diagnostic.Create(
+                                Diagnostics.MixedInlineBlockTag,
+                                location,
+                                target.TemplatePath,
+                                token.Source));
                     }
 
                     break;
 
                 case TokenKind.UnknownBlock:
-                    context.ReportDiagnostic(Diagnostic.Create(
-                        Diagnostics.UnsupportedBlockTag,
-                        location,
-                        target.TemplatePath,
-                        token.Source));
+                    context.ReportDiagnostic(
+                        Diagnostic.Create(
+                            Diagnostics.UnsupportedBlockTag,
+                            location,
+                            target.TemplatePath,
+                            token.Source));
                     break;
             }
         }
@@ -323,28 +334,30 @@ public sealed class ParchmentTemplateGenerator :
         foreach (var reference in references)
         {
             var resolved = ShapeResolver.Resolve(target.Shape, reference, scope);
-            if (resolved == null)
+            if (resolved != null)
             {
-                context.ReportDiagnostic(
-                    Diagnostic.Create(
-                        Diagnostics.MissingMember,
-                        location,
-                        target.TemplatePath,
-                        tokenSource,
-                        string.Join(".", reference),
-                        target.ModelSimpleName));
+                continue;
             }
+
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.MissingMember,
+                    location,
+                    target.TemplatePath,
+                    tokenSource,
+                    string.Join('.', reference),
+                    target.ModelSimpleName));
         }
     }
 
     static string GenerateRegistration(TargetInfo target)
     {
-        var templatePath = target.TemplatePath.Replace("\\", "\\\\");
+        var templatePath = target.TemplatePath.Replace("\\", @"\\");
         var builder = new StringBuilder(
             """
             // <auto-generated />
             #nullable enable
-            
+
             """);
 
         if (target.DeclaringNamespace != null)
