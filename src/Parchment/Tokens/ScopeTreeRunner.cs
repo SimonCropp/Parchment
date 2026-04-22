@@ -9,7 +9,8 @@ class ScopeTreeRunner(
     TemplateContext context,
     MainDocumentPart mainPart,
     object rootModel,
-    ExcelsiorTableMap excelsiorTables)
+    ExcelsiorTableMap excelsiorTables,
+    FormatMap formats)
 {
     List<StructuralReplacement> structuralReplacements = [];
 
@@ -68,7 +69,7 @@ class ScopeTreeRunner(
         foreach (var token in sortedByOffset)
         {
             var evaluated = await EvaluateTokenAsync(token, host);
-            if (evaluated is TokenValue.MarkdownToken or TokenValue.OpenXmlToken)
+            if (evaluated is TokenValue.MarkdownToken or TokenValue.HtmlToken or TokenValue.OpenXmlToken)
             {
                 structuralTokens.Add((token, evaluated));
                 continue;
@@ -107,6 +108,9 @@ class ScopeTreeRunner(
                 case TokenValue.MarkdownToken md:
                     result.AddRange(MarkdownRendering.Render(md.Source, mainPart, headingOffset: 0));
                     break;
+                case TokenValue.HtmlToken html:
+                    result.AddRange(OpenXmlHtml.WordHtmlConverter.ToElements(html.Source, mainPart, new()));
+                    break;
                 case TokenValue.OpenXmlToken raw:
                     var ctx = new OpenXmlContextImpl(
                         mainPart,
@@ -127,6 +131,11 @@ class ScopeTreeRunner(
             if (TryResolveExcelsiorTable(site) is { } excelsiorToken)
             {
                 return excelsiorToken;
+            }
+
+            if (TryResolveFormatted(site) is { } formatted)
+            {
+                return formatted;
             }
 
             // Walk the parsed FluidTemplate to its OutputStatement and evaluate the underlying
@@ -194,6 +203,46 @@ class ScopeTreeRunner(
         return TokenValue.OpenXml(_ => [ExcelsiorTableBridge.BuildTable(entry.ElementType, data, mainPart)]);
     }
 
+    TokenValue? TryResolveFormatted(DocxTokenSite site)
+    {
+        if (formats.IsEmpty || site.References.Count == 0)
+        {
+            return null;
+        }
+
+        var reference = site.References[0];
+        var dottedPath = string.Join('.', reference.Segments);
+        if (!formats.TryGet(dottedPath, out var entry))
+        {
+            return null;
+        }
+
+        var walker = rootModel;
+        foreach (var segment in reference.Segments)
+        {
+            if (walker == null)
+            {
+                break;
+            }
+
+            var property = walker.GetType().GetProperty(segment, BindingFlags.Public | BindingFlags.Instance);
+            if (property == null)
+            {
+                return null;
+            }
+
+            walker = property.GetValue(walker);
+        }
+
+        var text = walker as string ?? string.Empty;
+        return entry.Kind switch
+        {
+            FormatKind.Html => TokenValue.Html(text),
+            FormatKind.Markdown => TokenValue.Markdown(text),
+            _ => null
+        };
+    }
+
     async Task ProcessLoopAsync(LoopNode loop)
     {
         if (!anchorMap.TryGetValue(loop.OpenAnchorName, out var open) ||
@@ -255,7 +304,8 @@ class ScopeTreeRunner(
                 context,
                 mainPart,
                 rootModel,
-                excelsiorTables);
+                excelsiorTables,
+                formats);
             RemapBodyInto(loop.Body, nameMap, clonedBody);
             await clonedRunner.RunAsync(clonedBody);
             clonedRunner.ApplyStructural();
@@ -419,7 +469,7 @@ class ScopeTreeRunner(
                 }
             }
 
-            var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart, rootModel, excelsiorTables);
+            var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart, rootModel, excelsiorTables, formats);
             await innerRunner.RunAsync(branchNodes);
             innerRunner.ApplyStructural();
 

@@ -22,7 +22,7 @@
     <PackageVersion Include="ProjectDefaults" Version="1.0.172" />
     <PackageVersion Include="ProjectFiles" Version="1.1.1" />
     <PackageVersion Include="Microsoft.Sbom.Targets" Version="4.1.5" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.5.0" />
     <PackageVersion Include="TUnit" Version="1.37.24" />
     <PackageVersion Include="Verify" Version="31.16.1" />
     <PackageVersion Include="Verify.TUnit" Version="31.16.1" />

@@ -121,6 +121,63 @@ static class ShapeResolver
         return false;
     }
 
+    public static MemberEntry? ResolveMember(
+        ModelShape shape,
+        string[] segments,
+        IReadOnlyDictionary<string, string> scope)
+    {
+        if (segments.Length == 0)
+        {
+            return null;
+        }
+
+        string currentFqn;
+        int start;
+        if (scope.TryGetValue(segments[0], out var scoped))
+        {
+            currentFqn = scoped;
+            start = 1;
+        }
+        else
+        {
+            currentFqn = shape.RootTypeFullyQualifiedName;
+            start = 0;
+        }
+
+        for (var i = start; i < segments.Length; i++)
+        {
+            var entry = FindType(shape, currentFqn);
+            if (entry == null)
+            {
+                return null;
+            }
+
+            MemberEntry? matched = null;
+            foreach (var member in entry.Members)
+            {
+                if (string.Equals(member.Name, segments[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    matched = member;
+                    break;
+                }
+            }
+
+            if (matched == null)
+            {
+                return null;
+            }
+
+            if (i == segments.Length - 1)
+            {
+                return matched;
+            }
+
+            currentFqn = matched.TypeFullyQualifiedName;
+        }
+
+        return null;
+    }
+
     static TypeEntry? FindType(ModelShape shape, string typeFqn)
     {
         foreach (var entry in shape.Types)

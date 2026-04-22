@@ -56,6 +56,22 @@ static class Diagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor FormatTokenNotAlone = new(
+        id: "PARCH009",
+        title: "[Html]/[Markdown] token must sit alone in its own paragraph",
+        messageFormat: "Template '{0}' token '{1}' references an [Html]/[Markdown] property but shares its paragraph with other content; structural replacement would discard the surrounding text",
+        category: "Parchment",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor FormatTokenNotPlainIdentifier = new(
+        id: "PARCH010",
+        title: "[Html]/[Markdown] token must be a plain member-access expression",
+        messageFormat: "Template '{0}' token '{1}' references an [Html]/[Markdown] property with filters or a non-plain expression; the property's formatted rendering is selected by attribute so filters would not be applied",
+        category: "Parchment",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     public static readonly DiagnosticDescriptor ExcelsiorTokenNotPlainIdentifier = new(
         id: "PARCH008",
         title: "[ExcelsiorTable] token must be a plain member-access expression",

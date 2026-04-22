@@ -8,6 +8,9 @@ public abstract class TokenValue
     public static TokenValue Markdown(string markdown) =>
         new MarkdownToken(markdown);
 
+    public static TokenValue Html(string html) =>
+        new HtmlToken(html);
+
     public static TokenValue OpenXml(Func<IOpenXmlContext, IEnumerable<OpenXmlElement>> render) =>
         new OpenXmlToken(render);
 
@@ -27,6 +30,12 @@ public abstract class TokenValue
         TokenValue
     {
         public string Source { get; } = markdown;
+    }
+
+    public class HtmlToken(string html) :
+        TokenValue
+    {
+        public string Source { get; } = html;
     }
 
     public class OpenXmlToken(Func<IOpenXmlContext, IEnumerable<OpenXmlElement>> render) :

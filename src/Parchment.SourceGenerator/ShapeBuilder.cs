@@ -63,7 +63,8 @@ static class ShapeBuilder
                     }
 
                     var isExcelsior = HasExcelsiorTableAttribute(member, excelsiorTableType);
-                    members.Add(new(memberName, Fqn(memberType), isExcelsior));
+                    var (isHtml, isMarkdown) = DetectFormat(member);
+                    members.Add(new(memberName, Fqn(memberType), isExcelsior, isHtml, isMarkdown));
                     Enqueue(memberType, visited, queue);
                 }
 
@@ -72,6 +73,51 @@ static class ShapeBuilder
         }
 
         return new(Fqn(type), elementFqn, new(members.ToImmutable()));
+    }
+
+    static (bool isHtml, bool isMarkdown) DetectFormat(ISymbol member)
+    {
+        var hasHtml = false;
+        var hasMarkdown = false;
+        string? stringSyntax = null;
+        foreach (var attribute in member.GetAttributes())
+        {
+            var cls = attribute.AttributeClass;
+            if (cls == null)
+            {
+                continue;
+            }
+
+            var name = cls.Name;
+            if (name == "HtmlAttribute")
+            {
+                hasHtml = true;
+            }
+            else if (name == "MarkdownAttribute")
+            {
+                hasMarkdown = true;
+            }
+            else if (cls.ToDisplayString(format) == "global::System.Diagnostics.CodeAnalysis.StringSyntaxAttribute")
+            {
+                if (attribute.ConstructorArguments.Length > 0 &&
+                    attribute.ConstructorArguments[0].Value is string value)
+                {
+                    stringSyntax = value.ToLowerInvariant();
+                }
+            }
+        }
+
+        if (hasHtml || stringSyntax == "html")
+        {
+            return (true, false);
+        }
+
+        if (hasMarkdown || stringSyntax == "markdown")
+        {
+            return (false, true);
+        }
+
+        return (false, false);
     }
 
     static bool HasExcelsiorTableAttribute(ISymbol member, INamedTypeSymbol? excelsiorTableType)

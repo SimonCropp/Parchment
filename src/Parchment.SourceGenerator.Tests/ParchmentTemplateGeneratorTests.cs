@@ -281,6 +281,90 @@ public class ParchmentTemplateGeneratorTests
         await Assert.That(diagnostics.Any(d => d.Id == "PARCH008")).IsFalse();
     }
 
+    const string formatModel =
+        """
+        using System.Diagnostics.CodeAnalysis;
+        using Parchment;
+
+        namespace Sample;
+
+        [System.AttributeUsage(System.AttributeTargets.Property)]
+        public sealed class HtmlAttribute : System.Attribute { }
+
+        [System.AttributeUsage(System.AttributeTargets.Property)]
+        public sealed class MarkdownAttribute : System.Attribute { }
+
+        public class Doc
+        {
+            [Html]
+            public string Body { get; set; } = "";
+
+            [Markdown]
+            public string Notes { get; set; } = "";
+
+            [StringSyntax("html")]
+            public string Summary { get; set; } = "";
+        }
+        """;
+
+    [Test]
+    public async Task FormatToken_MixedInline_Diagnostic()
+    {
+        var source = formatModel +
+                     """
+
+                     [ParchmentTemplate("template.docx", typeof(Doc))]
+                     public partial class MixedFormat;
+                     """;
+        var result = GeneratorDriver.Run(source, "Prefix {{ Body }}");
+        var diagnostics = result.Results.Single().Diagnostics;
+        await Assert.That(diagnostics.Any(d => d.Id == "PARCH009")).IsTrue();
+    }
+
+    [Test]
+    public async Task FormatToken_WithFilter_Diagnostic()
+    {
+        var source = formatModel +
+                     """
+
+                     [ParchmentTemplate("template.docx", typeof(Doc))]
+                     public partial class FilteredFormat;
+                     """;
+        var result = GeneratorDriver.Run(source, "{{ Body | upcase }}");
+        var diagnostics = result.Results.Single().Diagnostics;
+        await Assert.That(diagnostics.Any(d => d.Id == "PARCH010")).IsTrue();
+    }
+
+    [Test]
+    public async Task FormatToken_MarkdownClean_NoDiagnostics()
+    {
+        var source = formatModel +
+                     """
+
+                     [ParchmentTemplate("template.docx", typeof(Doc))]
+                     public partial class CleanFormat;
+                     """;
+        var result = GeneratorDriver.Run(source, "{{ Notes }}");
+        var diagnostics = result.Results.Single().Diagnostics;
+        await Assert.That(diagnostics.Any(d => d.Id == "PARCH009")).IsFalse();
+        await Assert.That(diagnostics.Any(d => d.Id == "PARCH010")).IsFalse();
+    }
+
+    [Test]
+    public async Task FormatToken_StringSyntaxHtml_NoDiagnostics()
+    {
+        var source = formatModel +
+                     """
+
+                     [ParchmentTemplate("template.docx", typeof(Doc))]
+                     public partial class SyntaxFormat;
+                     """;
+        var result = GeneratorDriver.Run(source, "{{ Summary }}");
+        var diagnostics = result.Results.Single().Diagnostics;
+        await Assert.That(diagnostics.Any(d => d.Id == "PARCH009")).IsFalse();
+        await Assert.That(diagnostics.Any(d => d.Id == "PARCH010")).IsFalse();
+    }
+
     [Test]
     public Task MixedInlineBlockTag()
     {

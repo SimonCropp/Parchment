@@ -113,6 +113,29 @@ A hook that lets a `{{ Property }}` substitution resolve to a fully-formatted Wo
 
 The runtime and SG enforce the same two rules but via different mechanisms: runtime inspects the Fluid AST directly at registration; SG reads a boolean that `TokenScanner` baked in when parsing. Both paths are covered by `ExcelsiorTableTests` (Parchment.Tests) and `ExcelsiorToken_*` tests (Parchment.SourceGenerator.Tests).
 
+### Html / Markdown property dispatch (`[Html]` / `[Markdown]`)
+
+Parallel hook to Excelsior, but for string properties rather than collections: a `string`/`string?` property marked with a user-defined `HtmlAttribute` / `MarkdownAttribute` (detected by type name — Parchment does not ship the attributes) or with `[StringSyntax("html")]` / `[StringSyntax("markdown")]` causes its `{{ Property }}` substitution to be structurally replaced instead of text-substituted. Html runs through `OpenXmlHtml.WordHtmlConverter.ToElements`; markdown runs through the same `MarkdownRendering.Render` used by the markdown-template flow.
+
+**Runtime path** (`src/Parchment/Formats/`):
+
+1. `FormatMap.Build(modelType, name)` walks the model's reachable property graph, mirroring `ExcelsiorTableMap.WalkType` (per-branch `visited` HashSet, same `ShouldDescend` leaf-skipping). For each property it checks `[HtmlAttribute]` / `[MarkdownAttribute]` by `attribute.GetType().Name` and `[StringSyntaxAttribute]` by full type name with `Syntax == "html" | "markdown"`. Enforces string-only, throws on `[Html]+[Markdown]` or `[Html]+[StringSyntax("markdown")]` (and vice versa). Emits `(DottedPath → FormatKind)` entries.
+2. `FormatTokenValidator.Validate` runs in `TemplateStore.RegisterDocxTemplate` right after `ExcelsiorTokenValidator`. Same two rules: token alone in its paragraph, and parsed `OutputStatement.Expression is MemberExpression`.
+3. `ScopeTreeRunner.EvaluateTokenAsync` consults `TryResolveFormatted` AFTER `TryResolveExcelsiorTable`, before standard Fluid evaluation. It walks the dotted path on `rootModel` via `PropertyInfo.GetValue`, reads the string, and returns `TokenValue.Html(text)` / `TokenValue.Markdown(text)`. Null strings yield empty output.
+4. `TokenValue.HtmlToken` is handled alongside `MarkdownToken` / `OpenXmlToken` in `BuildStructuralReplacements`; its source string is passed directly to `OpenXmlHtml.WordHtmlConverter.ToElements(..., mainPart, new())`.
+5. `ScopeTreeRunner` takes `FormatMap` as a constructor dep and propagates it to cloned runners in loop / if branches — same pattern as `excelsiorTables` and `rootModel`.
+
+**SG path** (`src/Parchment.SourceGenerator/`):
+
+1. `MemberEntry` has primitive `IsHtml` / `IsMarkdown` bools (sealed record, incremental-pipeline-friendly).
+2. `ShapeBuilder.DetectFormat(ISymbol)` matches attribute class name strings (`"HtmlAttribute"`, `"MarkdownAttribute"`) and the `StringSyntaxAttribute` FQN `"global::System.Diagnostics.CodeAnalysis.StringSyntaxAttribute"` — the SG can't `typeof()` them because neither attribute is shipped by Parchment.
+3. `ShapeResolver.ResolveMember` returns the final `MemberEntry` for a segment path (honoring loop scope), analogous to `IsExcelsiorTableMember` but returning the whole entry so the caller can consult both flags without walking the shape twice.
+4. `ParchmentTemplateGenerator.ValidateFormatToken` gates on `member.IsHtml || member.IsMarkdown`, emits `PARCH009` on `HasOtherContent` and `PARCH010` on `!IsPlainIdentifier`.
+
+**Runtime + SG lockstep, same as Excelsior**: both enforce solo-in-paragraph and plain-member-access. If one side's rule changes, update the other. The relevant tests are `FormatAttributeTests` (runtime) and `FormatToken_*` (SG).
+
+Loop-scoped tokens fall through — `FormatMap` is keyed on dotted paths from the root model only, matching the `ExcelsiorTableMap` limitation. `{% for line in Lines %}{{ line.Body }}{% endfor %}` where `Line.Body` is `[Html]` won't trigger structural replacement; use `{{ line.Body | markdown }}` / the `markdown` filter explicitly inside loops.
+
 ### Determinism guarantee
 
 Same template + same model → byte-identical output. Avoid `w:rsid` randomness, never set `PackageProperties.Created`, no timestamps anywhere. `DeterminismTests.cs` renders a sample twice and asserts byte equality. Users hash outputs for caching/dedup, so don't break this.

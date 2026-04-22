@@ -459,6 +459,121 @@ Rules:
 - Currency and date formatting in the rendered table honor `Excelsior.ValueRenderer.Culture` (defaults to `CultureInfo.CurrentCulture`). Set it once in a module initializer to override the default locale.
 
 
+### Html and Markdown properties
+
+Mark a `string` property with `[Html]` or `[Markdown]` (any attribute named `HtmlAttribute` / `MarkdownAttribute`, or `[StringSyntax("html")]` / `[StringSyntax("markdown")]`) and the matching `{{ ... }}` substitution is rendered as a structurally-replaced block of Word content instead of raw text. Html runs through the `OpenXmlHtml` converter; markdown runs through the same Markdig pipeline used by the full markdown template flow.
+
+The attributes are detected by name — Parchment does not ship them. Define them in your own project (or use `[StringSyntax("html")]` from `System.Diagnostics.CodeAnalysis`):
+
+<!-- snippet: HtmlAttribute -->
+<a id='snippet-HtmlAttribute'></a>
+```cs
+[AttributeUsage(AttributeTargets.Property)]
+sealed class HtmlAttribute : Attribute;
+```
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L14-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlAttribute' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Mark the property:
+
+<!-- snippet: HtmlModel -->
+<a id='snippet-HtmlModel'></a>
+```cs
+public class HtmlDoc
+{
+    public required string Title { get; init; }
+
+    [Html]
+    public required string Body { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L24-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Drop a `{{ Body }}` substitution into the template on its own line:
+
+![Template before render](/src/Parchment.Tests/Scenarios/html-property/input.png)
+
+<!-- snippet: HtmlUsage -->
+<a id='snippet-HtmlUsage'></a>
+```cs
+var templatePath = Path.Combine(ScenarioPath("html-property"), "input.docx");
+
+var store = new TemplateStore();
+store.RegisterDocxTemplate<HtmlDoc>("html-doc", templatePath);
+
+var model = new HtmlDoc
+{
+    Title = "Report",
+    Body = "<p>Hello <b>world</b></p><p>Second para</p>"
+};
+
+using var stream = new MemoryStream();
+await store.Render("html-doc", model, stream);
+```
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L81-L95' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlUsage' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+![Rendered output](/src/Parchment.Tests/Scenarios/html-property/output%23page01.verified.png)
+
+`[Markdown]` is the same shape — mark the property with a `MarkdownAttribute`-named attribute (or `[StringSyntax("markdown")]`) and the string is parsed as markdown at render time:
+
+<!-- snippet: MarkdownModel -->
+<a id='snippet-MarkdownModel'></a>
+```cs
+public class MarkdownDoc
+{
+    public required string Title { get; init; }
+
+    [Markdown]
+    public required string Body { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L34-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+![Template before render](/src/Parchment.Tests/Scenarios/markdown-property/input.png)
+
+![Rendered output](/src/Parchment.Tests/Scenarios/markdown-property/output%23page01.verified.png)
+
+If you prefer not to define your own attributes, `[StringSyntax]` from `System.Diagnostics.CodeAnalysis` is equivalent (case-insensitive):
+
+<!-- snippet: StringSyntaxHtmlModel -->
+<a id='snippet-StringSyntaxHtmlModel'></a>
+```cs
+public class StringSyntaxHtmlDoc
+{
+    public required string Title { get; init; }
+
+    [StringSyntax("html")]
+    public required string Body { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L44-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxHtmlModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+<!-- snippet: StringSyntaxMarkdownModel -->
+<a id='snippet-StringSyntaxMarkdownModel'></a>
+```cs
+public class StringSyntaxMarkdownDoc
+{
+    public required string Title { get; init; }
+
+    [StringSyntax("markdown")]
+    public required string Body { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L54-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxMarkdownModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Rules (same as `[ExcelsiorTable]`):
+
+- The substitution must sit alone in its own paragraph — diagnostic `PARCH009` at compile time, `ParchmentRegistrationException` at runtime.
+- The substitution must be a plain member-access expression — filters and arithmetic are rejected because the formatted rendering is selected by attribute rather than Fluid evaluation. Diagnostic `PARCH010`.
+- Only `string` / `string?` properties are supported.
+- `[Html]` + `[Markdown]` on the same property, or `[Html]` + `[StringSyntax("markdown")]` (and vice versa), is rejected at registration as a mismatch.
+
+
 ## Markdown template
 
 A markdown template is a `.md` file containing the full body of the document plus liquid tokens for substitution, looping, and conditional content. The template below combines headings, emphasis, a pipe table driven by a loop, an ordered list driven by a loop, and a blockquote chosen by an `{% if %}`:
@@ -799,6 +914,16 @@ The Excelsior render path walks the CLR model directly and bypasses Fluid evalua
 // Template paragraph — the | reverse filter would be silently dropped
 {{ Lines | reverse }}
 ```
+
+
+### `PARCH009` — `[Html]` / `[Markdown]` token not alone in paragraph
+
+An `[Html]` or `[Markdown]` substitution replaces the entire host paragraph with rendered content. If the paragraph contains other text, that text would be discarded. The token must be the only content in its paragraph.
+
+
+### `PARCH010` — `[Html]` / `[Markdown]` token with filters or complex expression
+
+Formatted rendering is selected by the property attribute rather than via Fluid, so filter chains are not applied. Use plain member access (`{{ Body }}` or `{{ Customer.Bio }}`).
 
 It also generates a `RegisterWith(store)` helper so registration is one line at runtime.
 

@@ -3,7 +3,8 @@ class RegisteredDocxTemplate(
     Type modelType,
     byte[] canonicalBytes,
     IReadOnlyList<PartScopeTree> parts,
-    ExcelsiorTableMap excelsiorTables) :
+    ExcelsiorTableMap excelsiorTables,
+    FormatMap formats) :
     RegisteredTemplate(name, modelType)
 {
     public override async Task Render(object model, Stream output, Cancel cancel)
@@ -52,7 +53,7 @@ class RegisteredDocxTemplate(
         }
 
         var map = Anchors.BuildMap(root);
-        var runner = new ScopeTreeRunner(Name, part.PartUri, map, context, mainPart, model, excelsiorTables);
+        var runner = new ScopeTreeRunner(Name, part.PartUri, map, context, mainPart, model, excelsiorTables, formats);
         await runner.RunAsync(part.Nodes);
         runner.ApplyStructural();
     }

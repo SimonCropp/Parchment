@@ -16,7 +16,7 @@ public sealed class ParchmentTemplateGenerator :
             .ForAttributeWithMetadataName(
                 attributeFullName,
                 static (node, _) => node is ClassDeclarationSyntax,
-                static (ctx, cancel) => ExtractTarget(ctx, cancel))
+                ExtractTarget)
             .Where(static target => target != null)
             .Select(static (target, _) => target!)
             .WithTrackingName(Stages.Targets)
@@ -176,6 +176,7 @@ public sealed class ParchmentTemplateGenerator :
                 case TokenKind.Substitution:
                     ValidateReferences(context, target, location, token.References, scope, token.Source);
                     ValidateExcelsiorToken(context, target, location, token, scope);
+                    ValidateFormatToken(context, target, location, token, scope);
                     break;
 
                 case TokenKind.ForOpen:
@@ -318,6 +319,45 @@ public sealed class ParchmentTemplateGenerator :
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     Diagnostics.ExcelsiorTokenNotPlainIdentifier,
+                    location,
+                    target.TemplatePath,
+                    token.Source));
+        }
+    }
+
+    static void ValidateFormatToken(
+        SourceProductionContext context,
+        TargetInfo target,
+        Location location,
+        Token token,
+        Dictionary<string, string> scope)
+    {
+        if (token.References.Count == 0)
+        {
+            return;
+        }
+
+        var member = ShapeResolver.ResolveMember(target.Shape, token.References[0], scope);
+        if (member is null || (!member.IsHtml && !member.IsMarkdown))
+        {
+            return;
+        }
+
+        if (token.HasOtherContent)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.FormatTokenNotAlone,
+                    location,
+                    target.TemplatePath,
+                    token.Source));
+        }
+
+        if (!token.IsPlainIdentifier)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.FormatTokenNotPlainIdentifier,
                     location,
                     target.TemplatePath,
                     token.Source));
