@@ -57,7 +57,8 @@ public sealed class ParchmentTemplateGenerator :
         }
 
         var attribute = context.Attributes.FirstOrDefault();
-        if (attribute == null || attribute.ConstructorArguments.Length < 2)
+        if (attribute == null ||
+            attribute.ConstructorArguments.Length < 2)
         {
             return null;
         }
