@@ -9,7 +9,9 @@ global using System.Threading.Tasks;
 global using DocumentFormat.OpenXml;
 global using DocumentFormat.OpenXml.Packaging;
 global using DocumentFormat.OpenXml.Wordprocessing;
-
+global using Excelsior;
+global using Morph;
+global using NaughtyStrings;
 global using Parchment;
 global using ParchmentModel;
 

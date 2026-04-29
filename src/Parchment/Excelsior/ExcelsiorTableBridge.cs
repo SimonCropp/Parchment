@@ -19,16 +19,17 @@ static class ExcelsiorTableBridge
     {
         var builderType = typeof(WordTableBuilder<>).MakeGenericType(elementType);
         var enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
-        var ctor = builderType.GetConstructor([enumerableType])
+        var headingStyleType = typeof(Action<CellStyle>);
+        var ctor = builderType.GetConstructor([enumerableType, headingStyleType])
             ?? throw new InvalidOperationException(
-                $"Excelsior.WordTableBuilder<{elementType.Name}> has no constructor accepting IEnumerable<{elementType.Name}>.");
+                $"Excelsior.WordTableBuilder<{elementType.Name}> has no constructor accepting (IEnumerable<{elementType.Name}>, Action<CellStyle>).");
         var build = builderType.GetMethod("Build", [typeof(MainDocumentPart)])
             ?? throw new InvalidOperationException(
                 $"Excelsior.WordTableBuilder<{elementType.Name}>.Build(MainDocumentPart) is missing.");
 
         return (data, mainPart) =>
         {
-            var builder = ctor.Invoke([data]);
+            var builder = ctor.Invoke([data, null]);
             return (Table) build.Invoke(builder, [mainPart])!;
         };
     }

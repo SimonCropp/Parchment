@@ -52,8 +52,16 @@ public class LoopTests
             {
                 Groups =
                 [
-                    new() { Name = "Fruit", Items = ["apple", "pear"] },
-                    new() { Name = "Tools", Items = ["hammer", "saw", "drill"] }
+                    new()
+                    {
+                        Name = "Fruit",
+                        Items = ["apple", "pear"]
+                    },
+                    new()
+                    {
+                        Name = "Tools",
+                        Items = ["hammer", "saw", "drill"]
+                    }
                 ]
             },
             stream);

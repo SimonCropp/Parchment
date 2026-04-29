@@ -338,7 +338,7 @@ public sealed class ParchmentTemplateGenerator :
         }
 
         var member = ShapeResolver.ResolveMember(target.Shape, token.References[0], scope);
-        if (member is null || (!member.IsHtml && !member.IsMarkdown))
+        if (member is null || member is { IsHtml: false, IsMarkdown: false })
         {
             return;
         }

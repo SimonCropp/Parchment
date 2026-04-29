@@ -1,5 +1,3 @@
-using WordRender;
-
 /// <summary>
 /// Regenerates an <c>input.png</c> alongside every <c>scenarios/*/input.docx</c> by running the
 /// template docx through Morph's SkiaSharp-backed renderer. Marked <c>[Explicit]</c> because it
@@ -18,7 +16,7 @@ public class ScenarioInputRenderer
         var inputs = Directory.GetFiles(scenariosDir, "input.docx", SearchOption.AllDirectories);
         await Assert.That(inputs.Length).IsGreaterThan(0);
 
-        var converter = new global::WordRender.Skia.DocumentConverter();
+        var converter = new SkiaDocumentConverter();
         var options = new ConversionOptions();
 
         foreach (var docxPath in inputs)

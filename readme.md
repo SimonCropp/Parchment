@@ -413,7 +413,7 @@ public class QuoteLine
     public required decimal UnitPrice { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L14-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L12-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Drop a `{{ Lines }}` substitution into the template on its own line. The template:
@@ -435,16 +435,31 @@ var model = new Quote
     Reference = "Q-2026-0042",
     Lines =
     [
-        new() { Description = "Strategy workshop", Quantity = 2, UnitPrice = 4500m },
-        new() { Description = "Implementation support", Quantity = 8, UnitPrice = 1750m },
-        new() { Description = "Documentation review", Quantity = 1, UnitPrice = 950m }
+        new()
+        {
+            Description = "Strategy workshop",
+            Quantity = 2,
+            UnitPrice = 4500m
+        },
+        new()
+        {
+            Description = "Implementation support",
+            Quantity = 8,
+            UnitPrice = 1750m
+        },
+        new()
+        {
+            Description = "Documentation review",
+            Quantity = 1,
+            UnitPrice = 950m
+        }
     ]
 };
 
 using var stream = new MemoryStream();
 await store.Render("excelsior-quote", model, stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L144-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableUsage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L150-L186' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The rendered output:
@@ -471,7 +486,7 @@ The attributes are detected by name — Parchment does not ship them. Define the
 [AttributeUsage(AttributeTargets.Property)]
 sealed class HtmlAttribute : Attribute;
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L14-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlAttribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L13-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlAttribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Mark the property:
@@ -487,7 +502,7 @@ public class HtmlDoc
     public required string Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L24-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L23-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Drop a `{{ Body }}` substitution into the template on its own line:
@@ -511,7 +526,7 @@ var model = new HtmlDoc
 using var stream = new MemoryStream();
 await store.Render("html-doc", model, stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L81-L95' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlUsage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L80-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ![Rendered output](/src/Parchment.Tests/Scenarios/html-property/output%23page01.verified.png)
@@ -529,7 +544,7 @@ public class MarkdownDoc
     public required string Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L34-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L33-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ![Template before render](/src/Parchment.Tests/Scenarios/markdown-property/input.png)
@@ -549,7 +564,7 @@ public class StringSyntaxHtmlDoc
     public required string Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L44-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxHtmlModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L43-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxHtmlModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: StringSyntaxMarkdownModel -->
@@ -563,7 +578,7 @@ public class StringSyntaxMarkdownDoc
     public required string Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L54-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxMarkdownModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L53-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxMarkdownModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Rules (same as `[ExcelsiorTable]`):

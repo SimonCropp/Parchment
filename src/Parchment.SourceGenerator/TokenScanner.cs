@@ -54,8 +54,8 @@ public static class TokenScanner
     static bool IsPlainMemberAccess(IFluidTemplate template)
     {
         var statements = ((FluidTemplate) template).Statements;
-        return statements.Count == 1
-               && statements[0] is
+        return statements.Count == 1 &&
+               statements[0] is
                    OutputStatement
                    {
                        Expression: MemberExpression

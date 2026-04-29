@@ -1,5 +1,3 @@
-using NaughtyStrings;
-
 public class NaughtyStringsTests
 {
     public class NaughtyModel

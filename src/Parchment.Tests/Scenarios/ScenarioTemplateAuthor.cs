@@ -7,7 +7,7 @@
 public class ScenarioTemplateAuthor
 {
     [Test, Explicit]
-    public async Task WriteHtmlPropertyInput()
+    public Task WriteHtmlPropertyInput()
     {
         var bytes = DocxTemplateBuilder.Build(
             """
@@ -17,11 +17,11 @@ public class ScenarioTemplateAuthor
 
             End.
             """).ToArray();
-        await File.WriteAllBytesAsync(ScenarioPath("html-property"), bytes);
+        return File.WriteAllBytesAsync(ScenarioPath("html-property"), bytes);
     }
 
     [Test, Explicit]
-    public async Task WriteMarkdownPropertyInput()
+    public Task WriteMarkdownPropertyInput()
     {
         var bytes = DocxTemplateBuilder.Build(
             """
@@ -31,7 +31,7 @@ public class ScenarioTemplateAuthor
 
             End.
             """).ToArray();
-        await File.WriteAllBytesAsync(ScenarioPath("markdown-property"), bytes);
+        return File.WriteAllBytesAsync(ScenarioPath("markdown-property"), bytes);
     }
 
     static string ScenarioPath(string name) =>

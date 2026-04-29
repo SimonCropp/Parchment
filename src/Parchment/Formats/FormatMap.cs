@@ -162,11 +162,9 @@ sealed class FormatMap
             return false;
         }
 
-        return !typeof(System.Collections.IEnumerable).IsAssignableFrom(type);
+        return !typeof(IEnumerable).IsAssignableFrom(type);
     }
 }
-
-sealed record FormatEntry(string DottedPath, FormatKind Kind);
 
 enum FormatKind
 {

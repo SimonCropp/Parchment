@@ -1,5 +1,3 @@
-using Excelsior;
-
 public class ExcelsiorTableTests
 {
     static string SourcePath([CallerFilePath] string path = "") => path;
@@ -12,6 +10,7 @@ public class ExcelsiorTableTests
             scenarioName));
 
     #region ExcelsiorTableModel
+
     public class Quote
     {
         public required string Reference { get; init; }
@@ -31,6 +30,7 @@ public class ExcelsiorTableTests
         [Column(Order = 3, Format = "C0")]
         public required decimal UnitPrice { get; init; }
     }
+
     #endregion
 
     public class Order
@@ -84,8 +84,16 @@ public class ExcelsiorTableTests
                 Name = "Acme Corp",
                 Addresses =
                 [
-                    new() { Street = "1 Pine St", City = "Portland" },
-                    new() { Street = "42 Oak Ave", City = "Seattle" }
+                    new()
+                    {
+                        Street = "1 Pine St",
+                        City = "Portland"
+                    },
+                    new()
+                    {
+                        Street = "42 Oak Ave",
+                        City = "Seattle"
+                    }
                 ]
             }
         };
@@ -111,8 +119,7 @@ public class ExcelsiorTableTests
             """);
 
         var store = new TemplateStore();
-        var exception = await Assert.That(
-            () => store.RegisterDocxTemplate<Quote>("mixed-inline", template))
+        var exception = await Assert.That(() => store.RegisterDocxTemplate<Quote>("mixed-inline", template))
             .Throws<ParchmentRegistrationException>();
         await Assert.That(exception!.Message).Contains("must sit alone in its own paragraph");
     }
@@ -132,8 +139,7 @@ public class ExcelsiorTableTests
             """);
 
         var store = new TemplateStore();
-        var exception = await Assert.That(
-            () => store.RegisterDocxTemplate<Quote>("filter-rejected", template))
+        var exception = await Assert.That(() => store.RegisterDocxTemplate<Quote>("filter-rejected", template))
             .Throws<ParchmentRegistrationException>();
         await Assert.That(exception!.Message).Contains("plain member-access");
     }
@@ -142,6 +148,7 @@ public class ExcelsiorTableTests
     public async Task Render()
     {
         #region ExcelsiorTableUsage
+
         var templatePath = Path.Combine(ScenarioPath("excelsior-table"), "input.docx");
 
         var store = new TemplateStore();
@@ -152,14 +159,30 @@ public class ExcelsiorTableTests
             Reference = "Q-2026-0042",
             Lines =
             [
-                new() { Description = "Strategy workshop", Quantity = 2, UnitPrice = 4500m },
-                new() { Description = "Implementation support", Quantity = 8, UnitPrice = 1750m },
-                new() { Description = "Documentation review", Quantity = 1, UnitPrice = 950m }
+                new()
+                {
+                    Description = "Strategy workshop",
+                    Quantity = 2,
+                    UnitPrice = 4500m
+                },
+                new()
+                {
+                    Description = "Implementation support",
+                    Quantity = 8,
+                    UnitPrice = 1750m
+                },
+                new()
+                {
+                    Description = "Documentation review",
+                    Quantity = 1,
+                    UnitPrice = 950m
+                }
             ]
         };
 
         using var stream = new MemoryStream();
         await store.Render("excelsior-quote", model, stream);
+
         #endregion
 
         // Land the Verify artifacts next to input.docx so the scenario directory is a

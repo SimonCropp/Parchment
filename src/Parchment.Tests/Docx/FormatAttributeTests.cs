@@ -5,11 +5,10 @@ public class FormatAttributeTests
     static string SourcePath([CallerFilePath] string path = "") => path;
 
     static string ScenarioPath(string scenarioName) =>
-        Path.GetFullPath(Path.Combine(
-            Path.GetDirectoryName(SourcePath())!,
-            "..",
+        Path.Combine(
+            ProjectFiles.ProjectDirectory,
             "Scenarios",
-            scenarioName));
+            scenarioName);
 
     #region HtmlAttribute
     [AttributeUsage(AttributeTargets.Property)]
@@ -132,10 +131,7 @@ public class FormatAttributeTests
     [Test]
     public async Task StringSyntaxHtmlIsEquivalentToHtmlAttribute()
     {
-        using var template = DocxTemplateBuilder.Build(
-            """
-            {{ Body }}
-            """);
+        using var template = DocxTemplateBuilder.Build("{{ Body }}");
 
         var store = new TemplateStore();
         store.RegisterDocxTemplate<StringSyntaxHtmlDoc>("stringsyntax-html", template);
@@ -155,10 +151,7 @@ public class FormatAttributeTests
     [Test]
     public async Task MixedInlineContentIsRejected()
     {
-        using var template = DocxTemplateBuilder.Build(
-            """
-            Prefix {{ Body }}
-            """);
+        using var template = DocxTemplateBuilder.Build("Prefix {{ Body }}");
 
         var store = new TemplateStore();
         var exception = await Assert.That(
@@ -170,10 +163,7 @@ public class FormatAttributeTests
     [Test]
     public async Task FilterOnFormatTokenIsRejected()
     {
-        using var template = DocxTemplateBuilder.Build(
-            """
-            {{ Body | upcase }}
-            """);
+        using var template = DocxTemplateBuilder.Build("{{ Body | upcase }}");
 
         var store = new TemplateStore();
         var exception = await Assert.That(
