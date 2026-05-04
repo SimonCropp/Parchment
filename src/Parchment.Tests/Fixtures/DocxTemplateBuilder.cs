@@ -25,15 +25,15 @@ static class DocxTemplateBuilder
                 new SectionProperties(
                     new PageSize
                     {
-                        Width = 12240,
-                        Height = 15840
+                        Width = 6500,
+                        Height = 8000
                     },
                     new PageMargin
                     {
-                        Top = 1440,
-                        Right = 1440,
-                        Bottom = 1440,
-                        Left = 1440,
+                        Top = 500,
+                        Right = 500,
+                        Bottom = 500,
+                        Left = 500,
                         Header = 720,
                         Footer = 720
                     }));
