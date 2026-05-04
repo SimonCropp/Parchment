@@ -586,7 +586,6 @@ class ScopeTreeRunner(
         if (chosen != null)
         {
             // Process chosen branch in place (no cloning — branch paragraphs are used once)
-            var branchNodes = chosen;
             var branchAnchors = new Dictionary<string, Paragraph>(StringComparer.Ordinal);
             foreach (var p in allBranchParagraphs.OfType<Paragraph>())
             {
@@ -599,7 +598,7 @@ class ScopeTreeRunner(
             }
 
             var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart, rootModel, excelsiorTables, formats, stringLists, numberingState);
-            await innerRunner.RunAsync(branchNodes);
+            await innerRunner.RunAsync(chosen);
             innerRunner.ApplyStructural();
 
             // Only keep paragraphs that belong to the chosen branch; remove others
