@@ -49,6 +49,133 @@ public class NumberingStateSharingTests
         public required IReadOnlyList<string> Outer { get; init; }
     }
 
+    [AttributeUsage(AttributeTargets.Property)]
+    sealed class HtmlAttribute : Attribute;
+
+    public class TwoHtmlDoc
+    {
+        [Html]
+        public required string FirstBody { get; init; }
+
+        [Html]
+        public required string SecondBody { get; init; }
+    }
+
+    public class HtmlIfDoc
+    {
+        public required bool ShowInner { get; init; }
+
+        [Html]
+        public required string Inner { get; init; }
+
+        [Html]
+        public required string Outer { get; init; }
+    }
+
+    public class HtmlAndMarkdownDoc
+    {
+        [Html]
+        public required string HtmlBody { get; init; }
+
+        [Markdown]
+        public required string MdBody { get; init; }
+    }
+
+    [Test]
+    public async Task TwoHtmlPropertiesShareOneBulletAbstract()
+    {
+        // Two [Html] properties each containing a <ul> go through OpenXmlHtml.WordHtmlConverter;
+        // both must reuse the shared HtmlNumberingSession's bullet abstract rather than each
+        // allocating a fresh one.
+        using var template = DocxTemplateBuilder.Build(
+            """
+            {{ FirstBody }}
+
+            {{ SecondBody }}
+            """);
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<TwoHtmlDoc>("two-html", template);
+
+        var model = new TwoHtmlDoc
+        {
+            FirstBody = "<ul><li>a1</li><li>a2</li></ul>",
+            SecondBody = "<ul><li>b1</li><li>b2</li></ul>"
+        };
+
+        await AssertOneSharedBulletAbstract(store, "two-html", model, expectedInstanceCount: 2);
+    }
+
+    [Test]
+    public async Task HtmlInIfBranchSharesBulletAbstract()
+    {
+        // The inner ScopeTreeRunner spawned for {% if %} inherits the parent's WordNumberingState,
+        // which carries the HtmlNumberingSession. An [Html] token inside the branch and one outside
+        // must share the same bullet abstract.
+        using var template = DocxTemplateBuilder.Build(
+            """
+            {% if ShowInner %}
+
+            {{ Inner }}
+
+            {% endif %}
+
+            {{ Outer }}
+            """);
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<HtmlIfDoc>("html-if", template);
+
+        var model = new HtmlIfDoc
+        {
+            ShowInner = true,
+            Inner = "<ul><li>i1</li><li>i2</li></ul>",
+            Outer = "<ul><li>o1</li><li>o2</li></ul>"
+        };
+
+        await AssertOneSharedBulletAbstract(store, "html-if", model, expectedInstanceCount: 2);
+    }
+
+    [Test]
+    public async Task HtmlAndMarkdownUseSeparateAbstracts()
+    {
+        // [Html] and [Markdown] go through different rendering stacks: OpenXmlHtml uses its own
+        // 9-level bullet abstract, Parchment's WordNumberingState creates a separate 3-level one.
+        // The two abstracts must NOT be collapsed — each list type keeps its own definition.
+        using var template = DocxTemplateBuilder.Build(
+            """
+            {{ HtmlBody }}
+
+            {{ MdBody }}
+            """);
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<HtmlAndMarkdownDoc>("html-md", template);
+
+        var model = new HtmlAndMarkdownDoc
+        {
+            HtmlBody = "<ul><li>h1</li><li>h2</li></ul>",
+            MdBody = "- m1\n- m2"
+        };
+
+        using var stream = new MemoryStream();
+        await store.Render("html-md", model, stream);
+        stream.Position = 0;
+
+        using var doc = WordprocessingDocument.Open(stream, false);
+        var numbering = doc.MainDocumentPart!.NumberingDefinitionsPart!.Numbering!;
+        var bulletAbstracts = numbering
+            .Elements<AbstractNum>()
+            .Where(a =>
+                a.Elements<Level>().FirstOrDefault(l => l.LevelIndex?.Value == 0) is { } l &&
+                l.NumberingFormat?.Val?.Value == NumberFormatValues.Bullet)
+            .ToList();
+
+        // One from OpenXmlHtml (9 levels), one from WordNumberingState (3 levels) — distinct.
+        await Assert.That(bulletAbstracts.Count).IsEqualTo(2);
+        await Assert.That(numbering.Elements<NumberingInstance>().Count()).IsEqualTo(2);
+    }
+
     [Test]
     public async Task TwoMarkdownPropertiesShareOneBulletAbstract()
     {

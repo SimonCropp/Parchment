@@ -178,7 +178,14 @@ class ScopeTreeRunner(
         value switch
         {
             TokenValue.MarkdownToken md => MarkdownRendering.Render(md.Source, mainPart, numberingState, headingOffset: 0).ToList(),
-            TokenValue.HtmlToken html => OpenXmlHtml.WordHtmlConverter.ToElements(html.Source, mainPart, new()).ToList(),
+            TokenValue.HtmlToken html => OpenXmlHtml.WordHtmlConverter.ToElements(
+                    html.Source,
+                    mainPart,
+                    new()
+                    {
+                        NumberingSession = numberingState.GetHtmlSession()
+                    })
+                .ToList(),
             TokenValue.OpenXmlToken raw => raw
                 .Render(new OpenXmlContextImpl(mainPart, numberingState, StyleSet.Read(mainPart)))
                 .ToList(),
@@ -583,7 +590,8 @@ class ScopeTreeRunner(
             var branchAnchors = new Dictionary<string, Paragraph>(StringComparer.Ordinal);
             foreach (var p in allBranchParagraphs.OfType<Paragraph>())
             {
-                var start = p.Elements<BookmarkStart>().FirstOrDefault(_ => _.Name?.Value?.StartsWith(Anchors.Prefix, StringComparison.Ordinal) == true);
+                var start = p.Elements<BookmarkStart>()
+                    .FirstOrDefault(_ => _.Name?.Value?.StartsWith(Anchors.Prefix, StringComparison.Ordinal) == true);
                 if (start?.Name?.Value != null)
                 {
                     branchAnchors[start.Name.Value] = p;
@@ -696,5 +704,4 @@ class ScopeTreeRunner(
     }
 
     sealed record StructuralReplacement(Paragraph Host, IReadOnlyList<OpenXmlElement> Produced);
-
 }
