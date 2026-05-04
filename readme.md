@@ -263,7 +263,7 @@ await store.Render(
 <sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L77-L96' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterRender' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Both approaches produce the same structural replacement — the host paragraph is swapped with the rendered markdown elements. The token must sit alone in its paragraph.
+Both approaches produce the same structural replacement — the host paragraph is swapped with the rendered markdown elements when the token is the entire paragraph. If the token shares its paragraph with other text or with sibling tokens, the runtime falls back to inline splicing (single produced paragraph → its runs are extracted and merged into the host) or paragraph splitting (multiple produced blocks → host is split at the token offset and the produced blocks slot between the two halves). See [Inline-aware structural replacement](#inline-aware-structural-replacement) for the full rules.
 
 **Markdown templates**: Neither `TokenValue.Markdown` nor `| markdown` is needed when using `RegisterMarkdownTemplate`. The entire template is already markdown — a plain `string` property containing markdown syntax is interpolated into the source before Markdig parses it, so formatting just works:
 
@@ -581,12 +581,24 @@ public class StringSyntaxMarkdownDoc
 <sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L53-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxMarkdownModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Rules (same as `[ExcelsiorTable]`):
+Rules:
 
-- The substitution must sit alone in its own paragraph — diagnostic `PARCH009` at compile time, `ParchmentRegistrationException` at runtime.
 - The substitution must be a plain member-access expression — filters and arithmetic are rejected because the formatted rendering is selected by attribute rather than Fluid evaluation. Diagnostic `PARCH010`.
 - Only `string` / `string?` properties are supported.
 - `[Html]` + `[Markdown]` on the same property, or `[Html]` + `[StringSyntax("markdown")]` (and vice versa), is rejected at registration as a mismatch.
+- Unlike `[ExcelsiorTable]`, the token does **not** have to sit alone in its paragraph. Surrounding text and sibling tokens are preserved — see [Inline-aware structural replacement](#inline-aware-structural-replacement).
+
+#### Inline-aware structural replacement
+
+When an `[Html]` / `[Markdown]` token shares its paragraph with other text or sibling tokens, Parchment chooses one of three modes based on what the rendered content looks like:
+
+| Token position | Rendered shape | Result |
+| --- | --- | --- |
+| Solo (covers the whole paragraph) | Anything | Host paragraph is replaced by the rendered elements. The host's `pPr` is lost; rendered paragraphs/tables stand on their own. |
+| Non-solo | A single paragraph (typical for inline-only HTML like `<b>x</b>`, or single-line markdown) | The produced paragraph's `pPr` is dropped; its runs are spliced into the host at the token offset. Surrounding text and the host's `pPr` are preserved. |
+| Non-solo | Multiple block-level elements, or a non-paragraph block (table) | The host is split at the token offset: text before becomes its own paragraph (cloning host's `pPr`), the rendered blocks slot in between, and text after becomes another paragraph (also cloning host's `pPr`). Empty before/after halves are still emitted. |
+
+Two non-solo block-shaped tokens in the same paragraph are rejected at render time — the splits would overlap and there is no defined way to compose them. Move one of the tokens to its own paragraph.
 
 
 ### Enumerable string properties
@@ -988,9 +1000,9 @@ The Excelsior render path walks the CLR model directly and bypasses Fluid evalua
 ```
 
 
-### `PARCH009` — `[Html]` / `[Markdown]` token not alone in paragraph
+### `PARCH009` — retired
 
-An `[Html]` or `[Markdown]` substitution replaces the entire host paragraph with rendered content. If the paragraph contains other text, that text would be discarded. The token must be the only content in its paragraph.
+Previously emitted when an `[Html]` / `[Markdown]` token shared its paragraph with other content. The runtime now splices inline content in place and splits the host paragraph for block-level content, so non-solo tokens are valid. The id is intentionally not reused.
 
 
 ### `PARCH010` — `[Html]` / `[Markdown]` token with filters or complex expression

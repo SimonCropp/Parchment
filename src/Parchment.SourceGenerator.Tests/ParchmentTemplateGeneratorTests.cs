@@ -308,8 +308,11 @@ public class ParchmentTemplateGeneratorTests
         """;
 
     [Test]
-    public async Task FormatToken_MixedInline_Diagnostic()
+    public async Task FormatToken_MixedInline_NoDiagnostic()
     {
+        // Non-solo `[Html]`/`[Markdown]` tokens are allowed — the runtime splices inline content
+        // into the host paragraph and splits the host paragraph for block-level content. PARCH009
+        // (the legacy "must sit alone" diagnostic) is no longer emitted.
         var source = formatModel +
                      """
 
@@ -318,7 +321,8 @@ public class ParchmentTemplateGeneratorTests
                      """;
         var result = GeneratorDriver.Run(source, "Prefix {{ Body }}");
         var diagnostics = result.Results.Single().Diagnostics;
-        await Assert.That(diagnostics.Any(d => d.Id == "PARCH009")).IsTrue();
+        await Assert.That(diagnostics.Any(d => d.Id == "PARCH009")).IsFalse();
+        await Assert.That(diagnostics.Any(d => d.Id == "PARCH010")).IsFalse();
     }
 
     [Test]
@@ -346,7 +350,6 @@ public class ParchmentTemplateGeneratorTests
                      """;
         var result = GeneratorDriver.Run(source, "{{ Notes }}");
         var diagnostics = result.Results.Single().Diagnostics;
-        await Assert.That(diagnostics.Any(d => d.Id == "PARCH009")).IsFalse();
         await Assert.That(diagnostics.Any(d => d.Id == "PARCH010")).IsFalse();
     }
 
