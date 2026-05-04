@@ -20,6 +20,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
 
         var excelsiorMap = ExcelsiorTableMap.Build(typeof(TModel), name);
         var formatMap = FormatMap.Build(typeof(TModel), name);
+        var stringListMap = StringListMap.Build(typeof(TModel));
 
         using var stream = DocxCloner.ToWritableStream(template);
         IReadOnlyList<PartScopeTree> parts;
@@ -46,7 +47,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         }
 
         var canonicalBytes = stream.ToArray();
-        var registered = new RegisteredDocxTemplate(name, typeof(TModel), canonicalBytes, parts, excelsiorMap, formatMap);
+        var registered = new RegisteredDocxTemplate(name, typeof(TModel), canonicalBytes, parts, excelsiorMap, formatMap, stringListMap);
         templates[name] = registered;
         logger.LogInformation("Registered docx template {Name} for {ModelType}", name, typeof(TModel).Name);
     }

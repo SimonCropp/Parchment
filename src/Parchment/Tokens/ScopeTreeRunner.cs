@@ -10,7 +10,8 @@ class ScopeTreeRunner(
     MainDocumentPart mainPart,
     object rootModel,
     ExcelsiorTableMap excelsiorTables,
-    FormatMap formats)
+    FormatMap formats,
+    StringListMap stringLists)
 {
     List<StructuralReplacement> structuralReplacements = [];
 
@@ -68,7 +69,7 @@ class ScopeTreeRunner(
 
         foreach (var token in sortedByOffset)
         {
-            var evaluated = await EvaluateTokenAsync(token, host);
+            var evaluated = await EvaluateTokenAsync(token, host, node.Tokens.Count);
             if (evaluated is TokenValue.MarkdownToken or TokenValue.HtmlToken or TokenValue.OpenXmlToken)
             {
                 structuralTokens.Add((token, evaluated));
@@ -124,7 +125,7 @@ class ScopeTreeRunner(
         return result;
     }
 
-    async Task<object> EvaluateTokenAsync(DocxTokenSite site, Paragraph host)
+    async Task<object> EvaluateTokenAsync(DocxTokenSite site, Paragraph host, int siblingCount)
     {
         try
         {
@@ -138,12 +139,18 @@ class ScopeTreeRunner(
                 return formatted;
             }
 
+            if (TryResolveStringList(site, host, siblingCount) is { } stringList)
+            {
+                return stringList;
+            }
+
             // Walk the parsed FluidTemplate to its OutputStatement and evaluate the underlying
             // Expression directly (filter chain included). This lets us see whether the value is a
             // TokenValue (markdown / openxml hatch) before falling back to string rendering, without
             // round-tripping through the Render() pipeline twice.
             var statements = ((Fluid.Parser.FluidTemplate)site.Template).Statements;
-            if (statements.Count > 0 && statements[0] is OutputStatement output)
+            if (statements.Count > 0 &&
+                statements[0] is OutputStatement output)
             {
                 var fluidValue = await output.Expression.EvaluateAsync(context);
                 var underlying = fluidValue.ToObjectValue();
@@ -177,7 +184,8 @@ class ScopeTreeRunner(
 
     TokenValue? TryResolveExcelsiorTable(DocxTokenSite site)
     {
-        if (excelsiorTables.IsEmpty || site.References.Count == 0)
+        if (excelsiorTables.IsEmpty ||
+            site.References.Count == 0)
         {
             return null;
         }
@@ -201,6 +209,56 @@ class ScopeTreeRunner(
         }
 
         return TokenValue.OpenXml(_ => [ExcelsiorTableBridge.BuildTable(entry.ElementType, data, mainPart)]);
+    }
+
+    TokenValue? TryResolveStringList(DocxTokenSite site, Paragraph host, int siblingCount)
+    {
+        if (stringLists.IsEmpty ||
+            site.References.Count == 0)
+        {
+            return null;
+        }
+
+        var reference = site.References[0];
+        var dottedPath = string.Join('.', reference.Segments);
+        if (!stringLists.TryGet(dottedPath, out var entry))
+        {
+            return null;
+        }
+
+        // Auto-bullet rendering swaps the entire host paragraph. Skip silently if the token
+        // doesn't sit alone — the user gets Fluid stringification in that case (consistent with
+        // pre-feature behavior) instead of a surprising paragraph swap that drops surrounding text.
+        if (siblingCount != 1)
+        {
+            return null;
+        }
+
+        var paragraphText = ParagraphText.Build(host).InnerText;
+        if (site.Offset != 0 ||
+            site.Length != paragraphText.Length)
+        {
+            return null;
+        }
+
+        // If the user attached a filter chain (e.g. `{{ Tags | numbered_list }}`), they're
+        // explicitly opting into Fluid-driven rendering — let that path handle it.
+        var statements = ((Fluid.Parser.FluidTemplate)site.Template).Statements;
+        if (statements.Count == 0 ||
+            statements[0] is not OutputStatement { Expression: MemberExpression })
+        {
+            return null;
+        }
+
+        var data = entry.Getter(rootModel);
+        if (data is not IEnumerable<string> items)
+        {
+            return TokenValue.OpenXml(_ => []);
+        }
+
+        // Materialize so the deferred render delegate doesn't re-enumerate a fresh sequence
+        // (and so a null model walk can't surface here).
+        return TokenValueHelpers.BulletList(items.ToList());
     }
 
     TokenValue? TryResolveFormatted(DocxTokenSite site)
@@ -305,7 +363,8 @@ class ScopeTreeRunner(
                 mainPart,
                 rootModel,
                 excelsiorTables,
-                formats);
+                formats,
+                stringLists);
             RemapBodyInto(loop.Body, nameMap, clonedBody);
             await clonedRunner.RunAsync(clonedBody);
             clonedRunner.ApplyStructural();
@@ -350,7 +409,8 @@ class ScopeTreeRunner(
             foreach (var start in clone.Descendants<BookmarkStart>())
             {
                 var name = start.Name?.Value;
-                if (name == null || !name.StartsWith(Anchors.Prefix, StringComparison.Ordinal))
+                if (name == null ||
+                    !name.StartsWith(Anchors.Prefix, StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -469,7 +529,7 @@ class ScopeTreeRunner(
                 }
             }
 
-            var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart, rootModel, excelsiorTables, formats);
+            var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart, rootModel, excelsiorTables, formats, stringLists);
             await innerRunner.RunAsync(branchNodes);
             innerRunner.ApplyStructural();
 

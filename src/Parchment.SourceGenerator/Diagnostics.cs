@@ -79,4 +79,5 @@ static class Diagnostics
         category: "Parchment",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
 }

@@ -1,0 +1,8 @@
+﻿{
+  Text:
+Person: Ada
+Author
+Mathematician
+Engineer
+End.
+}

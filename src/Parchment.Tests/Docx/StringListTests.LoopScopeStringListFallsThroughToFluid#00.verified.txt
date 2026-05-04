@@ -1,0 +1,8 @@
+﻿{
+  Text:
+Customers
+Name: Ada
+a
+b
+End
+}

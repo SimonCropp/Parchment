@@ -1,0 +1,7 @@
+﻿{
+  Text:
+Tags:
+first
+second
+third
+}
