@@ -17,11 +17,11 @@ sealed class StringListMap
     public bool TryGet(string dottedPath, [NotNullWhen(true)] out StringListEntry? entry) =>
         entries.TryGetValue(dottedPath, out entry);
 
-    public static StringListMap Build(Type modelType, string templateName)
+    public static StringListMap Build(Type modelType)
     {
         var entries = new Dictionary<string, StringListEntry>(StringComparer.OrdinalIgnoreCase);
         var visited = new HashSet<Type> { modelType };
-        WalkType(modelType, [], static root => root, entries, visited, templateName);
+        WalkType(modelType, [], static root => root, entries, visited);
         return new(entries);
     }
 
@@ -30,8 +30,7 @@ sealed class StringListMap
         List<string> pathSegments,
         Func<object, object?> getter,
         Dictionary<string, StringListEntry> entries,
-        HashSet<Type> visited,
-        string templateName)
+        HashSet<Type> visited)
     {
         foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
@@ -72,37 +71,13 @@ sealed class StringListMap
                 continue;
             }
 
-            WalkType(underlying, nextSegments, nextGetter, entries, visited, templateName);
+            WalkType(underlying, nextSegments, nextGetter, entries, visited);
             visited.Remove(underlying);
         }
     }
 
-    static bool IsEnumerableOfString(Type type)
-    {
-        if (type == typeof(string))
-        {
-            return false;
-        }
-
-        if (type.IsGenericType &&
-            type.GetGenericTypeDefinition() == typeof(IEnumerable<>) &&
-            type.GetGenericArguments()[0] == typeof(string))
-        {
-            return true;
-        }
-
-        foreach (var iface in type.GetInterfaces())
-        {
-            if (iface.IsGenericType &&
-                iface.GetGenericTypeDefinition() == typeof(IEnumerable<>) &&
-                iface.GetGenericArguments()[0] == typeof(string))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    static bool IsEnumerableOfString(Type type) =>
+        typeof(IEnumerable<string>).IsAssignableFrom(type);
 
     static Func<object, object?> ChainGetter(Func<object, object?> upstream, PropertyInfo property) =>
         root =>

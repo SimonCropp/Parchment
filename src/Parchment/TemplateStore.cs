@@ -20,7 +20,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
 
         var excelsiorMap = ExcelsiorTableMap.Build(typeof(TModel), name);
         var formatMap = FormatMap.Build(typeof(TModel), name);
-        var stringListMap = StringListMap.Build(typeof(TModel), name);
+        var stringListMap = StringListMap.Build(typeof(TModel));
 
         using var stream = DocxCloner.ToWritableStream(template);
         IReadOnlyList<PartScopeTree> parts;

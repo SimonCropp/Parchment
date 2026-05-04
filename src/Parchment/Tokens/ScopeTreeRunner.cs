@@ -149,7 +149,8 @@ class ScopeTreeRunner(
             // TokenValue (markdown / openxml hatch) before falling back to string rendering, without
             // round-tripping through the Render() pipeline twice.
             var statements = ((Fluid.Parser.FluidTemplate)site.Template).Statements;
-            if (statements.Count > 0 && statements[0] is OutputStatement output)
+            if (statements.Count > 0 &&
+                statements[0] is OutputStatement output)
             {
                 var fluidValue = await output.Expression.EvaluateAsync(context);
                 var underlying = fluidValue.ToObjectValue();
@@ -183,7 +184,8 @@ class ScopeTreeRunner(
 
     TokenValue? TryResolveExcelsiorTable(DocxTokenSite site)
     {
-        if (excelsiorTables.IsEmpty || site.References.Count == 0)
+        if (excelsiorTables.IsEmpty ||
+            site.References.Count == 0)
         {
             return null;
         }
@@ -211,7 +213,8 @@ class ScopeTreeRunner(
 
     TokenValue? TryResolveStringList(DocxTokenSite site, Paragraph host, int siblingCount)
     {
-        if (stringLists.IsEmpty || site.References.Count == 0)
+        if (stringLists.IsEmpty ||
+            site.References.Count == 0)
         {
             return null;
         }
@@ -232,7 +235,8 @@ class ScopeTreeRunner(
         }
 
         var paragraphText = ParagraphText.Build(host).InnerText;
-        if (site.Offset != 0 || site.Length != paragraphText.Length)
+        if (site.Offset != 0 ||
+            site.Length != paragraphText.Length)
         {
             return null;
         }
@@ -240,7 +244,8 @@ class ScopeTreeRunner(
         // If the user attached a filter chain (e.g. `{{ Tags | numbered_list }}`), they're
         // explicitly opting into Fluid-driven rendering — let that path handle it.
         var statements = ((Fluid.Parser.FluidTemplate)site.Template).Statements;
-        if (statements.Count == 0 || statements[0] is not OutputStatement output || output.Expression is not MemberExpression)
+        if (statements.Count == 0 ||
+            statements[0] is not OutputStatement { Expression: MemberExpression })
         {
             return null;
         }
@@ -404,7 +409,8 @@ class ScopeTreeRunner(
             foreach (var start in clone.Descendants<BookmarkStart>())
             {
                 var name = start.Name?.Value;
-                if (name == null || !name.StartsWith(Anchors.Prefix, StringComparison.Ordinal))
+                if (name == null ||
+                    !name.StartsWith(Anchors.Prefix, StringComparison.Ordinal))
                 {
                     continue;
                 }
