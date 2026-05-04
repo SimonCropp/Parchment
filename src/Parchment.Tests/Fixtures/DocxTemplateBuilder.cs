@@ -36,6 +36,40 @@ static class DocxTemplateBuilder
                         Left = 500,
                         Header = 720,
                         Footer = 720
+                    },
+                    new PageBorders(
+                        new TopBorder
+                        {
+                            Val = BorderValues.Single,
+                            Size = 4,
+                            Color = "000000",
+                            Space = 0
+                        },
+                        new LeftBorder
+                        {
+                            Val = BorderValues.Single,
+                            Size = 4,
+                            Color = "000000",
+                            Space = 0
+                        },
+                        new BottomBorder
+                        {
+                            Val = BorderValues.Single,
+                            Size = 4,
+                            Color = "000000",
+                            Space = 0
+                        },
+                        new RightBorder
+                        {
+                            Val = BorderValues.Single,
+                            Size = 4,
+                            Color = "000000",
+                            Space = 0
+                        })
+                    {
+                        OffsetFrom = PageBorderOffsetValues.Page,
+                        Display = PageBorderDisplayValues.AllPages,
+                        ZOrder = PageBorderZOrderValues.Front
                     }));
         }
 
