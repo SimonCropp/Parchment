@@ -88,7 +88,18 @@ static class ModelValidator
             return scoped;
         }
 
-        return ResolveMember(modelType, name) ?? (MatchesRootIdentifier(modelType, name) ? modelType : null);
+        var type = ResolveMember(modelType, name);
+        if (type != null)
+        {
+            return type;
+        }
+
+        if (MatchesRootIdentifier(modelType, name))
+        {
+            return modelType;
+        }
+
+        return null;
     }
 
     static bool MatchesRootIdentifier(Type modelType, string name) =>
