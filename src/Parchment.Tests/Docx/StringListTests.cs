@@ -52,6 +52,12 @@ public class StringListTests
         public required IReadOnlyList<string> Skills { get; init; }
     }
 
+    public class TwoListsDoc
+    {
+        public required IReadOnlyList<string> First { get; init; }
+        public required IReadOnlyList<string> Second { get; init; }
+    }
+
     public class CustomersDoc
     {
         public required IReadOnlyList<CustomerWithTags> Customers { get; init; }
@@ -320,6 +326,58 @@ public class StringListTests
         await store.Render("string-list-mixed", model, stream);
         stream.Position = 0;
         await Verify(stream, "docx");
+    }
+
+    [Test]
+    public async Task TwoStringListsShareOneBulletAbstract()
+    {
+        // Two IEnumerable<string> properties on the same model must produce a single shared
+        // bullet abstract — not one per token. Each list created its own WordNumberingState
+        // before, which (a) wasted definitions and (b) gave non-deterministic abstract IDs
+        // because OOXML SDK reorders abstracts based on document position when both are
+        // inserted via InsertAt(0).
+        using var template = DocxTemplateBuilder.Build(
+            """
+            First:
+
+            {{ First }}
+
+            Second:
+
+            {{ Second }}
+            """);
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<TwoListsDoc>("two-lists", template);
+
+        var model = new TwoListsDoc
+        {
+            First = ["a1", "a2"],
+            Second = ["b1", "b2"]
+        };
+
+        using var stream = new MemoryStream();
+        await store.Render("two-lists", model, stream);
+        stream.Position = 0;
+
+        using var doc = WordprocessingDocument.Open(stream, false);
+        var numbering = doc.MainDocumentPart!.NumberingDefinitionsPart!.Numbering!;
+        var bulletAbstracts = numbering
+            .Elements<AbstractNum>()
+            .Where(a =>
+                a.Elements<Level>().FirstOrDefault(_ => _.LevelIndex?.Value == 0) is { } lvl &&
+                lvl.NumberingFormat?.Val?.Value == NumberFormatValues.Bullet &&
+                lvl.LevelText?.Val?.Value == "●")
+            .ToList();
+        var instances = numbering.Elements<NumberingInstance>().ToList();
+        var instancesPointingAtBulletAbstract = instances
+            .Where(i =>
+                i.AbstractNumId?.Val?.Value is { } refId &&
+                bulletAbstracts.Any(a => a.AbstractNumberId?.Value == refId))
+            .ToList();
+
+        await Assert.That(bulletAbstracts.Count).IsEqualTo(1);
+        await Assert.That(instancesPointingAtBulletAbstract.Count).IsEqualTo(2);
     }
 
     [Test]

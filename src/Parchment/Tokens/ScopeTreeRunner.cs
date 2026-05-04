@@ -11,7 +11,8 @@ class ScopeTreeRunner(
     object rootModel,
     ExcelsiorTableMap excelsiorTables,
     FormatMap formats,
-    StringListMap stringLists)
+    StringListMap stringLists,
+    WordNumberingState numberingState)
 {
     List<StructuralReplacement> structuralReplacements = [];
 
@@ -101,7 +102,7 @@ class ScopeTreeRunner(
                 ParagraphText.Build(host).Replace(token.Offset, token.Length, string.Empty);
                 var ctx = new OpenXmlContextImpl(
                     mainPart,
-                    new(mainPart),
+                    numberingState,
                     StyleSet.Read(mainPart));
                 mutate.Apply(host, ctx);
                 continue;
@@ -176,10 +177,10 @@ class ScopeTreeRunner(
     IReadOnlyList<OpenXmlElement> RenderTokenValue(object value) =>
         value switch
         {
-            TokenValue.MarkdownToken md => MarkdownRendering.Render(md.Source, mainPart, headingOffset: 0).ToList(),
+            TokenValue.MarkdownToken md => MarkdownRendering.Render(md.Source, mainPart, numberingState, headingOffset: 0).ToList(),
             TokenValue.HtmlToken html => OpenXmlHtml.WordHtmlConverter.ToElements(html.Source, mainPart, new()).ToList(),
             TokenValue.OpenXmlToken raw => raw
-                .Render(new OpenXmlContextImpl(mainPart, new(mainPart), StyleSet.Read(mainPart)))
+                .Render(new OpenXmlContextImpl(mainPart, numberingState, StyleSet.Read(mainPart)))
                 .ToList(),
             _ => []
         };
@@ -423,7 +424,8 @@ class ScopeTreeRunner(
                 rootModel,
                 excelsiorTables,
                 formats,
-                stringLists);
+                stringLists,
+                numberingState);
             RemapBodyInto(loop.Body, nameMap, clonedBody);
             await clonedRunner.RunAsync(clonedBody);
             clonedRunner.ApplyStructural();
@@ -588,7 +590,7 @@ class ScopeTreeRunner(
                 }
             }
 
-            var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart, rootModel, excelsiorTables, formats, stringLists);
+            var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart, rootModel, excelsiorTables, formats, stringLists, numberingState);
             await innerRunner.RunAsync(branchNodes);
             innerRunner.ApplyStructural();
 

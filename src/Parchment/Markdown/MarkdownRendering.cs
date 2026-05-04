@@ -4,10 +4,10 @@
 /// </summary>
 static class MarkdownRendering
 {
-    public static IReadOnlyList<OpenXmlElement> Render(string markdown, MainDocumentPart mainPart, int headingOffset)
+    public static IReadOnlyList<OpenXmlElement> Render(string markdown, MainDocumentPart mainPart, WordNumberingState numbering, int headingOffset)
     {
         var document = Markdown.Parse(markdown, MarkdigPipeline.Pipeline);
-        var renderer = new OpenXmlMarkdownRenderer(mainPart, headingOffset);
+        var renderer = new OpenXmlMarkdownRenderer(mainPart, numbering, headingOffset);
         renderer.Render(document);
         return renderer.Drain();
     }

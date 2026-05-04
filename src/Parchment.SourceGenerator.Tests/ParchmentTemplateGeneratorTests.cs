@@ -247,7 +247,7 @@ public class ParchmentTemplateGeneratorTests
                      """;
         var result = GeneratorDriver.Run(source, "Prefix {{ Lines }}");
         var diagnostics = result.Results.Single().Diagnostics;
-        await Assert.That(diagnostics.Any(d => d.Id == "PARCH007")).IsTrue();
+        await Assert.That(diagnostics.Any(_ => _.Id == "PARCH007")).IsTrue();
     }
 
     [Test]
@@ -262,7 +262,7 @@ public class ParchmentTemplateGeneratorTests
                      """;
         var result = GeneratorDriver.Run(source, "{{ Lines | reverse }}");
         var diagnostics = result.Results.Single().Diagnostics;
-        await Assert.That(diagnostics.Any(d => d.Id == "PARCH008")).IsTrue();
+        await Assert.That(diagnostics.Any(_ => _.Id == "PARCH008")).IsTrue();
     }
 
     [Test]
@@ -277,8 +277,8 @@ public class ParchmentTemplateGeneratorTests
                      """;
         var result = GeneratorDriver.Run(source, "{{ Lines }}");
         var diagnostics = result.Results.Single().Diagnostics;
-        await Assert.That(diagnostics.Any(d => d.Id == "PARCH007")).IsFalse();
-        await Assert.That(diagnostics.Any(d => d.Id == "PARCH008")).IsFalse();
+        await Assert.That(diagnostics.Any(_ => _.Id == "PARCH007")).IsFalse();
+        await Assert.That(diagnostics.Any(_ => _.Id == "PARCH008")).IsFalse();
     }
 
     const string formatModel =

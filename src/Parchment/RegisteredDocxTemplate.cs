@@ -17,11 +17,12 @@ class RegisteredDocxTemplate(
         using (var doc = WordprocessingDocument.Open(stream, true))
         {
             var mainPart = doc.MainDocumentPart!;
+            var numberingState = new WordNumberingState(mainPart);
 
             foreach (var part in parts)
             {
                 cancel.ThrowIfCancellationRequested();
-                await RenderPartAsync(doc, mainPart, part, context, model);
+                await RenderPartAsync(doc, mainPart, part, context, model, numberingState);
             }
 
             foreach (var (_, root) in DocxCloner.EnumerateParts(doc))
@@ -36,7 +37,7 @@ class RegisteredDocxTemplate(
         await stream.CopyToAsync(output, cancel);
     }
 
-    async Task RenderPartAsync(WordprocessingDocument doc, MainDocumentPart mainPart, PartScopeTree part, TemplateContext context, object model)
+    async Task RenderPartAsync(WordprocessingDocument doc, MainDocumentPart mainPart, PartScopeTree part, TemplateContext context, object model, WordNumberingState numberingState)
     {
         OpenXmlCompositeElement? root = null;
         foreach (var (uri, candidate) in DocxCloner.EnumerateParts(doc))
@@ -54,7 +55,7 @@ class RegisteredDocxTemplate(
         }
 
         var map = Anchors.BuildMap(root);
-        var runner = new ScopeTreeRunner(Name, part.PartUri, map, context, mainPart, model, excelsiorTables, formats, stringLists);
+        var runner = new ScopeTreeRunner(Name, part.PartUri, map, context, mainPart, model, excelsiorTables, formats, stringLists, numberingState);
         await runner.RunAsync(part.Nodes);
         runner.ApplyStructural();
     }
