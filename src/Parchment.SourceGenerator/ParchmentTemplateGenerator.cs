@@ -343,16 +343,6 @@ public sealed class ParchmentTemplateGenerator :
             return;
         }
 
-        if (token.HasOtherContent)
-        {
-            context.ReportDiagnostic(
-                Diagnostic.Create(
-                    Diagnostics.FormatTokenNotAlone,
-                    location,
-                    target.TemplatePath,
-                    token.Source));
-        }
-
         if (!token.IsPlainIdentifier)
         {
             context.ReportDiagnostic(

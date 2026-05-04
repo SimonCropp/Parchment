@@ -56,13 +56,10 @@ static class Diagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor FormatTokenNotAlone = new(
-        id: "PARCH009",
-        title: "[Html]/[Markdown] token must sit alone in its own paragraph",
-        messageFormat: "Template '{0}' token '{1}' references an [Html]/[Markdown] property but shares its paragraph with other content; structural replacement would discard the surrounding text",
-        category: "Parchment",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+    // PARCH009 was previously emitted for `[Html]`/`[Markdown]` tokens that did not sit alone in
+    // their paragraph. The runtime now splices inline content in place and splits the host
+    // paragraph for block-level content, so non-solo tokens are valid. The id is intentionally
+    // not reused.
 
     public static readonly DiagnosticDescriptor FormatTokenNotPlainIdentifier = new(
         id: "PARCH010",

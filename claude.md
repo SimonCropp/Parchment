@@ -120,19 +120,28 @@ Parallel hook to Excelsior, but for string properties rather than collections: a
 **Runtime path** (`src/Parchment/Formats/`):
 
 1. `FormatMap.Build(modelType, name)` walks the model's reachable property graph, mirroring `ExcelsiorTableMap.WalkType` (per-branch `visited` HashSet, same `ShouldDescend` leaf-skipping). For each property it checks `[HtmlAttribute]` / `[MarkdownAttribute]` by `attribute.GetType().Name` and `[StringSyntaxAttribute]` by full type name with `Syntax == "html" | "markdown"`. Enforces string-only, throws on `[Html]+[Markdown]` or `[Html]+[StringSyntax("markdown")]` (and vice versa). Emits `(DottedPath → FormatKind)` entries.
-2. `FormatTokenValidator.Validate` runs in `TemplateStore.RegisterDocxTemplate` right after `ExcelsiorTokenValidator`. Same two rules: token alone in its paragraph, and parsed `OutputStatement.Expression is MemberExpression`.
+2. `FormatTokenValidator.Validate` runs in `TemplateStore.RegisterDocxTemplate` right after `ExcelsiorTokenValidator`. The only registration-time rule is that the parsed `OutputStatement.Expression` must be a `MemberExpression` (no filters / arithmetic / literals — the format kind is selected by attribute, so a filter chain would be silently ignored). Solo-in-paragraph is **not** required — see "Inline-aware structural replacement" below.
 3. `ScopeTreeRunner.EvaluateTokenAsync` consults `TryResolveFormatted` AFTER `TryResolveExcelsiorTable`, before standard Fluid evaluation. It walks the dotted path on `rootModel` via `PropertyInfo.GetValue`, reads the string, and returns `TokenValue.Html(text)` / `TokenValue.Markdown(text)`. Null strings yield empty output.
-4. `TokenValue.HtmlToken` is handled alongside `MarkdownToken` / `OpenXmlToken` in `BuildStructuralReplacements`; its source string is passed directly to `OpenXmlHtml.WordHtmlConverter.ToElements(..., mainPart, new())`.
+4. `TokenValue.HtmlToken` is handled alongside `MarkdownToken` / `OpenXmlToken` in `BuildStructuralReplacements`; its source string is passed to `OpenXmlHtml.WordHtmlConverter.ToElements(..., mainPart, new())`. For non-solo tokens, `ProcessSubstitutionAsync` consults `ParagraphSplicer` instead — see below.
 5. `ScopeTreeRunner` takes `FormatMap` as a constructor dep and propagates it to cloned runners in loop / if branches — same pattern as `excelsiorTables` and `rootModel`.
+
+**Inline-aware structural replacement** (`src/Parchment/Word/ParagraphSplicer.cs`):
+
+When a `[Html]` / `[Markdown]` token shares its host paragraph with other text or sibling tokens, `ScopeTreeRunner.ApplyNonSoloStructural` chooses one of two paths:
+
+- **Inline splice** — the produced element list is exactly one Paragraph (typical for inline-only HTML like `<b>x</b>`, or single-line markdown). `ParagraphSplicer.SpliceInline` rebuilds the host's children as `[host children before token] + [produced paragraph's children, minus pPr] + [host children after token]`. The host paragraph's own `pPr` is preserved; the produced paragraph's `pPr` is dropped.
+- **Split** — the produced element list has multiple block-level elements or a non-paragraph block (a table). `ParagraphSplicer.Split` clones the host twice (preserving `pPr` on each), trims the first to the runs/text before the token offset and the second to the runs/text after `offset+length`, and returns `[before, ...produced, after]` for the caller to insert. The original host is removed via the existing `structuralReplacements` queue.
+
+Two non-solo block-shaped tokens in the same paragraph throw a `ParchmentRenderException` — the splits would overlap and there is no defined composition. The author needs to give one token its own paragraph.
 
 **SG path** (`src/Parchment.SourceGenerator/`):
 
 1. `MemberEntry` has primitive `IsHtml` / `IsMarkdown` bools (sealed record, incremental-pipeline-friendly).
 2. `ShapeBuilder.DetectFormat(ISymbol)` matches attribute class name strings (`"HtmlAttribute"`, `"MarkdownAttribute"`) and the `StringSyntaxAttribute` FQN `"global::System.Diagnostics.CodeAnalysis.StringSyntaxAttribute"` — the SG can't `typeof()` them because neither attribute is shipped by Parchment.
 3. `ShapeResolver.ResolveMember` returns the final `MemberEntry` for a segment path (honoring loop scope), analogous to `IsExcelsiorTableMember` but returning the whole entry so the caller can consult both flags without walking the shape twice.
-4. `ParchmentTemplateGenerator.ValidateFormatToken` gates on `member.IsHtml || member.IsMarkdown`, emits `PARCH009` on `HasOtherContent` and `PARCH010` on `!IsPlainIdentifier`.
+4. `ParchmentTemplateGenerator.ValidateFormatToken` gates on `member.IsHtml || member.IsMarkdown` and emits `PARCH010` on `!IsPlainIdentifier`. **PARCH009 (the legacy "must sit alone" diagnostic) is retired** — the runtime now splices inline / splits the host paragraph, so non-solo tokens are valid.
 
-**Runtime + SG lockstep, same as Excelsior**: both enforce solo-in-paragraph and plain-member-access. If one side's rule changes, update the other. The relevant tests are `FormatAttributeTests` (runtime) and `FormatToken_*` (SG).
+**Runtime + SG lockstep**: both still enforce plain-member-access (`PARCH010` / runtime `RequirePlainIdentifier`). The relevant tests are `FormatAttributeTests` (runtime, including `NonSoloHtml_*` / `NonSoloMarkdown_*` for the inline-splice and split paths) and `FormatToken_*` (SG).
 
 Loop-scoped tokens fall through — `FormatMap` is keyed on dotted paths from the root model only, matching the `ExcelsiorTableMap` limitation. `{% for line in Lines %}{{ line.Body }}{% endfor %}` where `Line.Body` is `[Html]` won't trigger structural replacement; use `{{ line.Body | markdown }}` / the `markdown` filter explicitly inside loops.
 

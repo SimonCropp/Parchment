@@ -20,24 +20,30 @@ class ScopeTreeRunner(
 
     public void ApplyStructural()
     {
-        foreach (var (host, replacement) in structuralReplacements)
+        foreach (var replacement in structuralReplacements)
         {
-            var parent = host.Parent;
-            if (parent == null)
-            {
-                continue;
-            }
-
-            OpenXmlElement cursor = host;
-            foreach (var produced in replacement)
-            {
-                cursor = parent.InsertAfter(produced, cursor);
-            }
-
-            host.Remove();
+            ApplyOne(replacement);
         }
 
         structuralReplacements.Clear();
+    }
+
+    static void ApplyOne(StructuralReplacement replacement)
+    {
+        var host = replacement.Host;
+        var parent = host.Parent;
+        if (parent == null)
+        {
+            return;
+        }
+
+        OpenXmlElement cursor = host;
+        foreach (var produced in replacement.Produced)
+        {
+            cursor = parent.InsertAfter(produced, cursor);
+        }
+
+        host.Remove();
     }
 
     async Task ProcessAsync(IReadOnlyList<RangeNode> nodes)
@@ -64,15 +70,28 @@ class ScopeTreeRunner(
             return;
         }
 
+        // Snapshot the host paragraph's original character length once. As we apply substitutions
+        // in reverse-offset order, later-offset edits don't shift earlier-offset tokens — so each
+        // token's solo-ness can be judged against the original text.
+        var originalLength = ParagraphText.Build(host).InnerText.Length;
         var sortedByOffset = node.Tokens.OrderByDescending(_ => _.Offset).ToList();
-        var structuralTokens = new List<(DocxTokenSite site, object value)>();
+        var soloStructuralTokens = new List<(DocxTokenSite site, object value)>();
+        var splitQueued = false;
 
         foreach (var token in sortedByOffset)
         {
             var evaluated = await EvaluateTokenAsync(token, host, node.Tokens.Count);
             if (evaluated is TokenValue.MarkdownToken or TokenValue.HtmlToken or TokenValue.OpenXmlToken)
             {
-                structuralTokens.Add((token, evaluated));
+                if (node.Tokens.Count == 1 && token.Offset == 0 && token.Length == originalLength)
+                {
+                    // Whole host paragraph is the token — queue for replacement after every
+                    // other in-paragraph substitution has run.
+                    soloStructuralTokens.Add((token, evaluated));
+                    continue;
+                }
+
+                ApplyNonSoloStructural(token, host, evaluated, ref splitQueued);
                 continue;
             }
 
@@ -93,10 +112,54 @@ class ScopeTreeRunner(
             text.Replace(token.Offset, token.Length, replacement);
         }
 
-        if (structuralTokens.Count > 0)
+        if (soloStructuralTokens.Count > 0)
         {
-            structuralReplacements.Add(new(host, BuildStructuralReplacements(structuralTokens)));
+            structuralReplacements.Add(new(host, BuildStructuralReplacements(soloStructuralTokens)));
         }
+    }
+
+    /// <summary>
+    /// Splice or split the host paragraph for a non-solo structural token. Inline-equivalent
+    /// output (single produced paragraph) is unwrapped and spliced in place; anything else
+    /// (multiple blocks, a table) splits the host paragraph at the token offset and inserts
+    /// the produced elements between the two halves.
+    /// </summary>
+    void ApplyNonSoloStructural(DocxTokenSite token, Paragraph host, object value, ref bool splitQueued)
+    {
+        var produced = RenderTokenValue(value);
+        if (produced.Count == 0)
+        {
+            // Nothing to render — strip the token text from the host paragraph.
+            ParagraphText.Build(host).Replace(token.Offset, token.Length, string.Empty);
+            return;
+        }
+
+        if (ParagraphSplicer.IsInlineEquivalent(produced))
+        {
+            ParagraphSplicer.SpliceInline(host, token.Offset, token.Length, (Paragraph)produced[0]);
+            return;
+        }
+
+        if (splitQueued)
+        {
+            // A second block-shaped substitution on the same paragraph would create overlapping
+            // structural replacements; we don't try to compose them. The author needs to give
+            // the second token its own paragraph.
+            throw new ParchmentRenderException(
+                templateName,
+                $"Token '{token.Source}' produced block-level content but another structural substitution on the same paragraph already required a paragraph split. Move one of the tokens to its own paragraph.",
+                partUri,
+                Snippet(host, token),
+                token.Source);
+        }
+
+        // Block-shaped output in a non-solo context: split the host paragraph and insert the
+        // produced block elements between the resulting before/after halves. We queue this as a
+        // structural replacement so any other in-paragraph substitutions on the same host have
+        // already applied to the host's text by the time we replace it.
+        var split = ParagraphSplicer.Split(host, token.Offset, token.Length, produced);
+        structuralReplacements.Add(new(host, split));
+        splitQueued = true;
     }
 
     IReadOnlyList<OpenXmlElement> BuildStructuralReplacements(IReadOnlyList<(DocxTokenSite site, object value)> tokens)
@@ -104,26 +167,22 @@ class ScopeTreeRunner(
         var result = new List<OpenXmlElement>();
         foreach (var (_, value) in tokens)
         {
-            switch (value)
-            {
-                case TokenValue.MarkdownToken md:
-                    result.AddRange(MarkdownRendering.Render(md.Source, mainPart, headingOffset: 0));
-                    break;
-                case TokenValue.HtmlToken html:
-                    result.AddRange(OpenXmlHtml.WordHtmlConverter.ToElements(html.Source, mainPart, new()));
-                    break;
-                case TokenValue.OpenXmlToken raw:
-                    var ctx = new OpenXmlContextImpl(
-                        mainPart,
-                        new(mainPart),
-                        StyleSet.Read(mainPart));
-                    result.AddRange(raw.Render(ctx));
-                    break;
-            }
+            result.AddRange(RenderTokenValue(value));
         }
 
         return result;
     }
+
+    IReadOnlyList<OpenXmlElement> RenderTokenValue(object value) =>
+        value switch
+        {
+            TokenValue.MarkdownToken md => MarkdownRendering.Render(md.Source, mainPart, headingOffset: 0).ToList(),
+            TokenValue.HtmlToken html => OpenXmlHtml.WordHtmlConverter.ToElements(html.Source, mainPart, new()).ToList(),
+            TokenValue.OpenXmlToken raw => raw
+                .Render(new OpenXmlContextImpl(mainPart, new(mainPart), StyleSet.Read(mainPart)))
+                .ToList(),
+            _ => []
+        };
 
     async Task<object> EvaluateTokenAsync(DocxTokenSite site, Paragraph host, int siblingCount)
     {

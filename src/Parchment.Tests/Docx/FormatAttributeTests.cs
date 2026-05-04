@@ -149,15 +149,88 @@ public class FormatAttributeTests
     }
 
     [Test]
-    public async Task MixedInlineContentIsRejected()
+    public async Task NonSoloHtml_InlineContent_SplicesIntoHostParagraph()
     {
-        using var template = DocxTemplateBuilder.Build("Prefix {{ Body }}");
+        // Inline-only HTML in a non-solo token — the produced single paragraph is unwrapped and
+        // its runs are spliced into the host paragraph, preserving the surrounding "Prefix " text.
+        using var template = DocxTemplateBuilder.Build("Prefix {{ Body }} suffix");
 
         var store = new TemplateStore();
-        var exception = await Assert.That(
-            () => store.RegisterDocxTemplate<HtmlDoc>("mixed-format", template))
-            .Throws<ParchmentRegistrationException>();
-        await Assert.That(exception!.Message).Contains("must sit alone in its own paragraph");
+        store.RegisterDocxTemplate<HtmlDoc>("inline-non-solo", template);
+
+        var model = new HtmlDoc
+        {
+            Title = "T",
+            Body = "<b>bold</b> and <i>italic</i>"
+        };
+
+        using var stream = new MemoryStream();
+        await store.Render("inline-non-solo", model, stream);
+        stream.Position = 0;
+        await Verify(stream, "docx");
+    }
+
+    [Test]
+    public async Task NonSoloHtml_BlockContent_SplitsHostParagraph()
+    {
+        // Block-level HTML (multiple `<p>`s) in a non-solo token — the host paragraph is split:
+        // "Prefix " becomes its own paragraph, the produced `<p>`s slot in between, and " suffix"
+        // becomes another paragraph after.
+        using var template = DocxTemplateBuilder.Build("Prefix {{ Body }} suffix");
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<HtmlDoc>("block-non-solo", template);
+
+        var model = new HtmlDoc
+        {
+            Title = "T",
+            Body = "<p>First</p><p>Second</p>"
+        };
+
+        using var stream = new MemoryStream();
+        await store.Render("block-non-solo", model, stream);
+        stream.Position = 0;
+        await Verify(stream, "docx");
+    }
+
+    [Test]
+    public async Task NonSoloMarkdown_InlineContent_SplicesIntoHostParagraph()
+    {
+        using var template = DocxTemplateBuilder.Build("Note: {{ Body }} (end)");
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<MarkdownDoc>("md-inline-non-solo", template);
+
+        var model = new MarkdownDoc
+        {
+            Title = "T",
+            Body = "**bold** and *italic*"
+        };
+
+        using var stream = new MemoryStream();
+        await store.Render("md-inline-non-solo", model, stream);
+        stream.Position = 0;
+        await Verify(stream, "docx");
+    }
+
+    [Test]
+    public async Task NonSoloMarkdown_BlockContent_SplitsHostParagraph()
+    {
+        using var template = DocxTemplateBuilder.Build("Section: {{ Body }} (end)");
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<MarkdownDoc>("md-block-non-solo", template);
+
+        var model = new MarkdownDoc
+        {
+            Title = "T",
+            Body = "First paragraph.\n\nSecond paragraph."
+        };
+
+        using var stream = new MemoryStream();
+        await store.Render("md-block-non-solo", model, stream);
+        stream.Position = 0;
+        await Verify(stream, "docx");
     }
 
     [Test]
