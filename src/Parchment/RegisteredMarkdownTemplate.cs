@@ -26,7 +26,8 @@ class RegisteredMarkdownTemplate(
             body.RemoveAllChildren();
 
             cancel.ThrowIfCancellationRequested();
-            var elements = MarkdownRendering.Render(markdownText, mainPart, headingOffset: 0);
+            var numberingState = new WordNumberingState(mainPart);
+            var elements = MarkdownRendering.Render(markdownText, mainPart, numberingState, headingOffset: 0);
             foreach (var element in elements)
             {
                 body.AppendChild(element);

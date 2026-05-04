@@ -55,12 +55,13 @@ public class RenderBenchmarks
                 IsPreferred = true
             },
             Lines = Enumerable.Range(1, lineCount)
-                .Select(_ => new LineItem
-                {
-                    Description = $"Service line item {_}",
-                    Quantity = _ % 10 + 1,
-                    UnitPrice = 100m + _
-                })
+                .Select(_ =>
+                    new LineItem
+                    {
+                        Description = $"Service line item {_}",
+                        Quantity = _ % 10 + 1,
+                        UnitPrice = 100m + _
+                    })
                 .ToList()
         };
 

@@ -17,7 +17,7 @@ public sealed class ParchmentTemplateGenerator :
                 attributeFullName,
                 static (node, _) => node is ClassDeclarationSyntax,
                 ExtractTarget)
-            .Where(static target => target != null)
+            .Where(static _ => _ != null)
             .Select(static (target, _) => target!)
             .WithTrackingName(Stages.Targets)
             .Collect()
@@ -25,7 +25,7 @@ public sealed class ParchmentTemplateGenerator :
             .WithTrackingName(Stages.TargetsCollected);
 
         var docs = context.AdditionalTextsProvider
-            .Where(static text => text.Path.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
+            .Where(static _ => _.Path.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
             .Select(static (text, _) => ReadDocx(text))
             .WithTrackingName(Stages.Docs)
             .Collect()
@@ -190,7 +190,8 @@ public sealed class ParchmentTemplateGenerator :
                                 token.Source));
                     }
 
-                    if (token.LoopVariable == null || token.References.Count == 0)
+                    if (token.LoopVariable == null ||
+                        token.References.Count == 0)
                     {
                         break;
                     }
@@ -338,7 +339,7 @@ public sealed class ParchmentTemplateGenerator :
         }
 
         var member = ShapeResolver.ResolveMember(target.Shape, token.References[0], scope);
-        if (member is null || member is { IsHtml: false, IsMarkdown: false })
+        if (member is null or { IsHtml: false, IsMarkdown: false })
         {
             return;
         }
