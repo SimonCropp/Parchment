@@ -589,6 +589,63 @@ Rules (same as `[ExcelsiorTable]`):
 - `[Html]` + `[Markdown]` on the same property, or `[Html]` + `[StringSyntax("markdown")]` (and vice versa), is rejected at registration as a mismatch.
 
 
+### Enumerable string properties
+
+Any property assignable to `IEnumerable<string>` (`string[]`, `List<string>`, `IReadOnlyList<string>`, etc.) is auto-rendered as a Word native bullet list when referenced as a solo `{{ Property }}` substitution. **No attribute is required** — detection is purely type-driven, mirroring [Excelsior's Enumerable string properties](https://github.com/SimonCropp/Excelsior#enumerable-string-properties) feature.
+
+Mark the property:
+
+<!-- snippet: StringListModel -->
+<a id='snippet-StringListModel'></a>
+```cs
+public class Person
+{
+    public required string Name { get; init; }
+    public required IEnumerable<string> Tags { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Docx/StringListTests.cs#L12-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringListModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Drop a `{{ Tags }}` substitution into the template on its own line:
+
+![Template before render](/src/Parchment.Tests/Scenarios/string-list/input.png)
+
+Register and render normally:
+
+<!-- snippet: StringListUsage -->
+<a id='snippet-StringListUsage'></a>
+```cs
+var templatePath = Path.Combine(ScenarioPath("string-list"), "input.docx");
+
+var store = new TemplateStore();
+store.RegisterDocxTemplate<Person>("string-list-scenario", templatePath);
+
+var model = new Person
+{
+    Name = "Ada Lovelace",
+    Tags = ["Author", "Mathematician", "Engineer"]
+};
+
+using var stream = new MemoryStream();
+await store.Render("string-list-scenario", model, stream);
+```
+<sup><a href='/src/Parchment.Tests/Docx/StringListTests.cs#L91-L107' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringListUsage' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The rendered output:
+
+![Rendered output](/src/Parchment.Tests/Scenarios/string-list/output%23page01.verified.png)
+
+Behavior:
+
+- The auto path is **opportunistic, not strict**: it only fires when the token sits alone in its paragraph and has no filter chain. Otherwise the substitution falls through to standard Fluid evaluation — so existing `{{ Tags | bullet_list }}` and `{{ Tags | numbered_list }}` filter usage keeps working unchanged.
+- A null collection renders as empty (no error). An empty collection renders as no paragraphs.
+- Properties marked `[ExcelsiorTable]` keep ownership — the Excelsior path runs first and wins for `[ExcelsiorTable] IEnumerable<string>` (though Excelsior itself rejects `string` as an element type, so this combination is rarely useful in practice).
+- Loop-scoped tokens fall through. The detection map is keyed on dotted paths from the root model only, matching the `[ExcelsiorTable]` and `[Html]`/`[Markdown]` limitations. Inside `{% for c in Customers %}{{ c.Tags }}{% endfor %}`, use the explicit `bullet_list` filter.
+- Numbered output: opt out of the auto path with `{{ Tags | numbered_list }}`.
+
+
 ## Markdown template
 
 A markdown template is a `.md` file containing the full body of the document plus liquid tokens for substitution, looping, and conditional content. The template below combines headings, emphasis, a pipe table driven by a loop, an ordered list driven by a loop, and a blockquote chosen by an `{% if %}`:

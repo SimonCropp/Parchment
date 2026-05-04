@@ -136,6 +136,29 @@ Parallel hook to Excelsior, but for string properties rather than collections: a
 
 Loop-scoped tokens fall through — `FormatMap` is keyed on dotted paths from the root model only, matching the `ExcelsiorTableMap` limitation. `{% for line in Lines %}{{ line.Body }}{% endfor %}` where `Line.Body` is `[Html]` won't trigger structural replacement; use `{{ line.Body | markdown }}` / the `markdown` filter explicitly inside loops.
 
+### String-list dispatch (auto bullet list for `IEnumerable<string>`)
+
+Mirrors Excelsior's "Enumerable string properties" feature: a substitution token whose dotted path on the root model resolves to an `IEnumerable<string>` (including `string[]`, `List<string>`, `IReadOnlyList<string>`, etc.) auto-renders as a Word native bullet list — same output as `{{ Tags | bullet_list }}` produces explicitly. **No attribute is required**; detection is purely type-driven. There is no SG counterpart and no diagnostic codes — the path is opportunistic, not validated.
+
+**Runtime path** (`src/Parchment/StringLists/`):
+
+1. `StringListMap.Build(modelType, name)` walks the model's reachable property graph. For each property:
+   - Skip if `[ExcelsiorTable]` is present (Excelsior keeps ownership; the attribute permits `string` element types and a `[ExcelsiorTable] IEnumerable<string>` would otherwise be shadowed).
+   - Otherwise, if the property type is assignable to `IEnumerable<string>` (excluding `string` itself, which is `IEnumerable<char>`), add an entry `(DottedPath, Func<object, object?> Getter)` keyed on the dotted path. Same `ChainGetter` / `ShouldDescend` / per-branch `visited` discipline as `ExcelsiorTableMap`.
+2. `ScopeTreeRunner.EvaluateTokenAsync` consults `TryResolveStringList` AFTER `TryResolveExcelsiorTable` and `TryResolveFormatted`, before standard Fluid evaluation. Dispatch order: Excelsior → Format → StringList → Fluid.
+3. `TryResolveStringList` **gates opportunistically** instead of throwing on misuse (the design choice that distinguishes this from Excelsior/Format paths):
+   - Returns `null` if the token isn't solo in its paragraph (sibling count != 1, or offset/length doesn't cover the whole paragraph text).
+   - Returns `null` if the parsed `OutputStatement.Expression` isn't a plain `MemberExpression` (i.e. user attached a filter — they're explicitly opting into Fluid-driven rendering).
+   - In both fall-through cases, Fluid takes over. This preserves backward compat: `{{ Tags | bullet_list }}` and `{{ Tags | numbered_list }}` keep working unchanged.
+4. When the gates pass, the helper calls `entry.Getter(rootModel)`, materializes the sequence with `.ToList()` (so the deferred render delegate doesn't re-enumerate), and returns `TokenValueHelpers.BulletList(items)` — the same primitive the `bullet_list` filter uses, which produces a `TokenValue.OpenXmlToken` wrapping `IOpenXmlContext.CreateBulletNumbering()` + `ListParagraph`-styled paragraphs.
+5. `ScopeTreeRunner` takes `StringListMap` as a constructor dep and propagates it to cloned runners in loop / if branches — same pattern as `excelsiorTables` and `formats`.
+
+**Why opportunistic, not strict** (different from Excelsior/Format): there's an existing `bullet_list` Liquid filter that takes any enumerable and produces the same Word bullet output. Pre-feature, users wrote `{{ Tags | bullet_list }}` against `IEnumerable<string>` properties. A strict validator would have broken that — see `TokenOverrideTests.BulletListFilter` against `Invoice.Tags`. The fall-through design lets the new feature be purely additive: `{{ Tags }}` solo → auto bullet, `{{ Tags | numbered_list }}` → user-driven numbered list, `{{ Tags }}` mixed inline → Fluid stringification (unchanged from before).
+
+Loop-scoped tokens fall through — `StringListMap` is keyed on dotted paths from the root model only, matching the `ExcelsiorTableMap` and `FormatMap` limitations. Inside `{% for c in Customers %}{{ c.Tags }}{% endfor %}` use the explicit `bullet_list` filter.
+
+The relevant test file is `StringListTests` (Parchment.Tests/Docx). The scenario lives at `src/Parchment.Tests/Scenarios/string-list/`.
+
 ### Determinism guarantee
 
 Same template + same model → byte-identical output. Avoid `w:rsid` randomness, never set `PackageProperties.Created`, no timestamps anywhere. `DeterminismTests.cs` renders a sample twice and asserts byte equality. Users hash outputs for caching/dedup, so don't break this.
