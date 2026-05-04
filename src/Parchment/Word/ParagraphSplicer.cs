@@ -31,7 +31,7 @@ static class ParagraphSplicer
     /// spliced inline. Anything else (multiple blocks, a table) requires host splitting.
     /// </summary>
     public static bool IsInlineEquivalent(IReadOnlyList<OpenXmlElement> produced) =>
-        produced.Count == 1 && produced[0] is Paragraph;
+        produced is [Paragraph];
 
     /// <summary>
     /// Inline splice: rebuilds host's children as
@@ -98,7 +98,7 @@ static class ParagraphSplicer
     static List<OpenXmlElement> ContentChildren(Paragraph source) =>
         source.ChildElements
             .Where(_ => _ is not ParagraphProperties)
-            .Select(_ => (OpenXmlElement)_.CloneNode(true))
+            .Select(_ => _.CloneNode(true))
             .ToList();
 
     /// <summary>
@@ -155,7 +155,7 @@ static class ParagraphSplicer
 
         foreach (var text in paragraph.Descendants<Text>().ToList())
         {
-            var value = text.Text ?? string.Empty;
+            var value = text.Text;
             var start = consumed;
             var end = consumed + value.Length;
             consumed = end;
@@ -191,7 +191,7 @@ static class ParagraphSplicer
 
         foreach (var text in paragraph.Descendants<Text>().ToList())
         {
-            var value = text.Text ?? string.Empty;
+            var value = text.Text;
             var start = consumed;
             var end = consumed + value.Length;
             consumed = end;
