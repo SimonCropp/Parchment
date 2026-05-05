@@ -21,10 +21,19 @@ public static class TokenValueHelpers
         var paragraph = new Paragraph();
         var props = new ParagraphProperties
         {
-            ParagraphStyleId = new() { Val = "ListParagraph" },
+            ParagraphStyleId = new()
+            {
+                Val = "ListParagraph"
+            },
             NumberingProperties = new(
-                new NumberingLevelReference { Val = ilvl },
-                new NumberingId { Val = numId })
+                new NumberingLevelReference
+                {
+                    Val = ilvl
+                },
+                new NumberingId
+                {
+                    Val = numId
+                })
         };
         paragraph.Append(props);
         paragraph.Append(new Run(
