@@ -63,13 +63,24 @@ Tokens in `MainDocumentPart`, every `HeaderPart` / `FooterPart`, `FootnotesPart`
 
 ### Loops
 
-A `{% for %}` paragraph and its matching `{% endfor %}` repeat the intervening paragraphs once per item.
+A `{% for %}` paragraph and its matching `{% endfor %}` repeat the intervening content once per item.
 
 ```
 {% for line in Lines %}
 - {{ line.Description }}: {{ line.Quantity }} x {{ line.UnitPrice }}
 {% endfor %}
 ```
+
+The body isn't restricted to paragraphs. Anything between the open and close paragraphs at the same nesting level — additional paragraphs, `<w:tbl>` tables, images, section breaks — is captured and cloned per iteration. This makes per-group "heading + table" layouts straightforward: place a styled heading paragraph and a hand-crafted Word table between `{% for %}` and `{% endfor %}`, and reference the loop variable inside the table cells.
+
+```
+{% for dept in Departments %}
+[heading paragraph: {{ dept.Name }}]
+[Word table with cells {{ dept.X }}, {{ dept.Y }}, ...]
+{% endfor %}
+```
+
+The open and close tags must be siblings (same parent element). A `{% for %}` paragraph in the body and an `{% endfor %}` paragraph inside a table cell will not pair up.
 
 ### Conditionals
 
@@ -526,7 +537,7 @@ var model = new HtmlDoc
 using var stream = new MemoryStream();
 await store.Render("html-doc", model, stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L80-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlUsage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L89-L103' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ![Rendered output](/src/Parchment.Tests/Scenarios/html-property/output%23page01.verified.png)

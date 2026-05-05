@@ -381,6 +381,49 @@ public class StringListTests
     }
 
     [Test]
+    public async Task EmptyCollectionRendersWithoutListParagraphs()
+    {
+        // An empty IEnumerable<string> still triggers the auto-bullet path (gates pass: solo,
+        // plain identifier, IEnumerable<string>) but produces zero list paragraphs. The
+        // surrounding paragraphs ("Header"/"Footer") must remain.
+        using var template = DocxTemplateBuilder.Build(
+            """
+            Header
+
+            {{ Tags }}
+
+            Footer
+            """);
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<Person>("person-empty", template);
+
+        var model = new Person
+        {
+            Name = "Ada",
+            Tags = []
+        };
+
+        using var stream = new MemoryStream();
+        await store.Render("person-empty", model, stream);
+        stream.Position = 0;
+
+        using var doc = WordprocessingDocument.Open(stream, false);
+        var paragraphs = doc.MainDocumentPart!.Document!.Body!.Elements<Paragraph>().ToList();
+
+        var listParagraphs = paragraphs.Where(_ =>
+                _.ParagraphProperties?.ParagraphStyleId?.Val?.Value == "ListParagraph")
+            .ToList();
+        await Assert.That(listParagraphs).IsEmpty();
+
+        var visibleTexts = paragraphs
+            .Select(_ => string.Concat(_.Descendants<Text>().Select(t => t.Text)))
+            .Where(_ => _.Length > 0)
+            .ToList();
+        await Assert.That(visibleTexts).IsEquivalentTo(new[] { "Header", "Footer" });
+    }
+
+    [Test]
     public async Task FilterOnStringListFallsThroughToFluid()
     {
         // Applying a filter is an explicit opt-out of the auto-bullet path. The existing

@@ -74,6 +74,15 @@ public class FormatAttributeTests
         public required string Body { get; init; }
     }
 
+    public class TwoHtmlBlockDoc
+    {
+        [Html]
+        public required string A { get; init; }
+
+        [Html]
+        public required string B { get; init; }
+    }
+
     [Test]
     public async Task RenderHtml()
     {
@@ -255,6 +264,30 @@ public class FormatAttributeTests
             () => store.RegisterDocxTemplate<MismatchDoc>("mismatch", template))
             .Throws<ParchmentRegistrationException>();
         await Assert.That(exception!.Message).Contains("mismatched");
+    }
+
+    [Test]
+    public async Task TwoBlockShapedFormatTokensInSameParagraph_Throws()
+    {
+        // Two non-solo block-shaped structural tokens in one paragraph would require overlapping
+        // host splits. ParagraphSplicer doesn't compose them — the second one must throw and
+        // tell the author to put one on its own line.
+        using var template = DocxTemplateBuilder.Build("Prefix {{ A }} between {{ B }} suffix");
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<TwoHtmlBlockDoc>("two-block", template);
+
+        var model = new TwoHtmlBlockDoc
+        {
+            A = "<p>A1</p><p>A2</p>",
+            B = "<p>B1</p><p>B2</p>"
+        };
+
+        using var stream = new MemoryStream();
+        var exception = await Assert.That(
+            async () => await store.Render("two-block", model, stream))
+            .Throws<ParchmentRenderException>();
+        await Assert.That(exception!.Message).Contains("Move one of the tokens to its own paragraph");
     }
 
     [Test]
