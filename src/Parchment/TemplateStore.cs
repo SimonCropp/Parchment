@@ -162,7 +162,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
     public static void AddFilter(string name, FilterDelegate filter) =>
         SharedFluid.Options.Filters.AddFilter(name, filter);
 
-    static IReadOnlyList<PartScopeTree> ExtractParts(WordprocessingDocument doc, string name)
+    static List<PartScopeTree> ExtractParts(WordprocessingDocument doc, string name)
     {
         var parts = new List<PartScopeTree>();
         foreach (var (uri, root) in DocxCloner.EnumerateParts(doc))

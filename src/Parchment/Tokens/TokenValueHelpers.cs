@@ -16,7 +16,7 @@ public static class TokenValueHelpers
             return items.Select(item => BuildListParagraph(item, numId, 0));
         });
 
-    static OpenXmlElement BuildListParagraph(string text, int numId, int ilvl)
+    static Paragraph BuildListParagraph(string text, int numId, int ilvl)
     {
         var paragraph = new Paragraph();
         var props = new ParagraphProperties

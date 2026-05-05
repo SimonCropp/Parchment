@@ -127,7 +127,7 @@ class ScopeTreeRunner(
             Text().Replace(token.Offset, token.Length, replacement);
         }
 
-        if (soloStructuralTokens != null && soloStructuralTokens.Count > 0)
+        if (soloStructuralTokens is { Count: > 0 })
         {
             (structuralReplacements ??= []).Add(new(host, BuildStructuralReplacements(soloStructuralTokens)));
         }
@@ -177,7 +177,7 @@ class ScopeTreeRunner(
         splitQueued = true;
     }
 
-    IReadOnlyList<OpenXmlElement> BuildStructuralReplacements(IReadOnlyList<(DocxTokenSite site, object value)> tokens)
+    List<OpenXmlElement> BuildStructuralReplacements(IReadOnlyList<(DocxTokenSite site, object value)> tokens)
     {
         var result = new List<OpenXmlElement>();
         foreach (var (_, value) in tokens)
@@ -191,15 +191,14 @@ class ScopeTreeRunner(
     IReadOnlyList<OpenXmlElement> RenderTokenValue(object value) =>
         value switch
         {
-            MarkdownToken md => MarkdownRendering.Render(md.Source, mainPart, numberingState, headingOffset: 0).ToList(),
+            MarkdownToken md => MarkdownRendering.Render(md.Source, mainPart, numberingState, headingOffset: 0),
             HtmlToken html => OpenXmlHtml.WordHtmlConverter.ToElements(
-                    html.Source,
-                    mainPart,
-                    new()
-                    {
-                        NumberingSession = numberingState.GetHtmlSession()
-                    })
-                .ToList(),
+                html.Source,
+                mainPart,
+                new()
+                {
+                    NumberingSession = numberingState.GetHtmlSession()
+                }),
             OpenXmlToken raw when ReferenceEquals(raw, OpenXmlToken.Empty) => [],
             OpenXmlToken raw => raw
                 .Render(new OpenXmlContextImpl(mainPart, numberingState, styles.Value))
