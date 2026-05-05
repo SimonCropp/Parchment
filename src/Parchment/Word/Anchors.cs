@@ -56,8 +56,9 @@ static class Anchors
                 continue;
             }
 
-            var host = bookmarkStart.Ancestors<Paragraph>().FirstOrDefault();
-            if (host != null)
+            // Parchment-prefixed bookmarks are inserted as direct paragraph children
+            // (see InsertAfterProperties), so a single Parent cast is sufficient.
+            if (bookmarkStart.Parent is Paragraph host)
             {
                 map[name] = host;
             }
@@ -110,19 +111,6 @@ static class Anchors
         foreach (var end in ends)
         {
             end.Remove();
-        }
-    }
-
-    public static void RenameIn(OpenXmlCompositeElement root, IDictionary<string, string> map)
-    {
-        foreach (var start in root.Descendants<BookmarkStart>())
-        {
-            var name = start.Name?.Value;
-            if (name != null &&
-                map.TryGetValue(name, out var replacement))
-            {
-                start.Name = replacement;
-            }
         }
     }
 
