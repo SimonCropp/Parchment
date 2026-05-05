@@ -149,4 +149,34 @@ public class MarkdownFlowTests
 
         await Assert.That(withStream.ToArray()).IsEquivalentTo(withoutStream.ToArray());
     }
+
+    public class ImageModel
+    {
+        public required string Caption { get; init; }
+    }
+
+    [Test]
+    public async Task ImageWithDataUriEmbedsDrawing()
+    {
+        // 1x1 transparent PNG
+        const string dataUri =
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgAAIAAAUAAeImBZsAAAAASUVORk5CYII=";
+
+        var markdown =
+            "# {{ Caption }}\n\n![pixel](" + dataUri + ")\n";
+
+        using var styleSource = DocxTemplateBuilder.Build();
+        var store = new TemplateStore();
+        store.RegisterMarkdownTemplate<ImageModel>("image", markdown, styleSource);
+
+        using var stream = new MemoryStream();
+        await store.Render("image", new ImageModel {Caption = "With image"}, stream);
+        stream.Position = 0;
+
+        using var doc = WordprocessingDocument.Open(stream, false);
+        var main = doc.MainDocumentPart!;
+        var drawings = main.Document!.Body!.Descendants<Drawing>().ToList();
+        await Assert.That(drawings.Count).IsEqualTo(1);
+        await Assert.That(main.ImageParts.Any()).IsTrue();
+    }
 }

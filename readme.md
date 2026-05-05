@@ -133,7 +133,7 @@ using var template = DocxTemplateBuilder.Build(
     {{ Tags | bullet_list }}
     """);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L258-L267' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterContent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L267-L276' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterContent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Render:
@@ -146,7 +146,7 @@ store.RegisterDocxTemplate<Invoice>("bullet-filter", template);
 using var stream = new MemoryStream();
 await store.Render("bullet-filter", SampleData.Invoice(), stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L269-L276' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterRender' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L278-L285' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterRender' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `numbered_list` is identical in shape — swap the filter name to produce a decimal-numbered list instead of bullets.
@@ -176,7 +176,7 @@ public class NoteModel
     public required TokenValue Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L3-L11' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L9-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Content:
@@ -188,7 +188,7 @@ Content:
 
 {{ Body }}
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L19-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyContent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L25-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyContent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Render:
@@ -216,7 +216,7 @@ await store.Render(
     },
     stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L26-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyRender' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L32-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyRender' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -235,7 +235,7 @@ public class ArticleModel
     public required string Content { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L54-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L60-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Content:
@@ -247,7 +247,7 @@ Content:
 
 {{ Content | markdown }}
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L70-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterContent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L76-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterContent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Render:
@@ -272,7 +272,7 @@ await store.Render(
     },
     stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L77-L96' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterRender' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L83-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterRender' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Both approaches produce the same structural replacement — the host paragraph is swapped with the rendered markdown elements when the token is the entire paragraph. If the token shares its paragraph with other text or with sibling tokens, the runtime falls back to inline splicing (single produced paragraph → its runs are extracted and merged into the host) or paragraph splitting (multiple produced blocks → host is split at the token offset and the produced blocks slot between the two halves). See [Inline-aware structural replacement](#inline-aware-structural-replacement) for the full rules.
@@ -352,7 +352,7 @@ public class PostModel
     public required TokenValue Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L153-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlPropertyModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L159-L167' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlPropertyModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Content:
@@ -364,7 +364,7 @@ Content:
 
 {{ Body }}
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L169-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlPropertyContent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L175-L179' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlPropertyContent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Render:
@@ -390,7 +390,7 @@ await store.Render(
     },
     stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L176-L196' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlPropertyRender' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L182-L202' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlPropertyRender' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -409,7 +409,7 @@ public class ReportModel
     public required TokenValue Callout { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L202-L210' title='Snippet source file'>snippet source</a> | <a href='#snippet-OpenXmlPropertyModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L208-L216' title='Snippet source file'>snippet source</a> | <a href='#snippet-OpenXmlPropertyModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Content:
@@ -421,7 +421,7 @@ Content:
 
 {{ Callout }}
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L218-L222' title='Snippet source file'>snippet source</a> | <a href='#snippet-OpenXmlPropertyContent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L224-L228' title='Snippet source file'>snippet source</a> | <a href='#snippet-OpenXmlPropertyContent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Render:
@@ -441,7 +441,10 @@ await store.Render(
             new Paragraph(
                 new Run(
                     new RunProperties(
-                        new Color { Val = "C00000" },
+                        new Color
+                        {
+                            Val = "C00000"
+                        },
                         new Bold()),
                     new Text("Critical: review required")
                     {
@@ -451,7 +454,7 @@ await store.Render(
     },
     stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L225-L249' title='Snippet source file'>snippet source</a> | <a href='#snippet-OpenXmlPropertyRender' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L231-L258' title='Snippet source file'>snippet source</a> | <a href='#snippet-OpenXmlPropertyRender' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -470,7 +473,7 @@ public class StyledModel
     public required TokenValue Highlight { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L102-L110' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L108-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Content:
@@ -482,7 +485,7 @@ Content:
 
 {{ Highlight }}
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L118-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateContent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L124-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateContent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Render:
@@ -510,7 +513,7 @@ await store.Render(
         })
     }, stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L125-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateRender' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L131-L153' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateRender' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -1005,6 +1008,164 @@ Body text follows the heading.
 ```
 
 Only standalone comment *blocks* are removed; inline HTML, scripts, styles, and any other HTML constructs render normally via [OpenXmlHtml](https://github.com/SimonCropp/OpenXmlHtml).
+
+
+## Images
+
+Parchment has no dedicated image binding or attribute. Images flow through one of four paths depending on where the reference lives.
+
+
+### Static images embedded in the template
+
+Pictures placed directly in the `.docx` template (Word's Insert &rarr; Picture, or pasted in) pass through to the output verbatim. Token scanning only mutates paragraphs that contain liquid tokens; image parts, drawings, and shapes elsewhere in the document are cloned byte-for-byte. Drop a logo into the header in Word, render, the logo comes out — no model wiring needed.
+
+
+### `<img>` inside HTML
+
+For `<img>` tags inside an `[Html]` property, an HTML block in a markdown template, or inline HTML inside a markdown property, embedding is delegated to [OpenXmlHtml](https://github.com/SimonCropp/OpenXmlHtml).
+
+| `src` value | Result |
+| --- | --- |
+| `data:image/...;base64,...` (data URI) | Bytes are decoded and embedded as a `<w:drawing>` |
+| Anything else (relative path, `http(s)://`, `file:///`) | Falls back to rendering the alt text as plain text |
+
+To embed a local file via the HTML path, encode it as a data URI on the model first. Or use the markdown image syntax below, which auto-encodes absolute file paths.
+
+
+### Markdown `![alt](url)`
+
+In a markdown template, or inside a `[Markdown]` property, `![alt](url)` is rendered as an embedded image flowing inline within the surrounding paragraph. The URL is resolved as follows:
+
+| `url` form | Result |
+| --- | --- |
+| `data:image/...;base64,...` | Bytes decoded, embedded |
+| Absolute file path (e.g. `C:\images\logo.png`) | File read from disk, encoded as a data URI, embedded |
+| `file:///...` URI | Same as absolute path |
+| Relative path or `http(s)://` URL | Falls back to alt text — no fetching, no CWD-relative resolution |
+
+HTTP fetching is intentionally not supported — it would couple render output to network state and break determinism. Resolve URLs into bytes (or absolute paths) on the way into the model.
+
+Determinism holds as long as the file at the resolved path doesn't change between renders.
+
+
+### Custom `OpenXmlToken` (programmatic embedding)
+
+For full control — explicit sizing, anchored positioning, charts, anything outside markdown or HTML — return an `OpenXmlToken` from a `TokenValue`-typed model property. The render delegate receives an `IOpenXmlContext` whose `AddImagePart(byte[] bytes, string contentType)` adds an `ImagePart` to the document and returns its relationship ID. Build the `<w:drawing>` yourself (inline or anchor element, EMU-sized extents, blip ref pointing at the rel-id) and yield it as one of the produced elements.
+
+Use this path when image bytes live in memory (rendered chart, database blob, dynamically generated PNG) and round-tripping through base64 or a temp file would be wasteful.
+
+Model:
+
+<!-- snippet: ImageTokenModel -->
+<a id='snippet-ImageTokenModel'></a>
+```cs
+public class BrandKit
+{
+    public required string Title { get; init; }
+    public required TokenValue Logo { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L291-L299' title='Snippet source file'>snippet source</a> | <a href='#snippet-ImageTokenModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Word's `Drawing` element conflicts with the `DocumentFormat.OpenXml.Drawing` namespace, so namespace aliases keep the construction code readable:
+
+<!-- snippet: ImageTokenAliases -->
+<a id='snippet-ImageTokenAliases'></a>
+```cs
+using A = DocumentFormat.OpenXml.Drawing;
+using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
+using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L1-L5' title='Snippet source file'>snippet source</a> | <a href='#snippet-ImageTokenAliases' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Template content:
+
+<!-- snippet: ImageTokenContent -->
+<a id='snippet-ImageTokenContent'></a>
+```cs
+# {{ Title }}
+
+{{ Logo }}
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L307-L311' title='Snippet source file'>snippet source</a> | <a href='#snippet-ImageTokenContent' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Render — `context.AddImagePart` returns a relationship ID; the rest is standard OpenXML drawing plumbing (extent in EMUs, blip referencing the rel-id, preset shape geometry):
+
+<!-- snippet: ImageTokenRender -->
+<a id='snippet-ImageTokenRender'></a>
+```cs
+var store = new TemplateStore();
+store.RegisterDocxTemplate<BrandKit>("image-token", template);
+await store.Render(
+    "image-token",
+    new BrandKit
+    {
+        Title = "Brand kit",
+        Logo = new OpenXmlToken(context =>
+        {
+            var relId = context.AddImagePart(imageBytes, "image/png");
+
+            // Word measures images in EMUs (English Metric Units): 914400 per inch.
+            const long widthEmu = 914400L;
+            const long heightEmu = 914400L;
+
+            var inline = new DW.Inline(
+                new DW.Extent
+                {
+                    Cx = widthEmu,
+                    Cy = heightEmu
+                },
+                new DW.DocProperties
+                {
+                    Id = 1U,
+                    Name = "Logo"
+                },
+                new A.Graphic(
+                    new A.GraphicData(
+                        new PIC.Picture(
+                            new PIC.NonVisualPictureProperties(
+                                new PIC.NonVisualDrawingProperties
+                                {
+                                    Id = 0U,
+                                    Name = "logo.png"
+                                },
+                                new PIC.NonVisualPictureDrawingProperties()),
+                            new PIC.BlipFill(
+                                new A.Blip
+                                {
+                                    Embed = relId
+                                },
+                                new A.Stretch(new A.FillRectangle())),
+                            new PIC.ShapeProperties(
+                                new A.Transform2D(
+                                    new A.Offset
+                                    {
+                                        X = 0L,
+                                        Y = 0L
+                                    },
+                                    new A.Extents
+                                    {
+                                        Cx = widthEmu,
+                                        Cy = heightEmu
+                                    }),
+                                new A.PresetGeometry(new A.AdjustValueList())
+                                {
+                                    Preset = A.ShapeTypeValues.Rectangle
+                                })))
+                    {
+                        Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture"
+                    }));
+
+            return [new Paragraph(new Run(new Drawing(inline)))];
+        })
+    },
+    stream);
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L318-L387' title='Snippet source file'>snippet source</a> | <a href='#snippet-ImageTokenRender' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 
 ## Registration-time validation
