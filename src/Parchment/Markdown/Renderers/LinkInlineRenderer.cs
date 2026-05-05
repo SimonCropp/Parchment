@@ -12,9 +12,10 @@ class LinkInlineRenderer :
 
         var relId = renderer.MainPart.AddHyperlinkRelationship(new(url, UriKind.RelativeOrAbsolute), true).Id;
 
-        var before = renderer.Top.CurrentRuns.Count;
+        var top = renderer.Top;
+        var before = top.CurrentRuns.Count;
         renderer.WriteChildren(inline);
-        var produced = renderer.Top.CurrentRuns.Skip(before).ToList();
+        var produced = top.CurrentRuns.Skip(before).ToList();
 
         var hyperlink = new Hyperlink
         {
@@ -38,7 +39,7 @@ class LinkInlineRenderer :
             }
         }
 
-        renderer.Top.CurrentRuns.RemoveRange(before, renderer.Top.CurrentRuns.Count - before);
+        top.CurrentRuns.RemoveRange(before, top.CurrentRuns.Count - before);
         renderer.AddRun(hyperlink);
     }
 }

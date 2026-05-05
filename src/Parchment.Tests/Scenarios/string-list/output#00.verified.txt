@@ -1,4 +1,14 @@
 ﻿{
+  Properties: {
+    LastModifiedBy: Simon Cropp,
+    Revision: 2
+  },
+  Fonts: [
+    Arial,
+    Calibri,
+    Calibri Light,
+    Times New Roman
+  ],
   Text:
 Person: Ada Lovelace
 Tags:
