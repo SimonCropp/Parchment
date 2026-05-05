@@ -7,29 +7,23 @@ static class ExcelsiorTableBridge
 {
     static readonly ConcurrentDictionary<Type, BuilderInvoker> invokerCache = new();
 
+    static readonly MethodInfo genericBuildTable = typeof(ExcelsiorTableBridge)
+        .GetMethods(BindingFlags.Public | BindingFlags.Static)
+        .Single(_ => _ is {Name: nameof(BuildTable), IsGenericMethodDefinition: true});
+
     public static Table BuildTable(Type elementType, object data, MainDocumentPart mainPart)
     {
         var invoker = invokerCache.GetOrAdd(elementType, CreateInvoker);
         return invoker(data, mainPart);
     }
 
+    public static Table BuildTable<TElement>(IEnumerable<TElement> data, MainDocumentPart mainPart) =>
+        new WordTableBuilder<TElement>(data, null).Build(mainPart);
+
     static BuilderInvoker CreateInvoker(Type elementType)
     {
-        var builderType = typeof(WordTableBuilder<>).MakeGenericType(elementType);
-        var enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
-        var headingStyleType = typeof(Action<CellStyle>);
-        var ctor = builderType.GetConstructor([enumerableType, headingStyleType])
-            ?? throw new InvalidOperationException(
-                $"Excelsior.WordTableBuilder<{elementType.Name}> has no constructor accepting (IEnumerable<{elementType.Name}>, Action<CellStyle>).");
-        var build = builderType.GetMethod("Build", [typeof(MainDocumentPart)])
-            ?? throw new InvalidOperationException(
-                $"Excelsior.WordTableBuilder<{elementType.Name}>.Build(MainDocumentPart) is missing.");
-
-        return (data, mainPart) =>
-        {
-            var builder = ctor.Invoke([data, null]);
-            return (Table) build.Invoke(builder, [mainPart])!;
-        };
+        var method = genericBuildTable.MakeGenericMethod(elementType);
+        return (data, mainPart) => (Table) method.Invoke(null, [data, mainPart])!;
     }
 
     delegate Table BuilderInvoker(object data, MainDocumentPart mainPart);
