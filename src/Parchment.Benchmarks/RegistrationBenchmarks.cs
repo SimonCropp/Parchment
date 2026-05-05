@@ -2,10 +2,24 @@
 public class RegistrationBenchmarks
 {
     byte[] templateBytes = null!;
+    string templatePath = null!;
 
     [GlobalSetup]
-    public void Setup() =>
+    public void Setup()
+    {
         templateBytes = BuildTemplate();
+        templatePath = Path.GetTempFileName();
+        File.WriteAllBytes(templatePath, templateBytes);
+    }
+
+    [GlobalCleanup]
+    public void Cleanup()
+    {
+        if (File.Exists(templatePath))
+        {
+            File.Delete(templatePath);
+        }
+    }
 
     [Benchmark]
     public void RegisterFromMemoryStream()
@@ -27,17 +41,8 @@ public class RegistrationBenchmarks
     [Benchmark]
     public void RegisterFromFilePath()
     {
-        var path = Path.GetTempFileName();
-        try
-        {
-            File.WriteAllBytes(path, templateBytes);
-            var store = new TemplateStore();
-            store.RegisterDocxTemplate<Invoice>("bench", path);
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<Invoice>("bench", templatePath);
     }
 
     static byte[] BuildTemplate()

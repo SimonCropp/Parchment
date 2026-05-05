@@ -12,15 +12,21 @@ class ScopeTreeRunner(
     ExcelsiorTableMap excelsiorTables,
     FormatMap formats,
     StringListMap stringLists,
-    WordNumberingState numberingState)
+    WordNumberingState numberingState,
+    Lazy<StyleSet> styles)
 {
-    List<StructuralReplacement> structuralReplacements = [];
+    List<StructuralReplacement>? structuralReplacements;
 
     public Task RunAsync(IReadOnlyList<RangeNode> nodes) =>
         ProcessAsync(nodes);
 
     public void ApplyStructural()
     {
+        if (structuralReplacements == null)
+        {
+            return;
+        }
+
         foreach (var replacement in structuralReplacements)
         {
             ApplyOne(replacement);
@@ -71,51 +77,59 @@ class ScopeTreeRunner(
             return;
         }
 
-        // Snapshot the host paragraph's original character length once. As we apply substitutions
-        // in reverse-offset order, later-offset edits don't shift earlier-offset tokens — so each
-        // token's solo-ness can be judged against the original text.
-        var originalLength = ParagraphText.Build(host).InnerText.Length;
-        var sortedByOffset = node.Tokens.OrderByDescending(_ => _.Offset).ToList();
-        var soloStructuralTokens = new List<(DocxTokenSite site, object value)>();
-        var splitQueued = false;
+        // Cache the ParagraphText across token replacements. Tokens are applied in reverse-offset
+        // order, so a higher-offset Replace doesn't disturb the spans/offsets used for the next
+        // lower-offset token. Structural ops (splice/split) and MutateToken arbitrary mutation do
+        // invalidate the cache — clear it after those.
+        ParagraphText? cachedText = null;
+        ParagraphText Text() => cachedText ??= ParagraphText.Build(host);
 
-        foreach (var token in sortedByOffset)
+        // Snapshot the host paragraph's original character length once.
+        var originalLength = Text().InnerText.Length;
+
+        // node.Tokens come from TokenScan in ascending-offset order. Iterate in reverse without
+        // allocating an OrderByDescending().ToList() — applying high-offset replacements first
+        // keeps the lower-offset spans valid for the next iteration.
+        List<(DocxTokenSite site, object value)>? soloStructuralTokens = null;
+        var splitQueued = false;
+        var tokenCount = node.Tokens.Count;
+
+        for (var i = tokenCount - 1; i >= 0; i--)
         {
-            var evaluated = await EvaluateTokenAsync(token, host, node.Tokens.Count);
+            var token = node.Tokens[i];
+            var evaluated = await EvaluateTokenAsync(token, host, tokenCount);
             if (evaluated is MarkdownToken or HtmlToken or OpenXmlToken)
             {
-                if (node.Tokens.Count == 1 && token.Offset == 0 && token.Length == originalLength)
+                if (tokenCount == 1 && token.Offset == 0 && token.Length == originalLength)
                 {
                     // Whole host paragraph is the token — queue for replacement after every
                     // other in-paragraph substitution has run.
-                    soloStructuralTokens.Add((token, evaluated));
+                    (soloStructuralTokens ??= []).Add((token, evaluated));
                     continue;
                 }
 
                 ApplyNonSoloStructural(token, host, evaluated, ref splitQueued);
+                cachedText = null;
                 continue;
             }
 
             if (evaluated is MutateToken mutate)
             {
                 // Clear the token text, then hand the paragraph to the caller for in-place mutation.
-                ParagraphText.Build(host).Replace(token.Offset, token.Length, string.Empty);
-                var ctx = new OpenXmlContextImpl(
-                    mainPart,
-                    numberingState,
-                    StyleSet.Read(mainPart));
+                Text().Replace(token.Offset, token.Length, string.Empty);
+                var ctx = new OpenXmlContextImpl(mainPart, numberingState, styles.Value);
                 mutate.Apply(host, ctx);
+                cachedText = null;
                 continue;
             }
 
             var replacement = ToDisplayString(evaluated);
-            var text = ParagraphText.Build(host);
-            text.Replace(token.Offset, token.Length, replacement);
+            Text().Replace(token.Offset, token.Length, replacement);
         }
 
-        if (soloStructuralTokens.Count > 0)
+        if (soloStructuralTokens != null && soloStructuralTokens.Count > 0)
         {
-            structuralReplacements.Add(new(host, BuildStructuralReplacements(soloStructuralTokens)));
+            (structuralReplacements ??= []).Add(new(host, BuildStructuralReplacements(soloStructuralTokens)));
         }
     }
 
@@ -159,7 +173,7 @@ class ScopeTreeRunner(
         // structural replacement so any other in-paragraph substitutions on the same host have
         // already applied to the host's text by the time we replace it.
         var split = ParagraphSplicer.Split(host, token.Offset, token.Length, produced);
-        structuralReplacements.Add(new(host, split));
+        (structuralReplacements ??= []).Add(new(host, split));
         splitQueued = true;
     }
 
@@ -188,7 +202,7 @@ class ScopeTreeRunner(
                 .ToList(),
             OpenXmlToken raw when ReferenceEquals(raw, OpenXmlToken.Empty) => [],
             OpenXmlToken raw => raw
-                .Render(new OpenXmlContextImpl(mainPart, numberingState, StyleSet.Read(mainPart)))
+                .Render(new OpenXmlContextImpl(mainPart, numberingState, styles.Value))
                 .ToList(),
             _ => []
         };
@@ -387,40 +401,28 @@ class ScopeTreeRunner(
         var bodyElements = CaptureBetween(open, close);
         OpenXmlElement insertAnchor = open;
 
-        // Detach the body elements and cache them. Cloning from detached copies avoids
-        // walking the live document DOM and keeps namespace declarations clean on insertion.
-        var bodyTemplates = new OpenXmlElement[bodyElements.Count];
-        for (var i = 0; i < bodyElements.Count; i++)
-        {
-            bodyTemplates[i] = bodyElements[i].CloneNode(true);
-        }
-
-        var nameMap = new Dictionary<string, string>(StringComparer.Ordinal);
         var cloneAnchors = new Dictionary<string, Paragraph>(StringComparer.Ordinal);
-        var clones = new List<OpenXmlElement>(bodyElements.Count);
-        var clonedBody = new RangeNode[loop.Body.Count];
+        var pendingMoves = new List<OpenXmlElement>();
+        // Reuse a single scratch parent across iterations. After each iteration's child-move
+        // loop the scratch is empty again, so plain reuse is safe.
+        var scratch = new Body();
 
         foreach (var item in items)
         {
             context.SetValue(loop.LoopVariable, item);
-            clones.Clear();
-            foreach (var template in bodyTemplates)
-            {
-                clones.Add(template.CloneNode(true));
-            }
-
-            nameMap.Clear();
             cloneAnchors.Clear();
-            RefreshAnchorsAndBuildMap(clones, nameMap, cloneAnchors);
 
-            // Attach clones to a scratch parent before running the nested scope tree. Nested
-            // ProcessLoopAsync / ProcessIfAsync / ApplyStructural all rely on open.Parent and
-            // sibling traversal — on detached clones those return null and the nested scope
-            // silently no-ops, leaving inner block-tag text in the output.
-            var scratch = new Body();
-            foreach (var clone in clones)
+            // Clone each body element directly into the scratch parent. Original elements stay
+            // attached to the live document (removed below after the loop completes) and we
+            // never mutate them, so cloning from them is equivalent to cloning from a detached
+            // template. Attaching to scratch is required because nested ProcessLoopAsync /
+            // ProcessIfAsync / ApplyStructural rely on Parent and sibling traversal — on
+            // detached clones those return null and inner scope tags silently no-op.
+            foreach (var element in bodyElements)
             {
+                var clone = element.CloneNode(true);
                 scratch.AppendChild(clone);
+                CollectAnchors(clone, cloneAnchors);
             }
 
             var clonedRunner = new ScopeTreeRunner(
@@ -433,12 +435,24 @@ class ScopeTreeRunner(
                 excelsiorTables,
                 formats,
                 stringLists,
-                numberingState);
-            RemapBodyInto(loop.Body, nameMap, clonedBody);
-            await clonedRunner.RunAsync(clonedBody);
+                numberingState,
+                styles);
+            // Reuse the original scope tree directly. cloneAnchors is keyed on the same anchor
+            // names the registration-time tree references, so no per-iteration tree rebuild
+            // (Remap) is needed. Multiple iterations leave duplicate-named bookmarks in the
+            // live docx — that's fine because StripAll runs before Save and removes them all.
+            await clonedRunner.RunAsync(loop.Body);
             clonedRunner.ApplyStructural();
 
-            foreach (var produced in scratch.ChildElements.ToList())
+            // Snapshot scratch's children before mutating, so remove+insert doesn't break
+            // the live ChildElements enumeration.
+            pendingMoves.Clear();
+            foreach (var element in scratch.ChildElements)
+            {
+                pendingMoves.Add(element);
+            }
+
+            foreach (var produced in pendingMoves)
             {
                 produced.Remove();
                 insertAnchor = parent.InsertAfter(produced, insertAnchor);
@@ -468,77 +482,33 @@ class ScopeTreeRunner(
         return result;
     }
 
-    static void RefreshAnchorsAndBuildMap(
-        IReadOnlyList<OpenXmlElement> clones,
-        Dictionary<string, string> nameMap,
-        Dictionary<string, Paragraph> anchorMap)
+    /// <summary>
+    /// Index every Parchment-prefixed BookmarkStart in <paramref name="clone"/> by its existing
+    /// (registration-time) name → host paragraph. The unchanged scope tree references those
+    /// same names, so the runner can look up the cloned host directly without a name-rewrite
+    /// or remap pass. Duplicate names across iterations are harmless because each iteration
+    /// uses its own fresh anchor dictionary, and StripAll prefix-matches at save time.
+    /// </summary>
+    static void CollectAnchors(OpenXmlElement clone, Dictionary<string, Paragraph> anchorMap)
     {
-        foreach (var clone in clones)
+        foreach (var start in clone.Descendants<BookmarkStart>())
         {
-            foreach (var start in clone.Descendants<BookmarkStart>())
+            var name = start.Name?.Value;
+            if (name == null ||
+                !name.StartsWith(Anchors.Prefix, StringComparison.Ordinal))
             {
-                var name = start.Name?.Value;
-                if (name == null ||
-                    !name.StartsWith(Anchors.Prefix, StringComparison.Ordinal))
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                if (!nameMap.TryGetValue(name, out var replacement))
-                {
-                    replacement = Anchors.Prefix + Guid.NewGuid().ToString("N");
-                    nameMap[name] = replacement;
-                }
-
-                start.Name = replacement;
-
-                var host = start.Ancestors<Paragraph>().FirstOrDefault();
-                if (host != null)
-                {
-                    anchorMap[replacement] = host;
-                }
+            // Parchment-prefixed bookmarks are inserted as direct paragraph children
+            // (see Anchors.InsertAfterProperties), so a single Parent cast beats walking
+            // the Ancestors chain.
+            if (start.Parent is Paragraph host)
+            {
+                anchorMap[name] = host;
             }
         }
     }
-
-    static void RemapBodyInto(
-        IReadOnlyList<RangeNode> body,
-        Dictionary<string, string> nameMap,
-        RangeNode[] target)
-    {
-        for (var i = 0; i < body.Count; i++)
-        {
-            target[i] = Remap(body[i], nameMap);
-        }
-    }
-
-    static IReadOnlyList<RangeNode> RemapBody(
-        IReadOnlyList<RangeNode> body,
-        Dictionary<string, string> nameMap) =>
-        body.Select(_ => Remap(_, nameMap)).ToList();
-
-    static RangeNode Remap(RangeNode node, Dictionary<string, string> nameMap) =>
-        node switch
-        {
-            SubstitutionNode substitutionNode => new SubstitutionNode(Rename(substitutionNode.AnchorName, nameMap), substitutionNode.Tokens),
-            StaticNode staticNode => new StaticNode(Rename(staticNode.AnchorName, nameMap)),
-            LoopNode loopNode => new LoopNode(
-                Rename(loopNode.OpenAnchorName, nameMap),
-                Rename(loopNode.CloseAnchorName, nameMap),
-                loopNode.Scope,
-                loopNode.LoopVariable,
-                loopNode.LoopSource,
-                RemapBody(loopNode.Body, nameMap)),
-            IfNode ifNode => new IfNode(
-                Rename(ifNode.OpenAnchorName, nameMap),
-                Rename(ifNode.CloseAnchorName, nameMap),
-                ifNode.Branches.Select(_ => new IfBranch(Rename(_.AnchorName, nameMap), _.Condition, RemapBody(_.Body, nameMap))).ToList(),
-                RemapBody(ifNode.ElseBody, nameMap)),
-            _ => node
-        };
-
-    static string Rename(string name, Dictionary<string, string> map) =>
-        map.GetValueOrDefault(name, name);
 
     async Task<IEnumerable<FluidValue>> ResolveIterableAsync(LoopNode loop)
     {
@@ -606,7 +576,7 @@ class ScopeTreeRunner(
                 }
             }
 
-            var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart, rootModel, excelsiorTables, formats, stringLists, numberingState);
+            var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart, rootModel, excelsiorTables, formats, stringLists, numberingState, styles);
             await innerRunner.RunAsync(chosen);
             innerRunner.ApplyStructural();
 

@@ -18,11 +18,14 @@ class RegisteredDocxTemplate(
         {
             var mainPart = doc.MainDocumentPart!;
             var numberingState = new WordNumberingState(mainPart);
+            // Cache the StyleSet per render — Excelsior / Format / OpenXml / Mutate tokens all
+            // need it, but it changes only across registrations, not within a render.
+            var styles = new Lazy<StyleSet>(() => StyleSet.Read(mainPart));
 
             foreach (var part in parts)
             {
                 cancel.ThrowIfCancellationRequested();
-                await RenderPartAsync(doc, mainPart, part, context, model, numberingState);
+                await RenderPartAsync(doc, mainPart, part, context, model, numberingState, styles);
             }
 
             foreach (var (_, root) in DocxCloner.EnumerateParts(doc))
@@ -37,7 +40,7 @@ class RegisteredDocxTemplate(
         await stream.CopyToAsync(output, cancel);
     }
 
-    async Task RenderPartAsync(WordprocessingDocument doc, MainDocumentPart mainPart, PartScopeTree part, TemplateContext context, object model, WordNumberingState numberingState)
+    async Task RenderPartAsync(WordprocessingDocument doc, MainDocumentPart mainPart, PartScopeTree part, TemplateContext context, object model, WordNumberingState numberingState, Lazy<StyleSet> styles)
     {
         OpenXmlCompositeElement? root = null;
         foreach (var (uri, candidate) in DocxCloner.EnumerateParts(doc))
@@ -55,7 +58,7 @@ class RegisteredDocxTemplate(
         }
 
         var map = Anchors.BuildMap(root);
-        var runner = new ScopeTreeRunner(Name, part.PartUri, map, context, mainPart, model, excelsiorTables, formats, stringLists, numberingState);
+        var runner = new ScopeTreeRunner(Name, part.PartUri, map, context, mainPart, model, excelsiorTables, formats, stringLists, numberingState, styles);
         await runner.RunAsync(part.Nodes);
         runner.ApplyStructural();
     }
