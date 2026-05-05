@@ -7,6 +7,16 @@
 static class Anchors
 {
     public const string Prefix = "parchment-anchor-";
+    static long runtimeCounter;
+
+    /// <summary>
+    /// Generates a unique anchor name for runtime clones of registration-time bookmarks.
+    /// Uses a monotonic counter (rather than a fresh GUID per call) because anchors only need
+    /// uniqueness within the active document and are stripped before save — the counter is
+    /// dramatically cheaper than <c>Guid.NewGuid().ToString("N")</c> in tight loop iterations.
+    /// </summary>
+    public static string NextRuntimeName() =>
+        Prefix + Interlocked.Increment(ref runtimeCounter).ToString(CultureInfo.InvariantCulture);
 
     public static string EnsureOn(Paragraph paragraph)
     {
@@ -58,21 +68,48 @@ static class Anchors
 
     public static void StripAll(OpenXmlCompositeElement root)
     {
-        var starts = root
-            .Descendants<BookmarkStart>()
-            .Where(_ => _.Name?.Value?.StartsWith(Prefix, StringComparison.Ordinal) == true)
-            .ToList();
-        foreach (var start in starts)
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        var starts = new List<BookmarkStart>();
+        foreach (var start in root.Descendants<BookmarkStart>())
         {
-            var id = start.Id?.Value;
-            start.Remove();
-            if (id == null)
+            if (start.Name?.Value?.StartsWith(Prefix, StringComparison.Ordinal) != true)
             {
                 continue;
             }
 
-            var end = root.Descendants<BookmarkEnd>().FirstOrDefault(_ => _.Id?.Value == id);
-            end?.Remove();
+            starts.Add(start);
+            var id = start.Id?.Value;
+            if (id != null)
+            {
+                ids.Add(id);
+            }
+        }
+
+        if (starts.Count == 0)
+        {
+            return;
+        }
+
+        // Walk BookmarkEnds once and collect those whose id matches any stripped start —
+        // avoids the O(N²) per-start `Descendants<BookmarkEnd>().FirstOrDefault(...)` scan.
+        var ends = new List<BookmarkEnd>();
+        foreach (var end in root.Descendants<BookmarkEnd>())
+        {
+            var id = end.Id?.Value;
+            if (id != null && ids.Contains(id))
+            {
+                ends.Add(end);
+            }
+        }
+
+        foreach (var start in starts)
+        {
+            start.Remove();
+        }
+
+        foreach (var end in ends)
+        {
+            end.Remove();
         }
     }
 
