@@ -88,9 +88,8 @@ public class DeepNestingTests
             .Where(_ => _ != null && _.StartsWith("Heading"))
             .Select(_ => _!)
             .ToList();
-        await Assert.That(styles).IsEquivalentTo(new[]
-        {
+        await Assert.That(styles).IsEquivalentTo([
             "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6"
-        });
+        ]);
     }
 }

@@ -1,5 +1,3 @@
-using Excelsior;
-
 /// <summary>
 /// Reflection adapter that constructs the closed-generic <c>Excelsior.WordTableBuilder&lt;T&gt;</c>
 /// for a model element type known only at runtime, then renders the table against the host

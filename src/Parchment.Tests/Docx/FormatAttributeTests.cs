@@ -284,8 +284,7 @@ public class FormatAttributeTests
         };
 
         using var stream = new MemoryStream();
-        var exception = await Assert.That(
-            async () => await store.Render("two-block", model, stream))
+        var exception = await Assert.That(() => store.Render("two-block", model, stream))
             .Throws<ParchmentRenderException>();
         await Assert.That(exception!.Message).Contains("Move one of the tokens to its own paragraph");
     }

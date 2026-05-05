@@ -575,7 +575,8 @@ class ScopeTreeRunner(
             break;
         }
 
-        if (chosen == null && ifNode.ElseBody.Count > 0)
+        if (chosen == null &&
+            ifNode.ElseBody.Count > 0)
         {
             chosen = ifNode.ElseBody;
         }
@@ -583,7 +584,14 @@ class ScopeTreeRunner(
         // Collect all branch paragraphs between open and close — everything that should be removed
         var allBranchParagraphs = CaptureBetween(open, close);
 
-        if (chosen != null)
+        if (chosen == null)
+        {
+            foreach (var element in allBranchParagraphs)
+            {
+                element.Remove();
+            }
+        }
+        else
         {
             // Process chosen branch in place (no cloning — branch paragraphs are used once)
             var branchAnchors = new Dictionary<string, Paragraph>(StringComparer.Ordinal);
@@ -609,13 +617,6 @@ class ScopeTreeRunner(
                 {
                     element.Remove();
                 }
-            }
-        }
-        else
-        {
-            foreach (var element in allBranchParagraphs)
-            {
-                element.Remove();
             }
         }
 

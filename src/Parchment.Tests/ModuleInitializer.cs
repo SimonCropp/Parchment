@@ -1,9 +1,6 @@
 public static class ModuleInitializer
 {
     [ModuleInitializer]
-    public static void Init()
-    {
-        VerifyOpenXml.Initialize();
+    public static void Init() =>
         VerifierSettings.InitializePlugins();
-    }
 }

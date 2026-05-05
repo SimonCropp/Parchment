@@ -107,6 +107,6 @@ public class ConditionalTests
             .Select(_ => string.Concat(_.Descendants<Text>().Select(t => t.Text)))
             .Where(_ => _.Length > 0)
             .ToList();
-        await Assert.That(texts).IsEquivalentTo(new[] { "Before", "After" });
+        await Assert.That(texts).IsEquivalentTo(["Before", "After"]);
     }
 }
