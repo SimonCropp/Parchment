@@ -129,9 +129,8 @@ static class ScopeTreeBuilder
         branches.Add(new(opening.AnchorName, opening.Block!.Condition!, firstBody));
 
         // Collect elsif / else branches until endif
-        while (queue.Count > 0 &&
-               (queue.Peek().Block?.Kind == BlockTagKind.ElsIf ||
-                queue.Peek().Block?.Kind == BlockTagKind.Else))
+        while (queue.TryPeek(out var peek) &&
+               peek.Block?.Kind is BlockTagKind.ElsIf or BlockTagKind.Else)
         {
             var branchOpening = queue.Dequeue();
             var branchBody = BuildBlock(queue, BlockTagKind.EndIf, templateName, partUri);
