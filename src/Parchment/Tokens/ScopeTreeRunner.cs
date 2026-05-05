@@ -186,6 +186,7 @@ class ScopeTreeRunner(
                         NumberingSession = numberingState.GetHtmlSession()
                     })
                 .ToList(),
+            OpenXmlToken raw when ReferenceEquals(raw, OpenXmlToken.Empty) => [],
             OpenXmlToken raw => raw
                 .Render(new OpenXmlContextImpl(mainPart, numberingState, StyleSet.Read(mainPart)))
                 .ToList(),
@@ -272,7 +273,7 @@ class ScopeTreeRunner(
         var data = entry.Getter(rootModel);
         if (data == null)
         {
-            return new OpenXmlToken(_ => []);
+            return OpenXmlToken.Empty;
         }
 
         return new OpenXmlToken(_ => [ExcelsiorTableBridge.BuildTable(entry.ElementType, data, mainPart)]);
@@ -320,7 +321,7 @@ class ScopeTreeRunner(
         var data = entry.Getter(rootModel);
         if (data is not IEnumerable<string> items)
         {
-            return new OpenXmlToken(_ => []);
+            return OpenXmlToken.Empty;
         }
 
         // Materialize so the deferred render delegate doesn't re-enumerate a fresh sequence

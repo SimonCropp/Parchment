@@ -109,12 +109,13 @@ Loops and conditionals can be nested to arbitrary depth. The outer loop variable
 
 ### Token override hatches
 
-A token can resolve to one of three values:
+Declare a model property as `TokenValue` and return one of:
 
-- `TokenValue.Text(string)` — plain string substitution (the default for raw model values).
-- `TokenValue.Markdown(string)` — the value is rendered as markdown via Markdig and spliced into the host paragraph.
-- `TokenValue.OpenXml(Func<IOpenXmlContext, IEnumerable<OpenXmlElement>>)` — the value is a function that emits raw OpenXML elements. Useful for rich tables, generated charts, custom-styled lists.
-- `TokenValue.Mutate(Action<Paragraph, IOpenXmlContext>)` — the callback receives the host paragraph and mutates it in place. The token text is cleared before the callback runs. Useful for adding runs with custom formatting, injecting bookmarks, or tweaking paragraph properties while preserving the original paragraph.
+- A plain `string` (or any value Fluid stringifies) — plain text substitution. This is the default when the property is typed as `string` directly; assigning a string to a `TokenValue` property goes through the same path via the implicit conversion.
+- `new MarkdownToken(string)` — the value is rendered as markdown via Markdig and spliced into the host paragraph.
+- `new HtmlToken(string)` — the value is converted from HTML (via OpenXmlHtml) and spliced into the host paragraph.
+- `new OpenXmlToken(Func<IOpenXmlContext, IEnumerable<OpenXmlElement>>)` — the callback emits raw OpenXML elements. Useful for rich tables, generated charts, custom-styled lists.
+- `new MutateToken(Action<Paragraph, IOpenXmlContext>)` — the callback receives the host paragraph and mutates it in place. The token text is cleared before the callback runs. Useful for adding runs with custom formatting, injecting bookmarks, or tweaking paragraph properties while preserving the original paragraph.
 
 #### List filters
 
@@ -132,7 +133,7 @@ using var template = DocxTemplateBuilder.Build(
     {{ Tags | bullet_list }}
     """);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L156-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterContent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L258-L267' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterContent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Render:
@@ -145,7 +146,7 @@ store.RegisterDocxTemplate<Invoice>("bullet-filter", template);
 using var stream = new MemoryStream();
 await store.Render("bullet-filter", SampleData.Invoice(), stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L167-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterRender' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L269-L276' title='Snippet source file'>snippet source</a> | <a href='#snippet-BulletListFilterRender' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `numbered_list` is identical in shape — swap the filter name to produce a decimal-numbered list instead of bullets.
@@ -153,7 +154,7 @@ await store.Render("bullet-filter", SampleData.Invoice(), stream);
 
 #### `escape_xml` filter
 
-Escapes `<`, `>`, `&`, `"`, and `'` in a string value. Useful when a token's value is spliced into a context where raw markup would be interpreted — e.g. feeding a user-supplied string into a `TokenValue.Markdown` that contains HTML blocks:
+Escapes `<`, `>`, `&`, `"`, and `'` in a string value. Useful when a token's value is spliced into a context where raw markup would be interpreted — e.g. feeding a user-supplied string into a `MarkdownToken` source that contains HTML blocks:
 
 ```
 {{ UserSuppliedComment | escape_xml }}
@@ -162,7 +163,7 @@ Escapes `<`, `>`, `&`, `"`, and `'` in a string value. Useful when a token's val
 
 #### Markdown property
 
-Declare a model property as `TokenValue` and return `TokenValue.Markdown(...)` to inject rendered markdown at the substitution site:
+Declare a model property as `TokenValue` and return `new MarkdownToken(...)` to inject rendered markdown at the substitution site:
 
 Model:
 
@@ -276,7 +277,7 @@ await store.Render(
 
 Both approaches produce the same structural replacement — the host paragraph is swapped with the rendered markdown elements when the token is the entire paragraph. If the token shares its paragraph with other text or with sibling tokens, the runtime falls back to inline splicing (single produced paragraph → its runs are extracted and merged into the host) or paragraph splitting (multiple produced blocks → host is split at the token offset and the produced blocks slot between the two halves). See [Inline-aware structural replacement](#inline-aware-structural-replacement) for the full rules.
 
-**Markdown templates**: Neither `TokenValue.Markdown` nor `| markdown` is needed when using `RegisterMarkdownTemplate`. The entire template is already markdown — a plain `string` property containing markdown syntax is interpolated into the source before Markdig parses it, so formatting just works:
+**Markdown templates**: Neither `MarkdownToken` nor `| markdown` is needed when using `RegisterMarkdownTemplate`. The entire template is already markdown — a plain `string` property containing markdown syntax is interpolated into the source before Markdig parses it, so formatting just works:
 
 Model:
 
@@ -336,9 +337,127 @@ await store.Render(
 <!-- endSnippet -->
 
 
+#### Html property
+
+Declare a model property as `TokenValue` and return `new HtmlToken(...)` to convert HTML source to Word elements at the substitution site. Use this when the value arrives as HTML — typically from a CMS, a WYSIWYG editor, or any system that already speaks HTML:
+
+Model:
+
+<!-- snippet: HtmlPropertyModel -->
+<a id='snippet-HtmlPropertyModel'></a>
+```cs
+public class PostModel
+{
+    public required string Title { get; init; }
+    public required TokenValue Body { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L153-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlPropertyModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Content:
+
+<!-- snippet: HtmlPropertyContent -->
+<a id='snippet-HtmlPropertyContent'></a>
+```cs
+# {{ Title }}
+
+{{ Body }}
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L169-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlPropertyContent' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Render:
+
+<!-- snippet: HtmlPropertyRender -->
+<a id='snippet-HtmlPropertyRender'></a>
+```cs
+var store = new TemplateStore();
+store.RegisterDocxTemplate<PostModel>("html-hatch", template);
+await store.Render(
+    "html-hatch",
+    new PostModel
+    {
+        Title = "Welcome",
+        Body = new HtmlToken(
+            """
+            <p>Welcome to the <b>weekly digest</b>.</p>
+            <ul>
+              <li>Search performance is up</li>
+              <li>Two regressions closed</li>
+            </ul>
+            """)
+    },
+    stream);
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L176-L196' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlPropertyRender' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+#### OpenXml property
+
+When the output can't be expressed as markdown or HTML — generated tables, charts, custom-styled callouts — use `new OpenXmlToken(...)` to emit raw OpenXML directly. The callback receives an `IOpenXmlContext` exposing numbering, image parts, and style lookups:
+
+Model:
+
+<!-- snippet: OpenXmlPropertyModel -->
+<a id='snippet-OpenXmlPropertyModel'></a>
+```cs
+public class ReportModel
+{
+    public required string Title { get; init; }
+    public required TokenValue Callout { get; init; }
+}
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L202-L210' title='Snippet source file'>snippet source</a> | <a href='#snippet-OpenXmlPropertyModel' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Content:
+
+<!-- snippet: OpenXmlPropertyContent -->
+<a id='snippet-OpenXmlPropertyContent'></a>
+```cs
+# {{ Title }}
+
+{{ Callout }}
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L218-L222' title='Snippet source file'>snippet source</a> | <a href='#snippet-OpenXmlPropertyContent' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Render:
+
+<!-- snippet: OpenXmlPropertyRender -->
+<a id='snippet-OpenXmlPropertyRender'></a>
+```cs
+var store = new TemplateStore();
+store.RegisterDocxTemplate<ReportModel>("openxml-hatch", template);
+await store.Render(
+    "openxml-hatch",
+    new ReportModel
+    {
+        Title = "Status",
+        Callout = new OpenXmlToken(_ =>
+        [
+            new Paragraph(
+                new Run(
+                    new RunProperties(
+                        new Color { Val = "C00000" },
+                        new Bold()),
+                    new Text("Critical: review required")
+                    {
+                        Space = SpaceProcessingModeValues.Preserve
+                    }))
+        ])
+    },
+    stream);
+```
+<sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L225-L249' title='Snippet source file'>snippet source</a> | <a href='#snippet-OpenXmlPropertyRender' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
 #### Mutate paragraph
 
-Use `TokenValue.Mutate` to receive the host paragraph and modify it in place. The token text is cleared before the callback runs, so the original paragraph structure (properties, styles) is preserved:
+Use `new MutateToken(...)` to receive the host paragraph and modify it in place. The token text is cleared before the callback runs, so the original paragraph structure (properties, styles) is preserved:
 
 Model:
 
