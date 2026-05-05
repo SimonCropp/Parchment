@@ -272,10 +272,10 @@ class ScopeTreeRunner(
         var data = entry.Getter(rootModel);
         if (data == null)
         {
-            return TokenValue.OpenXml(_ => []);
+            return new OpenXmlToken(_ => []);
         }
 
-        return TokenValue.OpenXml(_ => [ExcelsiorTableBridge.BuildTable(entry.ElementType, data, mainPart)]);
+        return new OpenXmlToken(_ => [ExcelsiorTableBridge.BuildTable(entry.ElementType, data, mainPart)]);
     }
 
     TokenValue? TryResolveStringList(DocxTokenSite site, Paragraph host, int siblingCount)
@@ -320,7 +320,7 @@ class ScopeTreeRunner(
         var data = entry.Getter(rootModel);
         if (data is not IEnumerable<string> items)
         {
-            return TokenValue.OpenXml(_ => []);
+            return new OpenXmlToken(_ => []);
         }
 
         // Materialize so the deferred render delegate doesn't re-enumerate a fresh sequence
@@ -362,8 +362,8 @@ class ScopeTreeRunner(
         var text = walker as string ?? string.Empty;
         return entry.Kind switch
         {
-            FormatKind.Html => TokenValue.Html(text),
-            FormatKind.Markdown => TokenValue.Markdown(text),
+            FormatKind.Html => new HtmlToken(text),
+            FormatKind.Markdown => new MarkdownToken(text),
             _ => null
         };
     }

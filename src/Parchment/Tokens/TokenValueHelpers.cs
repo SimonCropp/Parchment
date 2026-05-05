@@ -3,14 +3,14 @@ namespace Parchment;
 public static class TokenValueHelpers
 {
     public static TokenValue BulletList(IEnumerable<string> items) =>
-        TokenValue.OpenXml(context =>
+        new OpenXmlToken(context =>
         {
             var numId = context.CreateBulletNumbering();
             return items.Select(item => BuildListParagraph(item, numId, 0));
         });
 
     public static TokenValue NumberedList(IEnumerable<string> items, NumberFormatValues? format = null) =>
-        TokenValue.OpenXml(context =>
+        new OpenXmlToken(context =>
         {
             var numId = context.CreateOrderedNumbering(format ?? NumberFormatValues.Decimal);
             return items.Select(item => BuildListParagraph(item, numId, 0));

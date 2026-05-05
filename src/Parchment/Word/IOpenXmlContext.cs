@@ -1,7 +1,7 @@
 namespace Parchment;
 
 /// <summary>
-/// Narrow context passed to <see cref="TokenValue.OpenXml"/> render delegates. Kept intentionally
+/// Narrow context passed to <see cref="OpenXmlToken"/> render delegates. Kept intentionally
 /// small so the public API does not lock users to a specific DocumentFormat.OpenXml version.
 /// </summary>
 public interface IOpenXmlContext

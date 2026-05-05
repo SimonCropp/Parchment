@@ -202,7 +202,7 @@ await store.Render(
     new NoteModel
     {
         Title = "Weekly summary",
-        Body = TokenValue.Markdown(
+        Body = new MarkdownToken(
             """
             ## Highlights
 
@@ -378,7 +378,7 @@ await store.Render(
     new StyledModel
     {
         Label = "Before",
-        Highlight = TokenValue.Mutate((paragraph, _) =>
+        Highlight = new MutateToken((paragraph, _) =>
         {
             paragraph.Append(
                 new Run(

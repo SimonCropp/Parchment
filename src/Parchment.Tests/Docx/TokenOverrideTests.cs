@@ -32,7 +32,7 @@ public class TokenOverrideTests
             new NoteModel
             {
                 Title = "Weekly summary",
-                Body = TokenValue.Markdown(
+                Body = new MarkdownToken(
                     """
                     ## Highlights
 
@@ -131,7 +131,7 @@ public class TokenOverrideTests
             new StyledModel
             {
                 Label = "Before",
-                Highlight = TokenValue.Mutate((paragraph, _) =>
+                Highlight = new MutateToken((paragraph, _) =>
                 {
                     paragraph.Append(
                         new Run(
