@@ -1,4 +1,14 @@
 ﻿{
+  Properties: {
+    LastModifiedBy: Simon Cropp,
+    Revision: 3
+  },
+  Fonts: [
+    Arial,
+    Calibri,
+    Calibri Light,
+    Times New Roman
+  ],
   Text:
 Title: Report
 Hello world

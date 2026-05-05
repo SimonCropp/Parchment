@@ -1,4 +1,14 @@
 ﻿{
+  Properties: {
+    LastModifiedBy: Simon Cropp,
+    Revision: 3
+  },
+  Fonts: [
+    Arial,
+    Calibri,
+    Calibri Light,
+    Times New Roman
+  ],
   Text:
 Quote Q-2026-0042
 Thank you for your business.

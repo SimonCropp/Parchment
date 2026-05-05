@@ -12,7 +12,7 @@ global using System.Threading.Tasks;
 global using DocumentFormat.OpenXml;
 global using DocumentFormat.OpenXml.Packaging;
 global using DocumentFormat.OpenXml.Wordprocessing;
-
+global using Excelsior;
 global using Fluid;
 global using Fluid.Ast;
 global using Fluid.Values;

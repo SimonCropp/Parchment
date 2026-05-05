@@ -11,7 +11,7 @@ static class Filters
     static ValueTask<FluidValue> Markdown(FluidValue input, FilterArguments arguments, TemplateContext context)
     {
         var text = input.ToStringValue();
-        return new(new ObjectValue(TokenValue.Markdown(text)));
+        return new(new ObjectValue(new MarkdownToken(text)));
     }
 
     static ValueTask<FluidValue> EscapeXml(FluidValue input, FilterArguments arguments, TemplateContext context)

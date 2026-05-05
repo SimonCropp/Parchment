@@ -32,7 +32,7 @@ public class TokenOverrideTests
             new NoteModel
             {
                 Title = "Weekly summary",
-                Body = TokenValue.Markdown(
+                Body = new MarkdownToken(
                     """
                     ## Highlights
 
@@ -131,7 +131,7 @@ public class TokenOverrideTests
             new StyledModel
             {
                 Label = "Before",
-                Highlight = TokenValue.Mutate((paragraph, _) =>
+                Highlight = new MutateToken((paragraph, _) =>
                 {
                     paragraph.Append(
                         new Run(
@@ -143,6 +143,108 @@ public class TokenOverrideTests
                             }));
                 })
             }, stream);
+
+        #endregion
+
+        stream.Position = 0;
+        await Verify(stream, "docx");
+    }
+
+    #region HtmlPropertyModel
+
+    public class PostModel
+    {
+        public required string Title { get; init; }
+        public required TokenValue Body { get; init; }
+    }
+
+    #endregion
+
+    [Test]
+    public async Task HtmlProperty()
+    {
+        using var stream = new MemoryStream();
+        using var template = DocxTemplateBuilder.Build(
+            """
+            // begin-snippet: HtmlPropertyContent
+            # {{ Title }}
+
+            {{ Body }}
+            // end-snippet
+            """);
+
+        #region HtmlPropertyRender
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<PostModel>("html-hatch", template);
+        await store.Render(
+            "html-hatch",
+            new PostModel
+            {
+                Title = "Welcome",
+                Body = new HtmlToken(
+                    """
+                    <p>Welcome to the <b>weekly digest</b>.</p>
+                    <ul>
+                      <li>Search performance is up</li>
+                      <li>Two regressions closed</li>
+                    </ul>
+                    """)
+            },
+            stream);
+
+        #endregion
+
+        stream.Position = 0;
+        await Verify(stream, "docx");
+    }
+
+    #region OpenXmlPropertyModel
+
+    public class ReportModel
+    {
+        public required string Title { get; init; }
+        public required TokenValue Callout { get; init; }
+    }
+
+    #endregion
+
+    [Test]
+    public async Task OpenXmlProperty()
+    {
+        using var stream = new MemoryStream();
+        using var template = DocxTemplateBuilder.Build(
+            """
+            // begin-snippet: OpenXmlPropertyContent
+            # {{ Title }}
+
+            {{ Callout }}
+            // end-snippet
+            """);
+
+        #region OpenXmlPropertyRender
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<ReportModel>("openxml-hatch", template);
+        await store.Render(
+            "openxml-hatch",
+            new ReportModel
+            {
+                Title = "Status",
+                Callout = new OpenXmlToken(_ =>
+                [
+                    new Paragraph(
+                        new Run(
+                            new RunProperties(
+                                new Color { Val = "C00000" },
+                                new Bold()),
+                            new Text("Critical: review required")
+                            {
+                                Space = SpaceProcessingModeValues.Preserve
+                            }))
+                ])
+            },
+            stream);
 
         #endregion
 

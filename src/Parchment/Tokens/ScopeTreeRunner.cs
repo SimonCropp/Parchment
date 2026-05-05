@@ -82,7 +82,7 @@ class ScopeTreeRunner(
         foreach (var token in sortedByOffset)
         {
             var evaluated = await EvaluateTokenAsync(token, host, node.Tokens.Count);
-            if (evaluated is TokenValue.MarkdownToken or TokenValue.HtmlToken or TokenValue.OpenXmlToken)
+            if (evaluated is MarkdownToken or HtmlToken or OpenXmlToken)
             {
                 if (node.Tokens.Count == 1 && token.Offset == 0 && token.Length == originalLength)
                 {
@@ -96,7 +96,7 @@ class ScopeTreeRunner(
                 continue;
             }
 
-            if (evaluated is TokenValue.MutateToken mutate)
+            if (evaluated is MutateToken mutate)
             {
                 // Clear the token text, then hand the paragraph to the caller for in-place mutation.
                 ParagraphText.Build(host).Replace(token.Offset, token.Length, string.Empty);
@@ -177,8 +177,8 @@ class ScopeTreeRunner(
     IReadOnlyList<OpenXmlElement> RenderTokenValue(object value) =>
         value switch
         {
-            TokenValue.MarkdownToken md => MarkdownRendering.Render(md.Source, mainPart, numberingState, headingOffset: 0).ToList(),
-            TokenValue.HtmlToken html => OpenXmlHtml.WordHtmlConverter.ToElements(
+            MarkdownToken md => MarkdownRendering.Render(md.Source, mainPart, numberingState, headingOffset: 0).ToList(),
+            HtmlToken html => OpenXmlHtml.WordHtmlConverter.ToElements(
                     html.Source,
                     mainPart,
                     new()
@@ -186,7 +186,8 @@ class ScopeTreeRunner(
                         NumberingSession = numberingState.GetHtmlSession()
                     })
                 .ToList(),
-            TokenValue.OpenXmlToken raw => raw
+            OpenXmlToken raw when ReferenceEquals(raw, OpenXmlToken.Empty) => [],
+            OpenXmlToken raw => raw
                 .Render(new OpenXmlContextImpl(mainPart, numberingState, StyleSet.Read(mainPart)))
                 .ToList(),
             _ => []
@@ -272,10 +273,10 @@ class ScopeTreeRunner(
         var data = entry.Getter(rootModel);
         if (data == null)
         {
-            return TokenValue.OpenXml(_ => []);
+            return OpenXmlToken.Empty;
         }
 
-        return TokenValue.OpenXml(_ => [ExcelsiorTableBridge.BuildTable(entry.ElementType, data, mainPart)]);
+        return new OpenXmlToken(_ => [ExcelsiorTableBridge.BuildTable(entry.ElementType, data, mainPart)]);
     }
 
     TokenValue? TryResolveStringList(DocxTokenSite site, Paragraph host, int siblingCount)
@@ -320,7 +321,7 @@ class ScopeTreeRunner(
         var data = entry.Getter(rootModel);
         if (data is not IEnumerable<string> items)
         {
-            return TokenValue.OpenXml(_ => []);
+            return OpenXmlToken.Empty;
         }
 
         // Materialize so the deferred render delegate doesn't re-enumerate a fresh sequence
@@ -362,8 +363,8 @@ class ScopeTreeRunner(
         var text = walker as string ?? string.Empty;
         return entry.Kind switch
         {
-            FormatKind.Html => TokenValue.Html(text),
-            FormatKind.Markdown => TokenValue.Markdown(text),
+            FormatKind.Html => new HtmlToken(text),
+            FormatKind.Markdown => new MarkdownToken(text),
             _ => null
         };
     }
@@ -575,7 +576,8 @@ class ScopeTreeRunner(
             break;
         }
 
-        if (chosen == null && ifNode.ElseBody.Count > 0)
+        if (chosen == null &&
+            ifNode.ElseBody.Count > 0)
         {
             chosen = ifNode.ElseBody;
         }
@@ -583,7 +585,14 @@ class ScopeTreeRunner(
         // Collect all branch paragraphs between open and close — everything that should be removed
         var allBranchParagraphs = CaptureBetween(open, close);
 
-        if (chosen != null)
+        if (chosen == null)
+        {
+            foreach (var element in allBranchParagraphs)
+            {
+                element.Remove();
+            }
+        }
+        else
         {
             // Process chosen branch in place (no cloning — branch paragraphs are used once)
             var branchAnchors = new Dictionary<string, Paragraph>(StringComparer.Ordinal);
@@ -609,13 +618,6 @@ class ScopeTreeRunner(
                 {
                     element.Remove();
                 }
-            }
-        }
-        else
-        {
-            foreach (var element in allBranchParagraphs)
-            {
-                element.Remove();
             }
         }
 

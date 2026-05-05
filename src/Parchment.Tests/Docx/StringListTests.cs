@@ -420,7 +420,7 @@ public class StringListTests
             .Select(_ => string.Concat(_.Descendants<Text>().Select(t => t.Text)))
             .Where(_ => _.Length > 0)
             .ToList();
-        await Assert.That(visibleTexts).IsEquivalentTo(new[] { "Header", "Footer" });
+        await Assert.That(visibleTexts).IsEquivalentTo(["Header", "Footer"]);
     }
 
     [Test]
