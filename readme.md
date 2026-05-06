@@ -1313,19 +1313,21 @@ Add the docx as an additional file:
 ## Benchmarks
 
 ``` ini
-BenchmarkDotNet v0.14.0, Windows 11 (10.0.26200.8246)
-AMD Ryzen 9 5900X, 1 CPU, 24 logical and 12 physical cores
-.NET SDK 11.0.100-preview.2.26159.112
-  [Host] : .NET 10.0.6 (10.0.626.17701), X64 RyuJIT AVX2
+BenchmarkDotNet v0.15.8, Windows 11 (10.0.26200.8328)
+AMD Ryzen 9 5900X 3.70GHz, 1 CPU, 24 logical and 12 physical cores
+.NET SDK 11.0.100-preview.3.26207.106
+  [Host] : .NET 10.0.7 (10.0.7, 10.0.726.21808), X64 RyuJIT x86-64-v3
 ```
+
 
 ### Registration
 
 | Method | Mean | Allocated |
 |---|---|---|
-| RegisterFromMemoryStream | 0.22 ms | 181 KB |
-| RegisterFromBufferedStream | 0.22 ms | 180 KB |
-| RegisterFromFilePath | 1.27 ms | 180 KB |
+| RegisterFromMemoryStream | 0.24 ms | 194 KB |
+| RegisterFromBufferedStream | 0.24 ms | 192 KB |
+| RegisterFromFilePath | 0.31 ms | 193 KB |
+
 
 ### Rendering
 
@@ -1333,12 +1335,23 @@ ItemCount varies the number of loop iterations (line items for docx, findings/ac
 
 | Method | ItemCount | Mean | Allocated |
 |---|---|---|---|
-| DocxTemplate | 3 | 0.22 ms | 194 KB |
-| MarkdownTemplate | 3 | 0.50 ms | 371 KB |
-| DocxTemplate | 50 | 0.54 ms | 467 KB |
-| MarkdownTemplate | 50 | 1.09 ms | 780 KB |
-| DocxTemplate | 500 | 10.36 ms | 3,132 KB |
-| MarkdownTemplate | 500 | 6.65 ms | 4,633 KB |
+| DocxTemplate | 3 | 0.23 ms | 185 KB |
+| MarkdownTemplate | 3 | 0.50 ms | 373 KB |
+| DocxTemplate | 50 | 0.40 ms | 354 KB |
+| MarkdownTemplate | 50 | 1.03 ms | 781 KB |
+| DocxTemplate | 500 | 2.34 ms | 2,024 KB |
+| MarkdownTemplate | 500 | 6.99 ms | 4,634 KB |
+
+
+### Loops
+
+A pure-loop docx template (`{% for line in Lines %}{{ line.Description }}: {{ line.Quantity }} x {{ line.UnitPrice }}{% endfor %}`) rendered against varying iteration counts.
+
+| Method | LoopItems | Mean | Allocated |
+|---|---|---|---|
+| RenderLoop | 10 | 0.21 ms | 193 KB |
+| RenderLoop | 100 | 0.59 ms | 525 KB |
+| RenderLoop | 1000 | 4.21 ms | 3,825 KB |
 
 Run benchmarks with:
 
