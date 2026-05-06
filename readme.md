@@ -277,7 +277,7 @@ await store.Render(
 
 Both approaches produce the same structural replacement — the host paragraph is swapped with the rendered markdown elements when the token is the entire paragraph. If the token shares its paragraph with other text or with sibling tokens, the runtime falls back to inline splicing (single produced paragraph → its runs are extracted and merged into the host) or paragraph splitting (multiple produced blocks → host is split at the token offset and the produced blocks slot between the two halves). See [Inline-aware structural replacement](#inline-aware-structural-replacement) for the full rules.
 
-**Markdown templates**: Neither `MarkdownToken` nor `| markdown` is needed when using `RegisterMarkdownTemplate`. The entire template is already markdown — a plain `string` property containing markdown syntax is interpolated into the source before Markdig parses it, so formatting just works:
+**Markdown templates**: Neither `MarkdownToken` nor `| markdown` is needed when using `RegisterMarkdownTemplate`. The entire template is already markdown — a plain `string` property containing markdown syntax is interpolated into the source before Markdig parses it, so formatting works automatically:
 
 Model:
 
@@ -611,7 +611,7 @@ Rules:
 
 Mark a `string` property with `[Html]` or `[Markdown]` (any attribute named `HtmlAttribute` / `MarkdownAttribute`, or `[StringSyntax("html")]` / `[StringSyntax("markdown")]`) and the matching `{{ ... }}` substitution is rendered as a structurally-replaced block of Word content instead of raw text. Html runs through the `OpenXmlHtml` converter; markdown runs through the same Markdig pipeline used by the full markdown template flow.
 
-The attributes are detected by name — Parchment does not ship them. Define them in your own project (or use `[StringSyntax("html")]` from `System.Diagnostics.CodeAnalysis`):
+The attributes are detected by name — Parchment does not ship them. Define them in a consuming project (or use `[StringSyntax("html")]` from `System.Diagnostics.CodeAnalysis`):
 
 <!-- snippet: HtmlAttribute -->
 <a id='snippet-HtmlAttribute'></a>
@@ -684,7 +684,7 @@ public class MarkdownDoc
 
 ![Rendered output](/src/Parchment.Tests/Scenarios/markdown-property/output%23page01.verified.png)
 
-If you prefer not to define your own attributes, `[StringSyntax]` from `System.Diagnostics.CodeAnalysis` is equivalent (case-insensitive):
+As an alternative to defining custom attributes, `[StringSyntax]` from `System.Diagnostics.CodeAnalysis` is equivalent (case-insensitive):
 
 <!-- snippet: StringSyntaxHtmlModel -->
 <a id='snippet-StringSyntaxHtmlModel'></a>
@@ -998,7 +998,7 @@ Some intro paragraph. {.IntroBlock}
 
 ### HTML comments are stripped
 
-HTML comment blocks (`<!-- ... -->`) are dropped during rendering rather than passed through as empty paragraphs. This lets you embed snippet markers, authoring notes, or TODOs in template sources without bleeding visible whitespace into the output docx:
+HTML comment blocks (`<!-- ... -->`) are dropped during rendering rather than passed through as empty paragraphs. This allows embedding snippet markers, authoring notes, or TODOs in template sources without bleeding visible whitespace into the output docx:
 
 ```markdown
 # {{ Title }}
@@ -1032,7 +1032,7 @@ Pictures placed directly in the `.docx` template (Word's Insert &rarr; Picture, 
 | `http://...` / `https://...` | Fetched synchronously, embedded |
 | Path that fails the active `ImagePolicy` (or fails to read) | Falls back to rendering the alt text |
 
-By default, `TemplateStore` exposes `LocalImages = ImagePolicy.AllowAll()` and `WebImages = ImagePolicy.AllowAll()` — Parchment renders developer-bound model content, so locking either down by default would silently break `<img src="C:\...">` and `![](path)` references. If your model carries images from less-trusted sources, override the policies on the store:
+By default, `TemplateStore` exposes `LocalImages = ImagePolicy.AllowAll()` and `WebImages = ImagePolicy.AllowAll()` — Parchment renders developer-bound model content, so locking either down by default would silently break `<img src="C:\...">` and `![](path)` references. If a model carries images from less-trusted sources, override the policies on the store:
 
 ```cs
 var store = new TemplateStore
@@ -1049,7 +1049,7 @@ Determinism holds as long as the bytes at the resolved source don't change betwe
 
 ### Custom `OpenXmlToken` (programmatic embedding)
 
-For full control — explicit sizing, anchored positioning, charts, anything outside markdown or HTML — return an `OpenXmlToken` from a `TokenValue`-typed model property. The render delegate receives an `IOpenXmlContext` whose `AddImagePart(byte[] bytes, string contentType)` adds an `ImagePart` to the document and returns its relationship ID. Build the `<w:drawing>` yourself (inline or anchor element, EMU-sized extents, blip ref pointing at the rel-id) and yield it as one of the produced elements.
+For full control — explicit sizing, anchored positioning, charts, anything outside markdown or HTML — return an `OpenXmlToken` from a `TokenValue`-typed model property. The render delegate receives an `IOpenXmlContext` whose `AddImagePart(byte[] bytes, string contentType)` adds an `ImagePart` to the document and returns its relationship ID. Build the `<w:drawing>` directly (inline or anchor element, EMU-sized extents, blip ref pointing at the rel-id) and yield it as one of the produced elements.
 
 Use this path when image bytes live in memory (rendered chart, database blob, dynamically generated PNG) and round-tripping through base64 or a temp file would be wasteful.
 
@@ -1169,7 +1169,7 @@ await store.Render(
 
 ## Registration-time validation
 
-Whether you register by hand (`RegisterDocxTemplate<T>(...)`) or through the source generator's `RegisterWith(store)` helper, the template is fully validated against `T` at registration — before any render runs. Missing members, block tags targeting non-enumerable properties, or `[ExcelsiorTable]` tokens that break the solo-in-paragraph / plain-member-access rules throw `ParchmentRegistrationException` immediately. Register templates at app startup and any binding mismatch surfaces there, not on the first render.
+Whether registering by hand (`RegisterDocxTemplate<T>(...)`) or through the source generator's `RegisterWith(store)` helper, the template is fully validated against `T` at registration — before any render runs. Missing members, block tags targeting non-enumerable properties, or `[ExcelsiorTable]` tokens that break the solo-in-paragraph / plain-member-access rules throw `ParchmentRegistrationException` immediately. Register templates at app startup and any binding mismatch surfaces there, not on the first render.
 
 
 ## Source generator (compile-time validation)

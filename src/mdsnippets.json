@@ -3,5 +3,6 @@
   "TocExcludes": [ "NuGet package", "Release Notes", "Icon" ],
   "MaxWidth": 100,
   "Convention": "InPlaceOverwrite",
+  "ValidateContent": true,
   "ExcludeSnippetFiles": [ "*.verified.txt", "*.received.txt" ]
 }

@@ -14,7 +14,7 @@ dotnet build src --configuration Release
 dotnet build IntegrationTests --configuration Release
 ```
 
-Tests use **TUnit**, not NUnit/xUnit. Each test project is `OutputType=Exe` with `TestingPlatformDotnetTestSupport=true`, and you run them with `dotnet run`, not `dotnet test`:
+Tests use **TUnit**, not NUnit/xUnit. Each test project is `OutputType=Exe` with `TestingPlatformDotnetTestSupport=true`, and they are run via `dotnet run`, not `dotnet test`:
 
 ```bash
 dotnet run --project src/Parchment.Tests --configuration Release
@@ -35,7 +35,7 @@ Parchment combines a .NET data model with one of two template formats and produc
 
 ### Flow A — Docx template (`RegisterDocxTemplate<T>` / `Render`)
 
-This is the structurally interesting flow. The template is a real `.docx` containing liquid tokens scattered across paragraphs (substitutions like `{{ Customer.Name }}` plus block tags `{% for %}` / `{% if %}`). We can't just hand the whole file to Fluid because body paragraphs contain Word run-level formatting that text-based liquid would destroy. Instead:
+This is the structurally interesting flow. The template is a real `.docx` containing liquid tokens scattered across paragraphs (substitutions like `{{ Customer.Name }}` plus block tags `{% for %}` / `{% if %}`). Handing the whole file to Fluid is not viable, because body paragraphs contain Word run-level formatting that text-based liquid would destroy. Instead:
 
 1. **Token scanner** (`Tokens/TokenScanner.cs`, `Word/ParagraphText.cs`) — walks each paragraph in `MainDocumentPart`, every `HeaderPart`, `FooterPart`, `FootnotesPart`, `EndnotesPart`. For each paragraph it builds a flat `InnerText` plus a `RunMap` that maps character offsets back to the source `<w:t>` elements, regex-scans for `{{ ... }}` and `{% ... %}`, and classifies the paragraph as `Static` / `Substitution` / `Block`.
 
@@ -51,7 +51,7 @@ This is the structurally interesting flow. The template is a real `.docx` contai
    - **Conditionals**: call `IfBranch.Condition.EvaluateAsync(context).ToBooleanValue()`. The chosen branch is processed in place; non-chosen branch paragraphs are removed.
    - Structural replacements are applied last, top-down: each host paragraph is replaced with the produced elements via `parent.InsertAfter` + `host.Remove`.
 
-**Important**: `ScopeTreeRunner` uses Fluid's actual AST nodes (`Fluid.Ast.Expression`, `ForStatement`, `IfStatement`, `OutputStatement`) for runtime evaluation. We do NOT hand-roll loop iteration via reflection or string-render conditions to `"true"`/`"false"`. `IdentifierVisitor` is only used at **registration time** for compile-time-style validation against a .NET `Type`.
+**Important**: `ScopeTreeRunner` uses Fluid's actual AST nodes (`Fluid.Ast.Expression`, `ForStatement`, `IfStatement`, `OutputStatement`) for runtime evaluation. There is NO hand-rolled loop iteration via reflection, and no string-render of conditions to `"true"`/`"false"`. `IdentifierVisitor` is only used at **registration time** for compile-time-style validation against a .NET `Type`.
 
 ### Flow B — Markdown template (`RegisterMarkdownTemplate<T>` / `Render`)
 
@@ -85,9 +85,9 @@ Markdown `![alt](url)` images delegate to the same OpenXmlHtml converter — `Li
 
 ### Fluid integration (`Liquid/SharedFluid.cs`)
 
-A single static `FluidParser` and `TemplateOptions` shared across all renders (Fluid documents these as thread-safe and recommends per-process singletons). `RegisterModel(Type)` walks the model's reachable type graph and calls `MemberAccessStrategy.Register<T>()` on every POCO type via reflection (`MakeGenericMethod`). This is **load-bearing**: Fluid 2.x's `DefaultMemberAccessStrategy` does NOT auto-discover nested types from a model passed via `TemplateContext(model)` — without the recursive walk, `{{ Customer.Name }}` returns empty and you waste an hour debugging it.
+A single static `FluidParser` and `TemplateOptions` shared across all renders (Fluid documents these as thread-safe and recommends per-process singletons). `RegisterModel(Type)` walks the model's reachable type graph and calls `MemberAccessStrategy.Register<T>()` on every POCO type via reflection (`MakeGenericMethod`). This is **load-bearing**: Fluid 2.x's `DefaultMemberAccessStrategy` does NOT auto-discover nested types from a model passed via `TemplateContext(model)` — without the recursive walk, `{{ Customer.Name }}` returns empty, leading to obscure debugging sessions.
 
-Filters (`Liquid/Filters.cs`): `markdown`, `escape_xml`, `bullet_list`, `numbered_list`. Filters returning a `TokenValue` (wrapped in `ObjectValue`) trigger structural replacement at the substitution site — don't replace this with a string-only filter unless you also wire a separate detection path.
+Filters (`Liquid/Filters.cs`): `markdown`, `escape_xml`, `bullet_list`, `numbered_list`. Filters returning a `TokenValue` (wrapped in `ObjectValue`) trigger structural replacement at the substitution site — don't replace this with a string-only filter unless also wiring a separate detection path.
 
 ### Source generator (`src/Parchment.SourceGenerator/`)
 
@@ -210,7 +210,7 @@ src/Parchment.Tests/Scenarios/
    ```csharp
    static string SourcePath([CallerFilePath] string path = "") => path;
    static string ScenarioPath(string name) =>
-       Path.GetFullPath(Path.Combine(Path.GetDirectoryName(SourcePath())!, "..", "Scenarios", name));
+       Path.GetFullPath(Path.Combine(Path.GetDirectoryName(SourcePath()) ?? "", "..", "Scenarios", name));
    ```
 3. It calls `File.ReadAllBytesAsync(Path.Combine(ScenarioPath("..."), "input.docx"))`, registers, renders.
 4. It directs Verify's output into the scenario dir with a custom filename prefix:
@@ -220,7 +220,7 @@ src/Parchment.Tests/Scenarios/
    settings.UseFileName("output");
    await Verify(stream, "docx", settings);
    ```
-   The `UseFileName("output")` keeps the snapshot files clean — just `output.verified.docx` / `output#page01.verified.png` rather than the usual `ClassName.MethodName.*` naming.
+   The `UseFileName("output")` keeps the snapshot files clean — `output.verified.docx` / `output#page01.verified.png` rather than the usual `ClassName.MethodName.*` naming.
 
 **How `input.png` is generated** (`ScenarioInputRenderer.cs`):
 
@@ -250,17 +250,17 @@ TUnit's `[Explicit]` attribute excludes the test from default runs; only an expl
 4. Run the explicit `ScenarioInputRenderer` test once to produce `input.png`.
 5. Reference both PNGs from `readme.md` with `/src/Parchment.Tests/Scenarios/<name>/input.png` and `/src/Parchment.Tests/Scenarios/<name>/output%23page01.verified.png` (note the `#` → `%23` URL escape).
 
-## Non-obvious things that will trip you up
+## Non-obvious gotchas
 
 - **Tokens straddling run boundaries**: Word splits text into multiple `<w:r>` elements when formatting changes, when proofing markers fire, or when smart-quote autocorrect runs. `{{ customer.name }}` can land across N runs. The scanner uses `paragraph.InnerText` + a `RunMap` (offset → `<w:t>` element) so substitutions land correctly. The formatting of the **first run** containing the opening `{{` wins for the entire substitution — document this constraint when adding tests.
 
 - **PascalCase tokens**: Liquid in Parchment uses PascalCase (`{{ Customer.Name }}`), not snake_case. Fluid's default member access compares case-insensitively against the actual property name. There is no snake-case → PascalCase translation layer; an earlier attempt to wire `MemberNameStrategies.SnakeCase` was abandoned because that API doesn't exist in Fluid 2.15.
 
-- **`ScopeTreeRunner.ProcessLoopAsync` attaches each iteration's clones to a scratch `Body` before running the nested scope tree**. Without this, nested `{% for %}` / `{% if %}` silently no-op: `open.Parent` and `NextSibling()` return null on a detached clone, so `CaptureBetween(open, close)` captures nothing and `open.Remove()` does nothing, and the inner block-tag paragraph text lands in the output as literal `{% for ... %}`. If you "simplify" this by reverting to `parent.InsertAfter(clone, insertAnchor)` for each clone *before* the nested run, you break nested loops in a way that only the `LoopTests.NestedLoop` test catches.
+- **`ScopeTreeRunner.ProcessLoopAsync` attaches each iteration's clones to a scratch `Body` before running the nested scope tree**. Without this, nested `{% for %}` / `{% if %}` silently no-op: `open.Parent` and `NextSibling()` return null on a detached clone, so `CaptureBetween(open, close)` captures nothing and `open.Remove()` does nothing, and the inner block-tag paragraph text lands in the output as literal `{% for ... %}`. Reverting this to `parent.InsertAfter(clone, insertAnchor)` for each clone *before* the nested run breaks nested loops in a way that only the `LoopTests.NestedLoop` test catches.
 
-- **`OpenXmlMarkdownRenderer` is not thread-safe** — one instance per render. The `Stack<ContainerState>` and `ObjectRenderers` collection are mutable. The `RegisteredTemplate` (cached canonical bytes + scope tree) IS immutable and safe to share, so concurrent renders work — they just each get their own renderer.
+- **`OpenXmlMarkdownRenderer` is not thread-safe** — one instance per render. The `Stack<ContainerState>` and `ObjectRenderers` collection are mutable. The `RegisteredTemplate` (cached canonical bytes + scope tree) IS immutable and safe to share, so concurrent renders work — each render gets its own renderer.
 
-- **`appveyor.yml` font validation step** — every TTF/OTF in `src/Fonts/` is loaded through `System.Drawing.Text.PrivateFontCollection` BEFORE being copied to `%WINDIR%\Fonts`. This catches Git CRLF corruption upfront. If you add a font, mark it as binary in `.gitattributes` (`*.ttf binary`, `*.otf binary` — already present).
+- **`appveyor.yml` font validation step** — every TTF/OTF in `src/Fonts/` is loaded through `System.Drawing.Text.PrivateFontCollection` BEFORE being copied to `%WINDIR%\Fonts`. This catches Git CRLF corruption upfront. When adding a font, mark it as binary in `.gitattributes` (`*.ttf binary`, `*.otf binary` — already present).
 
 - **`ParchmentModel` is a separate project** (not `Model`) to avoid name clashes with common test fixture names in IDE autocomplete.
 
@@ -270,7 +270,7 @@ TUnit's `[Explicit]` attribute excludes the test from default runs; only an expl
 
 - **SG `[ExcelsiorTable]` detection matches by full-qualified-name string** (`"global::Parchment.ExcelsiorTableAttribute"` in `ShapeBuilder.HasExcelsiorTableAttribute`). The SG can't `typeof()` the attribute because it doesn't reference Parchment.dll (the SG runs inside Roslyn, the runtime library doesn't ship into the analyzer). Renaming or moving the attribute silently breaks `PARCH007`/`PARCH008` until the string literal is updated — there's no compile-time safety net.
 
-- **Excelsior runtime and SG validators must stay in lockstep**: `ExcelsiorTokenValidator` (runtime) and `ValidateExcelsiorToken` + `ShapeResolver.IsExcelsiorTableMember` (SG) enforce the same two rules — solo-in-paragraph and plain-member-access. The runtime checks the Fluid AST directly (`output.Expression is MemberExpression`); the SG piggybacks on a `Token.IsPlainIdentifier` bool set by `TokenScanner.IsPlainMemberAccess`. If you tighten or loosen one rule, update the other in the same PR. The relevant tests are `ExcelsiorTableTests` (runtime) and `ExcelsiorToken_*` (SG).
+- **Excelsior runtime and SG validators must stay in lockstep**: `ExcelsiorTokenValidator` (runtime) and `ValidateExcelsiorToken` + `ShapeResolver.IsExcelsiorTableMember` (SG) enforce the same two rules — solo-in-paragraph and plain-member-access. The runtime checks the Fluid AST directly (`output.Expression is MemberExpression`); the SG piggybacks on a `Token.IsPlainIdentifier` bool set by `TokenScanner.IsPlainMemberAccess`. When tightening or loosening one rule, update the other in the same PR. The relevant tests are `ExcelsiorTableTests` (runtime) and `ExcelsiorToken_*` (SG).
 
 - **`MemberEntry.IsExcelsiorTable` must stay primitive** — it's a `bool` on a `sealed record` that flows through the incremental generator pipeline, so its equality is structural. Adding a `bool` was safe; adding a `List<T>`, an `ISymbol` reference, or any mutable field would defeat the pipeline's cacheability and force ShapeBuilder to re-run on every compilation.
 
