@@ -1012,7 +1012,7 @@ Only standalone comment *blocks* are removed; inline HTML, scripts, styles, and 
 
 ## Images
 
-Parchment has no dedicated image binding or attribute. Images flow through one of four paths depending on where the reference lives.
+Parchment has no dedicated image binding or attribute. Images flow through one of three paths depending on where the reference lives.
 
 
 ### Static images embedded in the template
@@ -1020,32 +1020,31 @@ Parchment has no dedicated image binding or attribute. Images flow through one o
 Pictures placed directly in the `.docx` template (Word's Insert &rarr; Picture, or pasted in) pass through to the output verbatim. Token scanning only mutates paragraphs that contain liquid tokens; image parts, drawings, and shapes elsewhere in the document are cloned byte-for-byte. Drop a logo into the header in Word, render, the logo comes out — no model wiring needed.
 
 
-### `<img>` inside HTML
+### `<img>` inside HTML and markdown `![alt](url)`
 
-For `<img>` tags inside an `[Html]` property, an HTML block in a markdown template, or inline HTML inside a markdown property, embedding is delegated to [OpenXmlHtml](https://github.com/SimonCropp/OpenXmlHtml).
+`<img>` tags (in an `[Html]` property, an HTML block inside a markdown template, or inline HTML inside a `[Markdown]` property) and markdown `![alt](url)` syntax both delegate to [OpenXmlHtml](https://github.com/SimonCropp/OpenXmlHtml)'s `ImageResolver`. The same resolution table applies to both:
 
-| `src` value | Result |
+| `src` / `url` value | Result |
 | --- | --- |
-| `data:image/...;base64,...` (data URI) | Bytes are decoded and embedded as a `<w:drawing>` |
-| Anything else (relative path, `http(s)://`, `file:///`) | Falls back to rendering the alt text as plain text |
+| `data:image/...;base64,...` (data URI) | Bytes decoded, embedded as `<w:drawing>` |
+| `file:///...` URI | File read from disk, embedded |
+| Absolute or CWD-relative file path (e.g. `C:\images\logo.png`, `images/logo.png`) | File read from disk, embedded |
+| `http://...` / `https://...` | Fetched synchronously, embedded |
+| Path that fails the active `ImagePolicy` (or fails to read) | Falls back to rendering the alt text |
 
-To embed a local file via the HTML path, encode it as a data URI on the model first. Or use the markdown image syntax below, which auto-encodes absolute file paths.
+By default, `TemplateStore` exposes `LocalImages = ImagePolicy.AllowAll()` and `WebImages = ImagePolicy.AllowAll()` — Parchment renders developer-bound model content, so locking either down by default would silently break `<img src="C:\...">` and `![](path)` references. If your model carries images from less-trusted sources, override the policies on the store:
 
+```cs
+var store = new TemplateStore
+{
+    LocalImages = ImagePolicy.SafeDirectories("C:/assets/branding"),
+    WebImages = ImagePolicy.Deny()
+};
+```
 
-### Markdown `![alt](url)`
+The `ImagePolicy` type is OpenXmlHtml's — `Deny`, `AllowAll`, `SafeDomains(...)`, `SafeDirectories(...)`, `Filter(predicate)`. See [OpenXmlHtml's image-policy docs](https://github.com/SimonCropp/OpenXmlHtml#image-policy) for the full surface.
 
-In a markdown template, or inside a `[Markdown]` property, `![alt](url)` is rendered as an embedded image flowing inline within the surrounding paragraph. The URL is resolved as follows:
-
-| `url` form | Result |
-| --- | --- |
-| `data:image/...;base64,...` | Bytes decoded, embedded |
-| Absolute file path (e.g. `C:\images\logo.png`) | File read from disk, encoded as a data URI, embedded |
-| `file:///...` URI | Same as absolute path |
-| Relative path or `http(s)://` URL | Falls back to alt text — no fetching, no CWD-relative resolution |
-
-HTTP fetching is intentionally not supported — it would couple render output to network state and break determinism. Resolve URLs into bytes (or absolute paths) on the way into the model.
-
-Determinism holds as long as the file at the resolved path doesn't change between renders.
+Determinism holds as long as the bytes at the resolved source don't change between renders. Enabling `WebImages` couples render output to network state — if reproducibility matters, materialize web URLs into the model (or use `ImagePolicy.Deny()` for `WebImages`) before rendering.
 
 
 ### Custom `OpenXmlToken` (programmatic embedding)

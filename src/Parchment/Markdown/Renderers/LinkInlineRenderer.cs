@@ -54,10 +54,8 @@ class LinkInlineRenderer :
         renderer.AddRun(hyperlink);
     }
 
-    // Synthesize an <img> tag and delegate to OpenXmlHtml so drawing/blip plumbing stays in one place.
-    // data: URIs and absolute file paths are resolved to data URIs here; everything else is passed
-    // through, which makes OpenXmlHtml fall back to rendering the alt text — same behavior as a raw
-    // <img> in an [Html] property.
+    // Synthesize an <img> tag and delegate to OpenXmlHtml so drawing/blip plumbing — including
+    // data: URIs, file paths, and http(s) sources — is resolved by ImageResolver in one place.
     static void WriteImage(OpenXmlMarkdownRenderer renderer, LinkInline inline)
     {
         var url = inline.Url;
@@ -67,11 +65,11 @@ class LinkInlineRenderer :
             return;
         }
 
-        var src = ResolveImageSrc(url);
         var alt = ExtractAlt(inline);
-        var html = $"<img src=\"{HtmlEscape(src)}\" alt=\"{HtmlEscape(alt)}\" />";
+        var html = $"<img src=\"{HtmlEscape(url)}\" alt=\"{HtmlEscape(alt)}\" />";
 
-        var elements = OpenXmlHtml.WordHtmlConverter.ToElements(html, renderer.MainPart);
+        var settings = renderer.ImagePolicies.BuildSettings();
+        var elements = OpenXmlHtml.WordHtmlConverter.ToElements(html, renderer.MainPart, settings);
         foreach (var element in elements)
         {
             if (element is Paragraph paragraph)
@@ -84,47 +82,6 @@ class LinkInlineRenderer :
             }
         }
     }
-
-    static string ResolveImageSrc(string url)
-    {
-        if (url.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
-        {
-            return url;
-        }
-
-        string? path = null;
-        if (url.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
-        {
-            if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.IsFile)
-            {
-                path = uri.LocalPath;
-            }
-        }
-        else if (!url.Contains("://") && Path.IsPathRooted(url))
-        {
-            path = url;
-        }
-
-        if (path is null || !File.Exists(path))
-        {
-            return url;
-        }
-
-        var bytes = File.ReadAllBytes(path);
-        var mime = MimeFromExtension(Path.GetExtension(path));
-        return $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
-    }
-
-    static string MimeFromExtension(string extension) =>
-        extension.ToLowerInvariant() switch
-        {
-            ".png" => "image/png",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".gif" => "image/gif",
-            ".bmp" => "image/bmp",
-            ".tif" or ".tiff" => "image/tiff",
-            _ => "application/octet-stream"
-        };
 
     static string ExtractAlt(LinkInline inline)
     {

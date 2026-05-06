@@ -70,6 +70,19 @@ The markdown renderer (`Markdown/OpenXmlMarkdownRenderer.cs`) subclasses `Markdi
 
 When the renderer encounters an `HtmlBlock` or `HtmlInline`, it delegates to `OpenXmlHtml.WordHtmlConverter.ToElements(html, mainPart, settings)`, passing `HeadingLevelOffset` derived from the renderer's current heading depth. **OpenXmlHtml ≥ 0.4.0 is required** — the heading-offset parameter was added specifically for Parchment.
 
+Markdown `![alt](url)` images delegate to the same OpenXmlHtml converter — `LinkInlineRenderer.WriteImage` synthesizes a one-shot `<img src="<url>" />` and hands it to `WordHtmlConverter.ToElements`. So data URIs, `file://` URIs, absolute / CWD-relative file paths, and `http(s)://` URLs all flow through `OpenXmlHtml.ImageResolver` regardless of whether the source was a `<img>` tag in an `[Html]` property or a `![]()` token in a markdown template. **Do not** reintroduce a parallel "resolve to data URI in Parchment first" path inside `LinkInlineRenderer` — it duplicates ImageResolver and silently bypasses the active `ImagePolicy`.
+
+### Image policies (`Word/ImagePolicies.cs`)
+
+`TemplateStore` exposes two `init`-only properties — `LocalImages` and `WebImages`, both of type `OpenXmlHtml.ImagePolicy`, both defaulting to `ImagePolicy.AllowAll()`. The store builds an internal `ImagePolicies` record (`(ImagePolicy LocalImages, ImagePolicy WebImages)` plus a `BuildSettings(headingOffset, numberingSession)` helper) and threads it through every `OpenXmlHtml.WordHtmlConverter.ToElements` call site:
+
+- `RegisteredDocxTemplate` → `ScopeTreeRunner` (and every cloned runner inside loops / if branches) — used for `HtmlToken` rendering AND when `ScopeTreeRunner` calls `MarkdownRendering.Render` for `MarkdownToken`.
+- `RegisteredMarkdownTemplate` → `MarkdownRendering.Render` → `OpenXmlMarkdownRenderer` (exposed as `ImagePolicies` property), which `HtmlBlockRenderer` and `LinkInlineRenderer` read.
+
+`AllowAll` is the deliberate default because Parchment renders developer-bound content; OpenXmlHtml itself defaults to `Deny()` because *it* has no idea where its HTML came from. Don't chase OpenXmlHtml's default — Parchment's threat model is different.
+
+**Lockstep when adding new OpenXmlHtml call sites**: any new `OpenXmlHtml.WordHtmlConverter.ToElements` invocation MUST consume `ImagePolicies` (via `imagePolicies.BuildSettings(...)` for runtime calls, or `renderer.ImagePolicies.BuildSettings(...)` from inside a markdown renderer). A bare `new HtmlConvertSettings()` silently falls back to OpenXmlHtml's `Deny()` defaults and reintroduces the old alt-text-fallback bug for `<img>` tags.
+
 ### Fluid integration (`Liquid/SharedFluid.cs`)
 
 A single static `FluidParser` and `TemplateOptions` shared across all renders (Fluid documents these as thread-safe and recommends per-process singletons). `RegisterModel(Type)` walks the model's reachable type graph and calls `MemberAccessStrategy.Register<T>()` on every POCO type via reflection (`MakeGenericMethod`). This is **load-bearing**: Fluid 2.x's `DefaultMemberAccessStrategy` does NOT auto-discover nested types from a model passed via `TemplateContext(model)` — without the recursive walk, `{{ Customer.Name }}` returns empty and you waste an hour debugging it.

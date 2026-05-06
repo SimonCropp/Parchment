@@ -11,10 +11,7 @@ class HtmlBlockRenderer :
         }
 
         var html = block.Lines.ToString();
-        var settings = new OpenXmlHtml.HtmlConvertSettings
-        {
-            HeadingLevelOffset = renderer.HeadingOffset
-        };
+        var settings = renderer.ImagePolicies.BuildSettings(headingOffset: renderer.HeadingOffset);
         var elements = OpenXmlHtml.WordHtmlConverter.ToElements(html, renderer.MainPart, settings);
         foreach (var element in elements)
         {

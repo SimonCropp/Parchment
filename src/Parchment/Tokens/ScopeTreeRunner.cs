@@ -13,7 +13,8 @@ class ScopeTreeRunner(
     FormatMap formats,
     StringListMap stringLists,
     WordNumberingState numberingState,
-    Lazy<StyleSet> styles)
+    Lazy<StyleSet> styles,
+    ImagePolicies imagePolicies)
 {
     List<StructuralReplacement>? structuralReplacements;
 
@@ -191,14 +192,11 @@ class ScopeTreeRunner(
     IReadOnlyList<OpenXmlElement> RenderTokenValue(object value) =>
         value switch
         {
-            MarkdownToken md => MarkdownRendering.Render(md.Source, mainPart, numberingState, headingOffset: 0),
+            MarkdownToken md => MarkdownRendering.Render(md.Source, mainPart, numberingState, imagePolicies, headingOffset: 0),
             HtmlToken html => OpenXmlHtml.WordHtmlConverter.ToElements(
                 html.Source,
                 mainPart,
-                new()
-                {
-                    NumberingSession = numberingState.GetHtmlSession()
-                }),
+                imagePolicies.BuildSettings(numberingSession: numberingState.GetHtmlSession())),
             OpenXmlToken raw when ReferenceEquals(raw, OpenXmlToken.Empty) => [],
             OpenXmlToken raw => raw
                 .Render(new OpenXmlContextImpl(mainPart, numberingState, styles.Value))
@@ -435,7 +433,8 @@ class ScopeTreeRunner(
                 formats,
                 stringLists,
                 numberingState,
-                styles);
+                styles,
+                imagePolicies);
             // Reuse the original scope tree directly. cloneAnchors is keyed on the same anchor
             // names the registration-time tree references, so no per-iteration tree rebuild
             // (Remap) is needed. Multiple iterations leave duplicate-named bookmarks in the
@@ -575,7 +574,7 @@ class ScopeTreeRunner(
                 }
             }
 
-            var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart, rootModel, excelsiorTables, formats, stringLists, numberingState, styles);
+            var innerRunner = new ScopeTreeRunner(templateName, partUri, branchAnchors, context, mainPart, rootModel, excelsiorTables, formats, stringLists, numberingState, styles, imagePolicies);
             await innerRunner.RunAsync(chosen);
             innerRunner.ApplyStructural();
 

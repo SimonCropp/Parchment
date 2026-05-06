@@ -3,12 +3,13 @@ class OpenXmlMarkdownRenderer :
 {
     readonly Stack<ContainerState> stack = new();
 
-    public OpenXmlMarkdownRenderer(MainDocumentPart mainPart, WordNumberingState numbering, int headingOffset = 0)
+    public OpenXmlMarkdownRenderer(MainDocumentPart mainPart, WordNumberingState numbering, ImagePolicies imagePolicies, int headingOffset = 0)
     {
         MainPart = mainPart;
         HeadingOffset = headingOffset;
         AvailableStyles = StyleSet.Read(mainPart);
         Numbering = numbering;
+        ImagePolicies = imagePolicies;
         stack.Push(new());
 
         // Block renderers
@@ -36,6 +37,7 @@ class OpenXmlMarkdownRenderer :
     public int HeadingOffset { get; }
     public StyleSet AvailableStyles { get; }
     public WordNumberingState Numbering { get; }
+    public ImagePolicies ImagePolicies { get; }
 
     internal ContainerState Top => stack.Peek();
 

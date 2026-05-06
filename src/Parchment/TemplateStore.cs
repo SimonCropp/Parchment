@@ -5,6 +5,21 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
     ConcurrentDictionary<string, RegisteredTemplate> templates = new(StringComparer.Ordinal);
     ILogger logger = (ILogger?)logger ?? NullLogger.Instance;
 
+    /// <summary>
+    /// Policy for local-file image sources (<c>file://</c> URIs and filesystem paths) referenced
+    /// from <c>&lt;img&gt;</c> tags or markdown <c>![alt](path)</c> images. Defaults to
+    /// <see cref="OpenXmlHtml.ImagePolicy.AllowAll"/>.
+    /// </summary>
+    public OpenXmlHtml.ImagePolicy LocalImages { get; init; } = OpenXmlHtml.ImagePolicy.AllowAll();
+
+    /// <summary>
+    /// Policy for web image sources (<c>http://</c> and <c>https://</c> URIs). Defaults to
+    /// <see cref="OpenXmlHtml.ImagePolicy.AllowAll"/>.
+    /// </summary>
+    public OpenXmlHtml.ImagePolicy WebImages { get; init; } = OpenXmlHtml.ImagePolicy.AllowAll();
+
+    ImagePolicies Policies => new(LocalImages, WebImages);
+
     public void RegisterDocxTemplate<TModel>(string name, string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
@@ -47,7 +62,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         }
 
         var canonicalBytes = stream.ToArray();
-        var registered = new RegisteredDocxTemplate(name, typeof(TModel), canonicalBytes, parts, excelsiorMap, formatMap, stringListMap);
+        var registered = new RegisteredDocxTemplate(name, typeof(TModel), canonicalBytes, parts, excelsiorMap, formatMap, stringListMap, Policies);
         templates[name] = registered;
         logger.LogInformation("Registered docx template {Name} for {ModelType}", name, typeof(TModel).Name);
     }
@@ -99,7 +114,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
             bytes = BlankDocxTemplate;
         }
 
-        var registered = new RegisteredMarkdownTemplate(name, typeof(TModel), bytes, template);
+        var registered = new RegisteredMarkdownTemplate(name, typeof(TModel), bytes, template, Policies);
         templates[name] = registered;
         logger.LogInformation("Registered markdown template {Name} for {ModelType}", name, typeof(TModel).Name);
     }

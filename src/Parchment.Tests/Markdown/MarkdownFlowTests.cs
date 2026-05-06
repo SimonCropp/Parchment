@@ -179,4 +179,67 @@ public class MarkdownFlowTests
         await Assert.That(drawings.Count).IsEqualTo(1);
         await Assert.That(main.ImageParts.Any()).IsTrue();
     }
+
+    static byte[] OnePixelPng() =>
+        Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgAAIAAAUAAeImBZsAAAAASUVORk5CYII=");
+
+    [Test]
+    public async Task ImageFromLocalFileEmbedsDrawing()
+    {
+        var pngPath = Path.Combine(Path.GetTempPath(), $"parchment-md-img-{Guid.NewGuid():N}.png");
+        await File.WriteAllBytesAsync(pngPath, OnePixelPng());
+        try
+        {
+            var markdown = "# {{ Caption }}\n\n![pixel](" + pngPath.Replace("\\", "/") + ")\n";
+
+            using var styleSource = DocxTemplateBuilder.Build();
+            var store = new TemplateStore();
+            store.RegisterMarkdownTemplate<ImageModel>("image", markdown, styleSource);
+
+            using var stream = new MemoryStream();
+            await store.Render("image", new ImageModel {Caption = "With image"}, stream);
+            stream.Position = 0;
+
+            using var doc = WordprocessingDocument.Open(stream, false);
+            var main = doc.MainDocumentPart!;
+            await Assert.That(main.Document!.Body!.Descendants<Drawing>().Count()).IsEqualTo(1);
+            await Assert.That(main.ImageParts.Any()).IsTrue();
+        }
+        finally
+        {
+            File.Delete(pngPath);
+        }
+    }
+
+    [Test]
+    public async Task ImageFromLocalFileBlockedByDenyPolicy()
+    {
+        var pngPath = Path.Combine(Path.GetTempPath(), $"parchment-md-img-{Guid.NewGuid():N}.png");
+        await File.WriteAllBytesAsync(pngPath, OnePixelPng());
+        try
+        {
+            var markdown = "# {{ Caption }}\n\n![pixel](" + pngPath.Replace("\\", "/") + ")\n";
+
+            using var styleSource = DocxTemplateBuilder.Build();
+            var store = new TemplateStore
+            {
+                LocalImages = OpenXmlHtml.ImagePolicy.Deny()
+            };
+            store.RegisterMarkdownTemplate<ImageModel>("image", markdown, styleSource);
+
+            using var stream = new MemoryStream();
+            await store.Render("image", new ImageModel {Caption = "With image"}, stream);
+            stream.Position = 0;
+
+            using var doc = WordprocessingDocument.Open(stream, false);
+            var main = doc.MainDocumentPart!;
+            await Assert.That(main.Document!.Body!.Descendants<Drawing>().Any()).IsFalse();
+            await Assert.That(main.ImageParts.Any()).IsFalse();
+        }
+        finally
+        {
+            File.Delete(pngPath);
+        }
+    }
 }

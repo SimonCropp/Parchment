@@ -300,4 +300,75 @@ public class FormatAttributeTests
             .Throws<ParchmentRegistrationException>();
         await Assert.That(exception!.Message).Contains("both [Html] and [Markdown]");
     }
+
+    static byte[] OnePixelPng() =>
+        Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgAAIAAAUAAeImBZsAAAAASUVORk5CYII=");
+
+    [Test]
+    public async Task HtmlImageFromLocalFileEmbedsDrawing()
+    {
+        var pngPath = Path.Combine(Path.GetTempPath(), $"parchment-html-img-{Guid.NewGuid():N}.png");
+        await File.WriteAllBytesAsync(pngPath, OnePixelPng());
+        try
+        {
+            using var template = DocxTemplateBuilder.Build("{{ Body }}");
+            var store = new TemplateStore();
+            store.RegisterDocxTemplate<HtmlDoc>("html-img", template);
+
+            var model = new HtmlDoc
+            {
+                Title = "Report",
+                Body = $"<p><img src=\"{pngPath.Replace("\\", "/")}\" alt=\"pixel\" /></p>"
+            };
+
+            using var stream = new MemoryStream();
+            await store.Render("html-img", model, stream);
+            stream.Position = 0;
+
+            using var doc = WordprocessingDocument.Open(stream, false);
+            var main = doc.MainDocumentPart!;
+            await Assert.That(main.Document!.Body!.Descendants<Drawing>().Count()).IsEqualTo(1);
+            await Assert.That(main.ImageParts.Any()).IsTrue();
+        }
+        finally
+        {
+            File.Delete(pngPath);
+        }
+    }
+
+    [Test]
+    public async Task HtmlImageFromLocalFileBlockedByDenyPolicy()
+    {
+        var pngPath = Path.Combine(Path.GetTempPath(), $"parchment-html-img-{Guid.NewGuid():N}.png");
+        await File.WriteAllBytesAsync(pngPath, OnePixelPng());
+        try
+        {
+            using var template = DocxTemplateBuilder.Build("{{ Body }}");
+            var store = new TemplateStore
+            {
+                LocalImages = OpenXmlHtml.ImagePolicy.Deny()
+            };
+            store.RegisterDocxTemplate<HtmlDoc>("html-img", template);
+
+            var model = new HtmlDoc
+            {
+                Title = "Report",
+                Body = $"<p><img src=\"{pngPath.Replace("\\", "/")}\" alt=\"pixel\" /></p>"
+            };
+
+            using var stream = new MemoryStream();
+            await store.Render("html-img", model, stream);
+            stream.Position = 0;
+
+            using var doc = WordprocessingDocument.Open(stream, false);
+            var main = doc.MainDocumentPart!;
+            await Assert.That(main.Document!.Body!.Descendants<Drawing>().Any()).IsFalse();
+            await Assert.That(main.ImageParts.Any()).IsFalse();
+        }
+        finally
+        {
+            File.Delete(pngPath);
+        }
+    }
 }
