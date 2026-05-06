@@ -99,9 +99,9 @@ class WordNumberingState(MainDocumentPart mainPart)
         var id = nextAbstractNumId++;
         var abstractNum = new AbstractNum { AbstractNumberId = id };
         abstractNum.Append(
-            BuildBulletLevel(0, "\u25CF"),
-            BuildBulletLevel(1, "\u25CB"),
-            BuildBulletLevel(2, "\u25A0"));
+            BuildBulletLevel(0, "\uF0B7", "Symbol"),
+            BuildBulletLevel(1, "o", "Courier New"),
+            BuildBulletLevel(2, "\uF0A7", "Wingdings"));
         numbering.InsertAt(abstractNum, 0);
         return id;
     }
@@ -130,7 +130,7 @@ class WordNumberingState(MainDocumentPart mainPart)
         return numId;
     }
 
-    static Level BuildBulletLevel(int ilvl, string glyph) =>
+    static Level BuildBulletLevel(int ilvl, string glyph, string font) =>
         new()
         {
             LevelIndex = ilvl,
@@ -146,8 +146,8 @@ class WordNumberingState(MainDocumentPart mainPart)
             NumberingSymbolRunProperties = new(
                 new RunFonts
                 {
-                    Ascii = "Symbol",
-                    HighAnsi = "Symbol",
+                    Ascii = font,
+                    HighAnsi = font,
                     Hint = FontTypeHintValues.Default
                 })
         };

@@ -29,7 +29,8 @@ class ListBlockRenderer :
                                 new NumberingId
                                 {
                                     Val = numId
-                                })
+                                }),
+                            ContextualSpacing = new()
                         };
                         renderer.WriteLeafInline(leaf);
                         renderer.FlushParagraph(properties);

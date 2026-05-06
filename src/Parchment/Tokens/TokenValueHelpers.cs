@@ -33,7 +33,8 @@ public static class TokenValueHelpers
                 new NumberingId
                 {
                     Val = numId
-                })
+                }),
+            ContextualSpacing = new()
         };
         paragraph.Append(props);
         paragraph.Append(new Run(

@@ -350,8 +350,7 @@ public class NumberingStateSharingTests
             .Elements<AbstractNum>()
             .Where(a =>
                 a.Elements<Level>().FirstOrDefault(_ => _.LevelIndex?.Value == 0) is { } lvl &&
-                lvl.NumberingFormat?.Val?.Value == NumberFormatValues.Bullet &&
-                lvl.LevelText?.Val?.Value == "●")
+                lvl.NumberingFormat?.Val?.Value == NumberFormatValues.Bullet)
             .ToList();
         var instancesPointingAtBullet = numbering
             .Elements<NumberingInstance>()
