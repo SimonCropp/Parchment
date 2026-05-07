@@ -77,6 +77,17 @@ class ParagraphText
             return;
         }
 
+        // Fast path: single-span paragraph. Skips two FindSpan scans and the cross-span
+        // branching. The token offset/length are guaranteed to fall within the only span.
+        if (spans.Count == 1)
+        {
+            var only = spans[0];
+            var source = only.Text.Text;
+            only.Text.Text = string.Concat(source.AsSpan(0, offset), replacement, source.AsSpan(offset + length));
+            only.Text.Space = SpaceProcessingModeValues.Preserve;
+            return;
+        }
+
         var end = offset + length;
         var first = FindSpan(offset, preferEnd: false);
         var last = FindSpan(end - 1, preferEnd: true);

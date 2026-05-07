@@ -204,23 +204,30 @@ class ScopeTreeRunner(
             _ => []
         };
 
-    async Task<object> EvaluateTokenAsync(DocxTokenSite site, Paragraph host, int siblingCount)
+    /// <summary>
+    /// Splits the synchronous fast path from async machinery: the dispatch checks (Excelsior /
+    /// Format / StringList) are pure-sync, and the dominant Fluid path (MemberExpression member
+    /// access on a POCO) completes synchronously. Stays out of an async state machine entirely
+    /// when EvaluateAsync returns a synchronously-completed ValueTask. Saves the per-token Task
+    /// allocation on the hot loop-body path.
+    /// </summary>
+    ValueTask<object> EvaluateTokenAsync(DocxTokenSite site, Paragraph host, int siblingCount)
     {
         try
         {
             if (TryResolveExcelsiorTable(site) is { } excelsiorToken)
             {
-                return excelsiorToken;
+                return new(excelsiorToken);
             }
 
             if (TryResolveFormatted(site) is { } formatted)
             {
-                return formatted;
+                return new(formatted);
             }
 
             if (TryResolveStringList(site, host, siblingCount) is { } stringList)
             {
-                return stringList;
+                return new(stringList);
             }
 
             // Walk the parsed FluidTemplate to its OutputStatement and evaluate the underlying
@@ -231,22 +238,63 @@ class ScopeTreeRunner(
             if (statements.Count > 0 &&
                 statements[0] is OutputStatement output)
             {
-                var fluidValue = await output.Expression.EvaluateAsync(context);
-
-                // TokenValue is always wrapped in ObjectValue (see Filters.Markdown / BulletList /
-                // NumberedList and TokenValueHelpers). Skip ToObjectValue for primitive FluidValues
-                // (StringValue, NumberValue, BooleanValue, ArrayValue, DateTimeValue, ...) — that
-                // path boxes numerics to object before the type test, which the common-case
-                // text-token path doesn't need.
-                if (fluidValue is ObjectValue &&
-                    fluidValue.ToObjectValue() is TokenValue tokenValue)
+                var pending = output.Expression.EvaluateAsync(context);
+                if (pending.IsCompletedSuccessfully)
                 {
-                    return tokenValue;
+                    return new(InterpretFluidValue(pending.Result));
                 }
 
-                return fluidValue.ToStringValue();
+                return AwaitFluidValue(pending, host, site);
             }
 
+            return RenderFullTemplateAsync(site, host);
+        }
+        catch (ParchmentException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw WrapException(exception, host, site);
+        }
+    }
+
+    static object InterpretFluidValue(FluidValue fluidValue)
+    {
+        // TokenValue is always wrapped in ObjectValue (see Filters.Markdown / BulletList /
+        // NumberedList and TokenValueHelpers). Skip ToObjectValue for primitive FluidValues
+        // (StringValue, NumberValue, BooleanValue, ArrayValue, DateTimeValue, ...) — that
+        // path boxes numerics to object before the type test, which the common-case
+        // text-token path doesn't need.
+        if (fluidValue is ObjectValue &&
+            fluidValue.ToObjectValue() is TokenValue tokenValue)
+        {
+            return tokenValue;
+        }
+
+        return fluidValue.ToStringValue();
+    }
+
+    async ValueTask<object> AwaitFluidValue(ValueTask<FluidValue> pending, Paragraph host, DocxTokenSite site)
+    {
+        try
+        {
+            return InterpretFluidValue(await pending);
+        }
+        catch (ParchmentException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw WrapException(exception, host, site);
+        }
+    }
+
+    async ValueTask<object> RenderFullTemplateAsync(DocxTokenSite site, Paragraph host)
+    {
+        try
+        {
             await using var writer = new StringWriter();
             await site.Template.RenderAsync(writer, System.Text.Encodings.Web.HtmlEncoder.Default, context);
             return writer.ToString();
@@ -257,15 +305,18 @@ class ScopeTreeRunner(
         }
         catch (Exception exception)
         {
-            throw new ParchmentRenderException(
-                templateName,
-                exception.Message,
-                partUri,
-                Snippet(host, site),
-                site.Source,
-                inner: exception);
+            throw WrapException(exception, host, site);
         }
     }
+
+    ParchmentRenderException WrapException(Exception exception, Paragraph host, DocxTokenSite site) =>
+        new(
+            templateName,
+            exception.Message,
+            partUri,
+            Snippet(host, site),
+            site.Source,
+            inner: exception);
 
     TokenValue? TryResolveExcelsiorTable(DocxTokenSite site)
     {
