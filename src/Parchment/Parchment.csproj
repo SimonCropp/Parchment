@@ -18,7 +18,8 @@
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Parchment.SourceGenerator\Parchment.SourceGenerator.csproj"
                       SetTargetFramework="TargetFramework=netstandard2.0"
-                      ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true"
+                      ReferenceOutputAssembly="false"
+                      SkipGetTargetFrameworkProperties="true"
                       PrivateAssets="all" />
     <None Include="..\Parchment.SourceGenerator\bin\$(Configuration)\netstandard2.0\Parchment.SourceGenerator.dll"
           Pack="true" PackagePath="analyzers/dotnet/roslyn5.0/cs" Visible="false" />
