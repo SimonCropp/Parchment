@@ -5,7 +5,6 @@ class CodeBlockRenderer :
     {
         foreach (var line in block.Lines.Lines.Take(block.Lines.Count))
         {
-            var text = line.ToString();
             var paragraph = new Paragraph(
                 new ParagraphProperties(
                     new ParagraphStyleId
@@ -19,8 +18,7 @@ class CodeBlockRenderer :
                             Ascii = "Consolas",
                             HighAnsi = "Consolas"
                         }),
-                    new Text(
-                        XmlCharSanitizer.Strip(text))
+                    new Text(XmlCharSanitizer.Strip(line.Slice.AsSpan()).ToString())
                     {
                         Space = SpaceProcessingModeValues.Preserve
                     }));
