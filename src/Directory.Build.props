@@ -11,4 +11,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
   </PropertyGroup>
+  <ItemGroup>
+    <Using Include="System.ReadOnlySpan&lt;System.Char&gt;" Alias="CharSpan" />
+  </ItemGroup>
 </Project>

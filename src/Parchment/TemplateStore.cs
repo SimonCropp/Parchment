@@ -257,19 +257,29 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
             return null;
         }
 
-        var tag = tagMatch.Groups["tag"].Value;
-        var expression = tagMatch.Groups["expr"].Success ? tagMatch.Groups["expr"].Value.Trim() : null;
+        var tag = tagMatch.Groups["tag"].ValueSpan;
 
         return tag switch
         {
-            "for" => RebuildFor(source, expression),
-            "endfor" => new(BlockTagKind.EndFor, source, null, null, null, null, []),
-            "if" => RebuildIf(source, expression),
-            "elsif" or "elseif" => RebuildElsif(source, expression),
-            "else" => new(BlockTagKind.Else, source, null, null, null, null, []),
-            "endif" => new(BlockTagKind.EndIf, source, null, null, null, null, []),
+            "for" => RebuildFor(source, GetExpression(tagMatch)),
+            "endfor" => new(BlockTagKind.EndFor, source, null, null, null),
+            "if" => RebuildIf(source, GetExpression(tagMatch)),
+            "elsif" or "elseif" => RebuildElsif(source, GetExpression(tagMatch)),
+            "else" => new(BlockTagKind.Else, source, null, null, null),
+            "endif" => new(BlockTagKind.EndIf, source, null, null, null),
             _ => null
         };
+
+        static string? GetExpression(Match match)
+        {
+            var group = match.Groups["expr"];
+            if (group.Success)
+            {
+                return group.ValueSpan.Trim().ToString();
+            }
+
+            return null;
+        }
     }
 
     static BlockMarker? RebuildFor(string source, string? expression)
@@ -293,8 +303,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
             return null;
         }
 
-        var refs = IdentifierVisitor.Collect(forStatement.Source);
-        return new(BlockTagKind.For, source, expression, null, forStatement.Identifier, forStatement.Source, refs);
+        return new(BlockTagKind.For, source, null, forStatement.Identifier, forStatement.Source);
     }
 
     static BlockMarker? RebuildIf(string source, string? expression) =>
@@ -324,8 +333,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
             return null;
         }
 
-        var refs = IdentifierVisitor.Collect(ifStatement.Condition);
-        return new(kind, source, expression, ifStatement.Condition, null, null, refs);
+        return new(kind, source, ifStatement.Condition, null, null);
     }
 }
 

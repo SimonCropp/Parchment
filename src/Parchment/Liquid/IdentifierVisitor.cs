@@ -7,8 +7,6 @@ class IdentifierVisitor :
 {
     readonly List<IdentifierPath> paths = [];
 
-    public IReadOnlyList<IdentifierPath> Paths => paths;
-
     public static IReadOnlyList<IdentifierPath> Collect(IFluidTemplate template)
     {
         var visitor = new IdentifierVisitor();
@@ -23,10 +21,10 @@ class IdentifierVisitor :
         return visitor.paths;
     }
 
-    protected override Expression VisitMemberExpression(MemberExpression memberExpression)
+    protected override Expression VisitMemberExpression(MemberExpression expression)
     {
-        var segments = new List<string>(memberExpression.Segments.Count);
-        foreach (var segment in memberExpression.Segments)
+        var segments = new List<string>(expression.Segments.Count);
+        foreach (var segment in expression.Segments)
         {
             if (segment is IdentifierSegment identifier)
             {
@@ -43,6 +41,6 @@ class IdentifierVisitor :
             paths.Add(new(segments));
         }
 
-        return base.VisitMemberExpression(memberExpression);
+        return base.VisitMemberExpression(expression);
     }
 }

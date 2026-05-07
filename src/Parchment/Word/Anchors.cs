@@ -7,16 +7,6 @@
 static class Anchors
 {
     public const string Prefix = "parchment-anchor-";
-    static long runtimeCounter;
-
-    /// <summary>
-    /// Generates a unique anchor name for runtime clones of registration-time bookmarks.
-    /// Uses a monotonic counter (rather than a fresh GUID per call) because anchors only need
-    /// uniqueness within the active document and are stripped before save — the counter is
-    /// dramatically cheaper than <c>Guid.NewGuid().ToString("N")</c> in tight loop iterations.
-    /// </summary>
-    public static string NextRuntimeName() =>
-        Prefix + Interlocked.Increment(ref runtimeCounter).ToString(CultureInfo.InvariantCulture);
 
     public static string EnsureOn(Paragraph paragraph)
     {
@@ -55,8 +45,7 @@ static class Anchors
         {
             foreach (var child in paragraph.ChildElements)
             {
-                if (child is BookmarkStart start &&
-                    start.Name?.Value is { } name &&
+                if (child is BookmarkStart {Name.Value: { } name} &&
                     name.StartsWith(Prefix, StringComparison.Ordinal))
                 {
                     map[name] = paragraph;
@@ -84,8 +73,7 @@ static class Anchors
         {
             foreach (var child in paragraph.ChildElements)
             {
-                if (child is BookmarkStart start &&
-                    start.Name?.Value is { } name &&
+                if (child is BookmarkStart {Name.Value: { } name} start &&
                     name.StartsWith(Prefix, StringComparison.Ordinal))
                 {
                     (starts ??= []).Add(start);
@@ -95,8 +83,7 @@ static class Anchors
                         (ids ??= new(StringComparer.Ordinal)).Add(id);
                     }
                 }
-                else if (child is BookmarkEnd end &&
-                         end.Id?.Value is { } endId &&
+                else if (child is BookmarkEnd {Id.Value: { } endId} end &&
                          ids is { } captured &&
                          captured.Contains(endId))
                 {

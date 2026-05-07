@@ -1,16 +1,3 @@
-enum TokenSiteKind
-{
-    Substitution,
-    Block
-}
-
-readonly struct TokenSite(int offset, int length, TokenSiteKind kind)
-{
-    public int Offset { get; } = offset;
-    public int Length { get; } = length;
-    public TokenSiteKind Kind { get; } = kind;
-}
-
 /// <summary>
 /// Hand-written scanner that finds Liquid token sites — <c>{{ ... }}</c> substitutions and
 /// <c>{% ... %}</c> block tags — inside arbitrary text. Replaces a paragraph-splitting regex
@@ -40,14 +27,16 @@ static class TokenScan
             }
 
             var second = text[openIndex + 1];
-            if (second == '{' && TryMatchSubstitution(text, openIndex, out var subLength))
+            if (second == '{' &&
+                TryMatchSubstitution(text, openIndex, out var subLength))
             {
                 sites.Add(new(openIndex, subLength, TokenSiteKind.Substitution));
                 i = openIndex + subLength;
                 continue;
             }
 
-            if (second == '%' && TryMatchBlock(text, openIndex, out var blockLength))
+            if (second == '%' &&
+                TryMatchBlock(text, openIndex, out var blockLength))
             {
                 sites.Add(new(openIndex, blockLength, TokenSiteKind.Block));
                 i = openIndex + blockLength;

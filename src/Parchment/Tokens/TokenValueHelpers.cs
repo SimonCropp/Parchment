@@ -32,7 +32,7 @@ public static class TokenValueHelpers
         return hostStyle;
     }
 
-    static Paragraph BuildListParagraph(string text, int numId, int ilvl, string pStyle)
+    static Paragraph BuildListParagraph(CharSpan text, int numId, int ilvl, string pStyle)
     {
         var paragraph = new Paragraph();
         var props = new ParagraphProperties
@@ -54,7 +54,7 @@ public static class TokenValueHelpers
         };
         paragraph.Append(props);
         paragraph.Append(new Run(
-            new Text(XmlCharSanitizer.Strip(text))
+            new Text(XmlCharSanitizer.Strip(text).ToString())
             {
                 Space = SpaceProcessingModeValues.Preserve
             }));

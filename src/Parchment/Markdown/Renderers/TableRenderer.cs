@@ -147,25 +147,23 @@ class TableRenderer :
 
     static TableCell? TryBuildPlainCell(Markdig.Extensions.Tables.TableCell cell, bool isHeader)
     {
-        if (cell.Count != 1 ||
-            cell[0] is not ParagraphBlock paragraphBlock)
+        if (cell is not [ParagraphBlock paragraphBlock])
         {
             return null;
         }
 
         var inline = paragraphBlock.Inline;
-        if (inline?.FirstChild is not LiteralInline literal ||
-            literal.NextSibling != null)
+        if (inline?.FirstChild is not LiteralInline {NextSibling: null} literal)
         {
             return null;
         }
 
         var paragraph = new Paragraph();
-        var text = literal.Content.ToString();
-        if (text.Length > 0)
+        var content = literal.Content.AsSpan();
+        if (content.Length > 0)
         {
             var run = new Run(
-                new Text(XmlCharSanitizer.Strip(text))
+                new Text(XmlCharSanitizer.Strip(content).ToString())
                 {
                     Space = SpaceProcessingModeValues.Preserve
                 });
@@ -188,18 +186,18 @@ class TableRenderer :
                 });
         }
 
-        return new TableCell(paragraph);
+        return new(paragraph);
     }
 
-    static void ApplyHeaderFormatting(Paragraph p)
+    static void ApplyHeaderFormatting(Paragraph paragraph)
     {
-        p.ParagraphProperties ??= new();
-        p.ParagraphProperties.Append(
+        paragraph.ParagraphProperties ??= new();
+        paragraph.ParagraphProperties.Append(
             new Justification
             {
                 Val = JustificationValues.Center
             });
-        foreach (var run in p.Elements<Run>())
+        foreach (var run in paragraph.Elements<Run>())
         {
             run.RunProperties ??= new();
             run.RunProperties.Append(new Bold());

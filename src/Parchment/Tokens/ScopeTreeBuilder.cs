@@ -24,7 +24,7 @@ static class ScopeTreeBuilder
             extra.Block?.Source);
     }
 
-    static IReadOnlyList<RangeNode> BuildBlock(
+    static List<RangeNode> BuildBlock(
         Queue<ParagraphClassification> queue,
         BlockTagKind? closer,
         string templateName,
@@ -109,7 +109,6 @@ static class ScopeTreeBuilder
         return new(
             opening.AnchorName,
             closing.AnchorName,
-            RangeScopeKind.Paragraph,
             opening.Block!.LoopVariable!,
             opening.Block!.LoopSource!,
             body);
@@ -126,7 +125,7 @@ static class ScopeTreeBuilder
 
         // First branch is the if itself
         var firstBody = BuildBlock(queue, BlockTagKind.EndIf, templateName, partUri);
-        branches.Add(new(opening.AnchorName, opening.Block!.Condition!, firstBody));
+        branches.Add(new(opening.Block!.Condition!, firstBody));
 
         // Collect elsif / else branches until endif
         while (queue.TryPeek(out var peek) &&
@@ -136,7 +135,7 @@ static class ScopeTreeBuilder
             var branchBody = BuildBlock(queue, BlockTagKind.EndIf, templateName, partUri);
             if (branchOpening.Block!.Kind == BlockTagKind.ElsIf)
             {
-                branches.Add(new(branchOpening.AnchorName, branchOpening.Block!.Condition!, branchBody));
+                branches.Add(new(branchOpening.Block!.Condition!, branchBody));
             }
             else
             {

@@ -24,11 +24,11 @@ public static class TokenScanner
                 var source = paragraph.Substring(site.Offset, site.Length);
                 if (site.Kind == TokenSiteKind.Substitution)
                 {
-                    result.Add(ParseSubstitution(source, paragraph, hasOtherContent));
+                    result.Add(ParseSubstitution(source, hasOtherContent));
                 }
                 else
                 {
-                    result.Add(ParseBlockTag(source, paragraph, hasOtherContent));
+                    result.Add(ParseBlockTag(source, hasOtherContent));
                 }
             }
         }
@@ -36,16 +36,16 @@ public static class TokenScanner
         return result;
     }
 
-    static Token ParseSubstitution(string source, string paragraph, bool hasOtherContent)
+    static Token ParseSubstitution(string source, bool hasOtherContent)
     {
         if (!parser.TryParse(source, out var template, out _))
         {
-            return new(TokenKind.Substitution, source, [], null, null, paragraph, hasOtherContent);
+            return new(TokenKind.Substitution, source, [], null, hasOtherContent);
         }
 
         var references = IdentifierVisitor.Collect(template);
         var isPlain = IsPlainMemberAccess(template);
-        return new(TokenKind.Substitution, source, references, null, null, paragraph, hasOtherContent, isPlain);
+        return new(TokenKind.Substitution, source, references, null, hasOtherContent, isPlain);
     }
 
     // A "plain" substitution is `{{ a.b.c }}` — just an OutputStatement wrapping a MemberExpression,
@@ -62,12 +62,12 @@ public static class TokenScanner
                    };
     }
 
-    static Token ParseBlockTag(string source, string paragraph, bool hasOtherContent)
+    static Token ParseBlockTag(string source, bool hasOtherContent)
     {
         var match = blockTagRegex.Match(source);
         if (!match.Success)
         {
-            return new(TokenKind.UnknownBlock, source, [], null, null, paragraph, hasOtherContent);
+            return new(TokenKind.UnknownBlock, source, [], null, hasOtherContent);
         }
 
         var tag = match.Groups["tag"].Value;
@@ -76,42 +76,42 @@ public static class TokenScanner
         switch (tag)
         {
             case "for":
-                return BuildForTag(source, expression, paragraph, hasOtherContent);
+                return BuildForTag(source, expression, hasOtherContent);
 
             case "endfor":
-                return new(TokenKind.ForClose, source, [], null, null, paragraph, hasOtherContent);
+                return new(TokenKind.ForClose, source, [], null, hasOtherContent);
 
             case "if":
-                return BuildConditional(TokenKind.IfOpen, source, expression, paragraph, hasOtherContent);
+                return BuildConditional(TokenKind.IfOpen, source, expression, hasOtherContent);
 
             case "elsif":
             case "elseif":
-                return BuildConditional(TokenKind.ElsIf, source, expression, paragraph, hasOtherContent);
+                return BuildConditional(TokenKind.ElsIf, source, expression, hasOtherContent);
 
             case "else":
-                return new(TokenKind.Else, source, [], null, null, paragraph, hasOtherContent);
+                return new(TokenKind.Else, source, [], null, hasOtherContent);
 
             case "endif":
-                return new(TokenKind.IfClose, source, [], null, null, paragraph, hasOtherContent);
+                return new(TokenKind.IfClose, source, [], null, hasOtherContent);
 
             default:
-                return new(TokenKind.UnknownBlock, source, [], null, null, paragraph, hasOtherContent);
+                return new(TokenKind.UnknownBlock, source, [], null, hasOtherContent);
         }
     }
 
-    static Token BuildForTag(string source, string? expression, string paragraph, bool hasOtherContent)
+    static Token BuildForTag(string source, string? expression, bool hasOtherContent)
     {
         if (expression == null)
         {
-            return new(TokenKind.UnknownBlock, source, [], null, null, paragraph, hasOtherContent);
+            return new(TokenKind.UnknownBlock, source, [], null, hasOtherContent);
         }
 
         // Wrap the tag so Fluid yields a real ForStatement. We can then read the loop variable
-        // (Identifier) and source expression directly off the AST instead of regex-parsing them.
+        // (Identifier) directly off the AST instead of regex-parsing it.
         var liquid = $"{{% for {expression} %}}{{% endfor %}}";
         if (!parser.TryParse(liquid, out var template, out _))
         {
-            return new(TokenKind.UnknownBlock, source, [], null, null, paragraph, hasOtherContent);
+            return new(TokenKind.UnknownBlock, source, [], null, hasOtherContent);
         }
 
         var forStatement = ((FluidTemplate)template).Statements
@@ -119,24 +119,24 @@ public static class TokenScanner
             .FirstOrDefault();
         if (forStatement == null)
         {
-            return new(TokenKind.UnknownBlock, source, [], null, null, paragraph, hasOtherContent);
+            return new(TokenKind.UnknownBlock, source, [], null, hasOtherContent);
         }
 
         var references = IdentifierVisitor.Collect(template);
-        return new(TokenKind.ForOpen, source, references, forStatement.Identifier, expression, paragraph, hasOtherContent);
+        return new(TokenKind.ForOpen, source, references, forStatement.Identifier, hasOtherContent);
     }
 
-    static Token BuildConditional(TokenKind kind, string source, string? expression, string paragraph, bool hasOtherContent)
+    static Token BuildConditional(TokenKind kind, string source, string? expression, bool hasOtherContent)
     {
         if (expression == null)
         {
-            return new(TokenKind.UnknownBlock, source, [], null, null, paragraph, hasOtherContent);
+            return new(TokenKind.UnknownBlock, source, [], null, hasOtherContent);
         }
 
         var liquid = $"{{% if {expression} %}}{{% endif %}}";
         if (!parser.TryParse(liquid, out var template, out _))
         {
-            return new(TokenKind.UnknownBlock, source, [], null, null, paragraph, hasOtherContent);
+            return new(TokenKind.UnknownBlock, source, [], null, hasOtherContent);
         }
 
         var ifStatement = ((FluidTemplate)template).Statements
@@ -144,10 +144,10 @@ public static class TokenScanner
             .FirstOrDefault();
         if (ifStatement == null)
         {
-            return new(TokenKind.UnknownBlock, source, [], null, null, paragraph, hasOtherContent);
+            return new(TokenKind.UnknownBlock, source, [], null, hasOtherContent);
         }
 
         var references = IdentifierVisitor.Collect(template);
-        return new(kind, source, references, null, null, paragraph, hasOtherContent);
+        return new(kind, source, references, null, hasOtherContent);
     }
 }

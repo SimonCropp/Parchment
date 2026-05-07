@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="ProjectDefaults" PrivateAssets="all" />
     <ProjectReference Include="..\Parchment\Parchment.csproj" />
     <ProjectReference Include="..\ParchmentModel\ParchmentModel.csproj" />
   </ItemGroup>
