@@ -84,8 +84,8 @@ static class Anchors
                     }
                 }
                 else if (child is BookmarkEnd {Id.Value: { } endId} end &&
-                         ids is { } captured &&
-                         captured.Contains(endId))
+                         ids != null &&
+                         ids.Contains(endId))
                 {
                     (ends ??= []).Add(end);
                 }
