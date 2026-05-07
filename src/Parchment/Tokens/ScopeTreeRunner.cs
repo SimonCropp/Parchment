@@ -281,8 +281,7 @@ class ScopeTreeRunner(
         // inside `{% for line in Lines %}`) won't match because the map is keyed on paths from
         // the root model only — they fall through to normal Fluid evaluation.
         var reference = site.References[0];
-        var dottedPath = string.Join('.', reference.Segments);
-        if (!excelsiorTables.TryGet(dottedPath, out var entry))
+        if (!excelsiorTables.TryGet(reference.Dotted, out var entry))
         {
             return null;
         }
@@ -305,8 +304,7 @@ class ScopeTreeRunner(
         }
 
         var reference = site.References[0];
-        var dottedPath = string.Join('.', reference.Segments);
-        if (!stringLists.TryGet(dottedPath, out var entry))
+        if (!stringLists.TryGet(reference.Dotted, out var entry))
         {
             return null;
         }
@@ -354,8 +352,7 @@ class ScopeTreeRunner(
         }
 
         var reference = site.References[0];
-        var dottedPath = string.Join('.', reference.Segments);
-        if (!formats.TryGet(dottedPath, out var entry))
+        if (!formats.TryGet(reference.Dotted, out var entry))
         {
             return null;
         }

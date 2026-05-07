@@ -42,8 +42,7 @@ static class ExcelsiorTokenValidator
                     continue;
                 }
 
-                var dottedPath = string.Join('.', token.References[0].Segments);
-                if (!excelsiorTables.TryGet(dottedPath, out _))
+                if (!excelsiorTables.TryGet(token.References[0].Dotted, out _))
                 {
                     continue;
                 }

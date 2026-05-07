@@ -33,8 +33,7 @@ static class FormatTokenValidator
                     continue;
                 }
 
-                var dottedPath = string.Join('.', token.References[0].Segments);
-                if (!formats.TryGet(dottedPath, out var entry))
+                if (!formats.TryGet(token.References[0].Dotted, out var entry))
                 {
                     continue;
                 }
