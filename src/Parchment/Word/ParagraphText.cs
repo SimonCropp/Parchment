@@ -19,17 +19,39 @@ class ParagraphText
 
     public static ParagraphText Build(Paragraph paragraph)
     {
-        var spans = new List<TextSpan>();
-        var builder = new StringBuilder();
+        // Fast path: most paragraphs (especially loop-body paragraphs) have ≤1 Text descendant.
+        // Track the first one in locals; only allocate StringBuilder when a second appears.
+        // Skips both the StringBuilder allocation and the trailing ToString() in the common case,
+        // and reuses text.Text directly as innerText.
+        var spans = new List<TextSpan>(4);
+        StringBuilder? builder = null;
+        string? singleValue = null;
+
         foreach (var text in paragraph.Descendants<Text>())
         {
-            var offset = builder.Length;
             var value = text.Text;
+            var offset = builder?.Length ?? singleValue?.Length ?? 0;
             spans.Add(new(offset, value.Length, text));
-            builder.Append(value);
+
+            if (builder != null)
+            {
+                builder.Append(value);
+            }
+            else if (singleValue == null)
+            {
+                singleValue = value;
+            }
+            else
+            {
+                builder = new(singleValue.Length + value.Length);
+                builder.Append(singleValue);
+                builder.Append(value);
+                singleValue = null;
+            }
         }
 
-        return new(spans, builder.ToString());
+        var innerText = builder?.ToString() ?? singleValue ?? string.Empty;
+        return new(spans, innerText);
     }
 
     /// <summary>
@@ -122,4 +144,4 @@ class ParagraphText
     readonly record struct SpanRef(int index);
 }
 
-sealed record TextSpan(int Offset, int Length, Text Text);
+readonly record struct TextSpan(int Offset, int Length, Text Text);
