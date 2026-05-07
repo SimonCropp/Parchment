@@ -570,8 +570,7 @@ class ScopeTreeRunner(
     {
         foreach (var child in paragraph.ChildElements)
         {
-            if (child is BookmarkStart start &&
-                start.Name?.Value is { } name &&
+            if (child is BookmarkStart {Name.Value: { } name} &&
                 name.StartsWith(Anchors.Prefix, StringComparison.Ordinal))
             {
                 anchorMap[name] = paragraph;
