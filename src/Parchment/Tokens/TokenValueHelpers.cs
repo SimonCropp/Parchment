@@ -32,7 +32,7 @@ public static class TokenValueHelpers
         return hostStyle;
     }
 
-    static Paragraph BuildListParagraph(string text, int numId, int ilvl, string pStyle)
+    static Paragraph BuildListParagraph(CharSpan text, int numId, int ilvl, string pStyle)
     {
         var paragraph = new Paragraph();
         var props = new ParagraphProperties
