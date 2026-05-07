@@ -138,6 +138,43 @@ public class FormatAttributeTests
     }
 
     [Test]
+    public async Task RenderMarkdownWithNestedHtml()
+    {
+        #region MarkdownWithHtmlUsage
+        var templatePath = Path.Combine(ScenarioPath("markdown-with-html"), "input.docx");
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<MarkdownDoc>("markdown-with-html", templatePath);
+
+        var model = new MarkdownDoc
+        {
+            Title = "Report",
+            Body = """
+                # Heading
+
+                Some **bold** markdown with an <em>inline HTML</em> tag.
+
+                <div>
+                  <p>This is an <strong>HTML block</strong> nested inside markdown.</p>
+                </div>
+
+                Back to *markdown* after the HTML block.
+                """
+        };
+
+        using var stream = new MemoryStream();
+        await store.Render("markdown-with-html", model, stream);
+        #endregion
+
+        var settings = new VerifySettings();
+        settings.UseDirectory(ScenarioPath("markdown-with-html"));
+        settings.UseFileName("output");
+
+        stream.Position = 0;
+        await Verify(stream, "docx", settings);
+    }
+
+    [Test]
     public async Task StringSyntaxHtmlIsEquivalentToHtmlAttribute()
     {
         using var template = DocxTemplateBuilder.Build("{{ Body }}");
