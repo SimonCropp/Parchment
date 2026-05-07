@@ -41,16 +41,16 @@ static class XmlCharSanitizer
         return list.ToArray();
     }
 
-    public static string Strip(string value)
+    public static CharSpan Strip(CharSpan value)
     {
         if (value.Length == 0)
         {
             return value;
         }
 
-        // Fast path: vectorized scan. If no char in the string falls in the inspection set,
-        // the value is guaranteed XML-valid and is returned as-is — no allocation.
-        var firstSuspect = value.AsSpan().IndexOfAny(needsInspection);
+        // Fast path: vectorized scan. If no char falls in the inspection set, the value
+        // is guaranteed XML-valid and is returned as-is — the same span, no allocation.
+        var firstSuspect = value.IndexOfAny(needsInspection);
         if (firstSuspect < 0)
         {
             return value;
@@ -62,7 +62,7 @@ static class XmlCharSanitizer
         return StripSlow(value, firstSuspect);
     }
 
-    static string StripSlow(string value, int startAt)
+    static CharSpan StripSlow(CharSpan value, int startAt)
     {
         // builder stays null when no actually-invalid char is encountered. Reachable not only
         // for invalid input but also when the fast-path's IndexOfAny matched a surrogate that
@@ -101,12 +101,12 @@ static class XmlCharSanitizer
 
             if (valid)
             {
-                builder?.Append(value, i, advance);
+                builder?.Append(value.Slice(i, advance));
             }
             else if (builder == null)
             {
                 builder = new(value.Length);
-                builder.Append(value, 0, i);
+                builder.Append(value[..i]);
             }
 
             i += advance;

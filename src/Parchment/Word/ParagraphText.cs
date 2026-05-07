@@ -60,7 +60,7 @@ class ParagraphText
     /// </summary>
     public void Replace(int offset, int length, string replacement)
     {
-        replacement = XmlCharSanitizer.Strip(replacement);
+        var cleaned = XmlCharSanitizer.Strip(replacement);
 
         if (length < 0)
         {
@@ -83,7 +83,7 @@ class ParagraphText
         {
             var only = spans[0];
             var source = only.Text.Text;
-            only.Text.Text = string.Concat(source.AsSpan(0, offset), replacement, source.AsSpan(offset + length));
+            only.Text.Text = string.Concat(source.AsSpan(0, offset), cleaned, source.AsSpan(offset + length));
             only.Text.Space = SpaceProcessingModeValues.Preserve;
             return;
         }
@@ -94,7 +94,7 @@ class ParagraphText
 
         if (first.index == last.index)
         {
-            ReplaceWithin(first, offset, length, replacement);
+            ReplaceWithin(first, offset, length, cleaned);
             return;
         }
 
@@ -102,7 +102,7 @@ class ParagraphText
         var firstSpan = spans[first.index];
         var localStart = offset - firstSpan.Offset;
         var firstText = firstSpan.Text.Text;
-        var newFirstText = string.Concat(firstText.AsSpan(0, localStart), replacement);
+        var newFirstText = string.Concat(firstText.AsSpan(0, localStart), cleaned);
         firstSpan.Text.Text = newFirstText;
         firstSpan.Text.Space = SpaceProcessingModeValues.Preserve;
 
@@ -122,7 +122,7 @@ class ParagraphText
         }
     }
 
-    void ReplaceWithin(SpanRef reference, int offset, int length, string replacement)
+    void ReplaceWithin(SpanRef reference, int offset, int length, CharSpan replacement)
     {
         var span = spans[reference.index];
         var local = offset - span.Offset;

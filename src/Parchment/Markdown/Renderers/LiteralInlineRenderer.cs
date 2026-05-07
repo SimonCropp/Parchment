@@ -3,14 +3,14 @@ class LiteralInlineRenderer :
 {
     protected override void Write(OpenXmlMarkdownRenderer renderer, LiteralInline inline)
     {
-        var text = inline.Content.ToString();
-        if (text.Length == 0)
+        var content = inline.Content.AsSpan();
+        if (content.Length == 0)
         {
             return;
         }
 
         var run = new Run(
-            new Text(XmlCharSanitizer.Strip(text))
+            new Text(XmlCharSanitizer.Strip(content).ToString())
             {
                 Space = SpaceProcessingModeValues.Preserve
             });

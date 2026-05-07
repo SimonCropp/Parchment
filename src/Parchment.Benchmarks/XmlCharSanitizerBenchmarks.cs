@@ -27,26 +27,26 @@ public class XmlCharSanitizerBenchmarks
     }
 
     [Benchmark]
-    public string ShortAscii_FastPath() =>
-        XmlCharSanitizer.Strip(shortAscii);
+    public int ShortAscii_FastPath() =>
+        XmlCharSanitizer.Strip(shortAscii).Length;
 
     [Benchmark]
-    public string ShortUnicodeBmp_FastPath() =>
-        XmlCharSanitizer.Strip(shortUnicodeBmp);
+    public int ShortUnicodeBmp_FastPath() =>
+        XmlCharSanitizer.Strip(shortUnicodeBmp).Length;
 
     [Benchmark]
-    public string ShortWithControl_SlowPath() =>
-        XmlCharSanitizer.Strip(shortWithControl);
+    public int ShortWithControl_SlowPath() =>
+        XmlCharSanitizer.Strip(shortWithControl).Length;
 
     [Benchmark]
-    public string LongAscii_FastPath() =>
-        XmlCharSanitizer.Strip(longAscii);
+    public int LongAscii_FastPath() =>
+        XmlCharSanitizer.Strip(longAscii).Length;
 
     [Benchmark]
-    public string LongWithControl_SlowPath() =>
-        XmlCharSanitizer.Strip(longWithControl);
+    public int LongWithControl_SlowPath() =>
+        XmlCharSanitizer.Strip(longWithControl).Length;
 
     [Benchmark]
-    public string LongWithSurrogatePair_SlowPath() =>
-        XmlCharSanitizer.Strip(longWithSurrogatePair);
+    public int LongWithSurrogatePair_SlowPath() =>
+        XmlCharSanitizer.Strip(longWithSurrogatePair).Length;
 }

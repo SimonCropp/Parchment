@@ -159,11 +159,11 @@ class TableRenderer :
         }
 
         var paragraph = new Paragraph();
-        var text = literal.Content.ToString();
-        if (text.Length > 0)
+        var content = literal.Content.AsSpan();
+        if (content.Length > 0)
         {
             var run = new Run(
-                new Text(XmlCharSanitizer.Strip(text))
+                new Text(XmlCharSanitizer.Strip(content).ToString())
                 {
                     Space = SpaceProcessingModeValues.Preserve
                 });

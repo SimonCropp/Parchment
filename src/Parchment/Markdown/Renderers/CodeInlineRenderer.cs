@@ -10,7 +10,7 @@ class CodeInlineRenderer :
                     Ascii = "Consolas",
                     HighAnsi = "Consolas"
                 }),
-            new Text(XmlCharSanitizer.Strip(inline.Content))
+            new Text(XmlCharSanitizer.Strip(inline.ContentSpan).ToString())
             {
                 Space = SpaceProcessingModeValues.Preserve
             });
