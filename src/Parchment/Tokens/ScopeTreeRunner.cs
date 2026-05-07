@@ -204,23 +204,30 @@ class ScopeTreeRunner(
             _ => []
         };
 
-    async Task<object> EvaluateTokenAsync(DocxTokenSite site, Paragraph host, int siblingCount)
+    /// <summary>
+    /// Splits the synchronous fast path from async machinery: the dispatch checks (Excelsior /
+    /// Format / StringList) are pure-sync, and the dominant Fluid path (MemberExpression member
+    /// access on a POCO) completes synchronously. Stays out of an async state machine entirely
+    /// when EvaluateAsync returns a synchronously-completed ValueTask. Saves the per-token Task
+    /// allocation on the hot loop-body path.
+    /// </summary>
+    ValueTask<object> EvaluateTokenAsync(DocxTokenSite site, Paragraph host, int siblingCount)
     {
         try
         {
             if (TryResolveExcelsiorTable(site) is { } excelsiorToken)
             {
-                return excelsiorToken;
+                return new(excelsiorToken);
             }
 
             if (TryResolveFormatted(site) is { } formatted)
             {
-                return formatted;
+                return new(formatted);
             }
 
             if (TryResolveStringList(site, host, siblingCount) is { } stringList)
             {
-                return stringList;
+                return new(stringList);
             }
 
             // Walk the parsed FluidTemplate to its OutputStatement and evaluate the underlying
@@ -231,16 +238,63 @@ class ScopeTreeRunner(
             if (statements.Count > 0 &&
                 statements[0] is OutputStatement output)
             {
-                var fluidValue = await output.Expression.EvaluateAsync(context);
-                var underlying = fluidValue.ToObjectValue();
-                if (underlying is TokenValue tokenValue)
+                var pending = output.Expression.EvaluateAsync(context);
+                if (pending.IsCompletedSuccessfully)
                 {
-                    return tokenValue;
+                    return new(InterpretFluidValue(pending.Result));
                 }
 
-                return fluidValue.ToStringValue();
+                return AwaitFluidValue(pending, host, site);
             }
 
+            return RenderFullTemplateAsync(site, host);
+        }
+        catch (ParchmentException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw WrapException(exception, host, site);
+        }
+    }
+
+    static object InterpretFluidValue(FluidValue fluidValue)
+    {
+        // TokenValue is always wrapped in ObjectValue (see Filters.Markdown / BulletList /
+        // NumberedList and TokenValueHelpers). Skip ToObjectValue for primitive FluidValues
+        // (StringValue, NumberValue, BooleanValue, ArrayValue, DateTimeValue, ...) — that
+        // path boxes numerics to object before the type test, which the common-case
+        // text-token path doesn't need.
+        if (fluidValue is ObjectValue &&
+            fluidValue.ToObjectValue() is TokenValue tokenValue)
+        {
+            return tokenValue;
+        }
+
+        return fluidValue.ToStringValue();
+    }
+
+    async ValueTask<object> AwaitFluidValue(ValueTask<FluidValue> pending, Paragraph host, DocxTokenSite site)
+    {
+        try
+        {
+            return InterpretFluidValue(await pending);
+        }
+        catch (ParchmentException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw WrapException(exception, host, site);
+        }
+    }
+
+    async ValueTask<object> RenderFullTemplateAsync(DocxTokenSite site, Paragraph host)
+    {
+        try
+        {
             await using var writer = new StringWriter();
             await site.Template.RenderAsync(writer, System.Text.Encodings.Web.HtmlEncoder.Default, context);
             return writer.ToString();
@@ -251,15 +305,18 @@ class ScopeTreeRunner(
         }
         catch (Exception exception)
         {
-            throw new ParchmentRenderException(
-                templateName,
-                exception.Message,
-                partUri,
-                Snippet(host, site),
-                site.Source,
-                inner: exception);
+            throw WrapException(exception, host, site);
         }
     }
+
+    ParchmentRenderException WrapException(Exception exception, Paragraph host, DocxTokenSite site) =>
+        new(
+            templateName,
+            exception.Message,
+            partUri,
+            Snippet(host, site),
+            site.Source,
+            inner: exception);
 
     TokenValue? TryResolveExcelsiorTable(DocxTokenSite site)
     {
@@ -275,8 +332,7 @@ class ScopeTreeRunner(
         // inside `{% for line in Lines %}`) won't match because the map is keyed on paths from
         // the root model only — they fall through to normal Fluid evaluation.
         var reference = site.References[0];
-        var dottedPath = string.Join('.', reference.Segments);
-        if (!excelsiorTables.TryGet(dottedPath, out var entry))
+        if (!excelsiorTables.TryGet(reference.Dotted, out var entry))
         {
             return null;
         }
@@ -299,8 +355,7 @@ class ScopeTreeRunner(
         }
 
         var reference = site.References[0];
-        var dottedPath = string.Join('.', reference.Segments);
-        if (!stringLists.TryGet(dottedPath, out var entry))
+        if (!stringLists.TryGet(reference.Dotted, out var entry))
         {
             return null;
         }
@@ -348,8 +403,7 @@ class ScopeTreeRunner(
         }
 
         var reference = site.References[0];
-        var dottedPath = string.Join('.', reference.Segments);
-        if (!formats.TryGet(dottedPath, out var entry))
+        if (!formats.TryGet(reference.Dotted, out var entry))
         {
             return null;
         }
@@ -404,6 +458,24 @@ class ScopeTreeRunner(
         // loop the scratch is empty again, so plain reuse is safe.
         var scratch = new Body();
 
+        // Construct the inner runner once and reuse across iterations. cloneAnchors is passed
+        // by reference and re-populated per iteration, so the runner sees the fresh per-iteration
+        // anchor map without needing to be re-allocated. ApplyStructural clears the runner's
+        // structuralReplacements list at the end of each iteration.
+        var clonedRunner = new ScopeTreeRunner(
+            templateName,
+            partUri,
+            cloneAnchors,
+            context,
+            mainPart,
+            rootModel,
+            excelsiorTables,
+            formats,
+            stringLists,
+            numberingState,
+            styles,
+            imagePolicies);
+
         foreach (var item in items)
         {
             context.SetValue(loop.LoopVariable, item);
@@ -422,19 +494,6 @@ class ScopeTreeRunner(
                 CollectAnchors(clone, cloneAnchors);
             }
 
-            var clonedRunner = new ScopeTreeRunner(
-                templateName,
-                partUri,
-                cloneAnchors,
-                context,
-                mainPart,
-                rootModel,
-                excelsiorTables,
-                formats,
-                stringLists,
-                numberingState,
-                styles,
-                imagePolicies);
             // Reuse the original scope tree directly. cloneAnchors is keyed on the same anchor
             // names the registration-time tree references, so no per-iteration tree rebuild
             // (Remap) is needed. Multiple iterations leave duplicate-named bookmarks in the
