@@ -548,21 +548,33 @@ class ScopeTreeRunner(
     /// </summary>
     static void CollectAnchors(OpenXmlElement clone, Dictionary<string, Paragraph> anchorMap)
     {
-        foreach (var start in clone.Descendants<BookmarkStart>())
+        // Parchment-prefixed bookmarks are always direct children of a Paragraph (see
+        // Anchors.InsertAfterProperties). Walk Paragraphs and scan their direct children
+        // instead of Descendants<BookmarkStart>() over the full subtree — the descendant
+        // enumerator allocates and walks every non-bookmark element, while direct-child
+        // iteration touches only ParagraphProperties + bookmark + run-level descendants of
+        // the Paragraph element directly.
+        if (clone is Paragraph paragraph)
         {
-            var name = start.Name?.Value;
-            if (name == null ||
-                !name.StartsWith(Anchors.Prefix, StringComparison.Ordinal))
-            {
-                continue;
-            }
+            CollectFromParagraph(paragraph, anchorMap);
+            return;
+        }
 
-            // Parchment-prefixed bookmarks are inserted as direct paragraph children
-            // (see Anchors.InsertAfterProperties), so a single Parent cast beats walking
-            // the Ancestors chain.
-            if (start.Parent is Paragraph host)
+        foreach (var p in clone.Descendants<Paragraph>())
+        {
+            CollectFromParagraph(p, anchorMap);
+        }
+    }
+
+    static void CollectFromParagraph(Paragraph paragraph, Dictionary<string, Paragraph> anchorMap)
+    {
+        foreach (var child in paragraph.ChildElements)
+        {
+            if (child is BookmarkStart start &&
+                start.Name?.Value is { } name &&
+                name.StartsWith(Anchors.Prefix, StringComparison.Ordinal))
             {
-                anchorMap[name] = host;
+                anchorMap[name] = paragraph;
             }
         }
     }

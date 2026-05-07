@@ -47,20 +47,20 @@ static class Anchors
 
     public static Dictionary<string, Paragraph> BuildMap(OpenXmlCompositeElement root)
     {
+        // Parchment-prefixed bookmarks are always direct children of a Paragraph (see
+        // InsertAfterProperties). Walk Paragraphs and scan direct children rather than
+        // Descendants<BookmarkStart>() over the full subtree.
         var map = new Dictionary<string, Paragraph>(StringComparer.Ordinal);
-        foreach (var bookmarkStart in root.Descendants<BookmarkStart>())
+        foreach (var paragraph in root.Descendants<Paragraph>())
         {
-            var name = bookmarkStart.Name?.Value;
-            if (name == null || !name.StartsWith(Prefix, StringComparison.Ordinal))
+            foreach (var child in paragraph.ChildElements)
             {
-                continue;
-            }
-
-            // Parchment-prefixed bookmarks are inserted as direct paragraph children
-            // (see InsertAfterProperties), so a single Parent cast is sufficient.
-            if (bookmarkStart.Parent is Paragraph host)
-            {
-                map[name] = host;
+                if (child is BookmarkStart start &&
+                    start.Name?.Value is { } name &&
+                    name.StartsWith(Prefix, StringComparison.Ordinal))
+                {
+                    map[name] = paragraph;
+                }
             }
         }
 
@@ -69,38 +69,45 @@ static class Anchors
 
     public static void StripAll(OpenXmlCompositeElement root)
     {
-        var ids = new HashSet<string>(StringComparer.Ordinal);
-        var starts = new List<BookmarkStart>();
-        foreach (var start in root.Descendants<BookmarkStart>())
+        // Single Descendants<Paragraph> pass instead of two Descendants<BookmarkStart> +
+        // Descendants<BookmarkEnd> walks over the full subtree. For a fully-expanded body
+        // (post-loop), the original two-walk pattern was the dominant non-Save cost in the
+        // per-render path (~13% of total at 1000 loop iterations).
+        //
+        // Parchment bookmarks are inserted Start-then-End in the same paragraph
+        // (InsertAfterProperties). Document order therefore guarantees a Start is encountered
+        // before its matching End, so the single-pass id-set works correctly.
+        List<BookmarkStart>? starts = null;
+        List<BookmarkEnd>? ends = null;
+        HashSet<string>? ids = null;
+        foreach (var paragraph in root.Descendants<Paragraph>())
         {
-            if (start.Name?.Value?.StartsWith(Prefix, StringComparison.Ordinal) != true)
+            foreach (var child in paragraph.ChildElements)
             {
-                continue;
-            }
-
-            starts.Add(start);
-            var id = start.Id?.Value;
-            if (id != null)
-            {
-                ids.Add(id);
+                if (child is BookmarkStart start &&
+                    start.Name?.Value is { } name &&
+                    name.StartsWith(Prefix, StringComparison.Ordinal))
+                {
+                    (starts ??= []).Add(start);
+                    var id = start.Id?.Value;
+                    if (id != null)
+                    {
+                        (ids ??= new(StringComparer.Ordinal)).Add(id);
+                    }
+                }
+                else if (child is BookmarkEnd end &&
+                         end.Id?.Value is { } endId &&
+                         ids is { } captured &&
+                         captured.Contains(endId))
+                {
+                    (ends ??= []).Add(end);
+                }
             }
         }
 
-        if (starts.Count == 0)
+        if (starts == null)
         {
             return;
-        }
-
-        // Walk BookmarkEnds once and collect those whose id matches any stripped start —
-        // avoids the O(N²) per-start `Descendants<BookmarkEnd>().FirstOrDefault(...)` scan.
-        var ends = new List<BookmarkEnd>();
-        foreach (var end in root.Descendants<BookmarkEnd>())
-        {
-            var id = end.Id?.Value;
-            if (id != null && ids.Contains(id))
-            {
-                ends.Add(end);
-            }
         }
 
         foreach (var start in starts)
@@ -108,9 +115,12 @@ static class Anchors
             start.Remove();
         }
 
-        foreach (var end in ends)
+        if (ends != null)
         {
-            end.Remove();
+            foreach (var end in ends)
+            {
+                end.Remove();
+            }
         }
     }
 
