@@ -2,6 +2,7 @@ class OpenXmlMarkdownRenderer :
     RendererBase
 {
     readonly Stack<ContainerState> stack = new();
+    readonly Stack<ContainerState> pool = new();
 
     public OpenXmlMarkdownRenderer(MainDocumentPart mainPart, WordNumberingState numbering, ImagePolicies imagePolicies, int headingOffset = 0)
     {
@@ -51,10 +52,22 @@ class OpenXmlMarkdownRenderer :
         stack.Peek().Blocks;
 
     internal void PushContainer() =>
-        stack.Push(new());
+        stack.Push(pool.Count > 0 ? pool.Pop() : new());
 
     internal ContainerState PopContainer() =>
         stack.Pop();
+
+    /// <summary>
+    /// Return a popped <see cref="ContainerState"/> to the pool for reuse. Lists are cleared
+    /// so subsequent <see cref="PushContainer"/> calls receive an empty state. For high-cell
+    /// markdown tables this avoids one ContainerState + two List allocations per cell.
+    /// </summary>
+    internal void ReleaseContainer(ContainerState state)
+    {
+        state.Blocks.Clear();
+        state.CurrentRuns.Clear();
+        pool.Push(state);
+    }
 
     internal void FlushParagraph(ParagraphProperties? properties = null)
     {

@@ -232,8 +232,14 @@ class ScopeTreeRunner(
                 statements[0] is OutputStatement output)
             {
                 var fluidValue = await output.Expression.EvaluateAsync(context);
-                var underlying = fluidValue.ToObjectValue();
-                if (underlying is TokenValue tokenValue)
+
+                // TokenValue is always wrapped in ObjectValue (see Filters.Markdown / BulletList /
+                // NumberedList and TokenValueHelpers). Skip ToObjectValue for primitive FluidValues
+                // (StringValue, NumberValue, BooleanValue, ArrayValue, DateTimeValue, ...) — that
+                // path boxes numerics to object before the type test, which the common-case
+                // text-token path doesn't need.
+                if (fluidValue is ObjectValue &&
+                    fluidValue.ToObjectValue() is TokenValue tokenValue)
                 {
                     return tokenValue;
                 }
@@ -404,6 +410,24 @@ class ScopeTreeRunner(
         // loop the scratch is empty again, so plain reuse is safe.
         var scratch = new Body();
 
+        // Construct the inner runner once and reuse across iterations. cloneAnchors is passed
+        // by reference and re-populated per iteration, so the runner sees the fresh per-iteration
+        // anchor map without needing to be re-allocated. ApplyStructural clears the runner's
+        // structuralReplacements list at the end of each iteration.
+        var clonedRunner = new ScopeTreeRunner(
+            templateName,
+            partUri,
+            cloneAnchors,
+            context,
+            mainPart,
+            rootModel,
+            excelsiorTables,
+            formats,
+            stringLists,
+            numberingState,
+            styles,
+            imagePolicies);
+
         foreach (var item in items)
         {
             context.SetValue(loop.LoopVariable, item);
@@ -422,19 +446,6 @@ class ScopeTreeRunner(
                 CollectAnchors(clone, cloneAnchors);
             }
 
-            var clonedRunner = new ScopeTreeRunner(
-                templateName,
-                partUri,
-                cloneAnchors,
-                context,
-                mainPart,
-                rootModel,
-                excelsiorTables,
-                formats,
-                stringLists,
-                numberingState,
-                styles,
-                imagePolicies);
             // Reuse the original scope tree directly. cloneAnchors is keyed on the same anchor
             // names the registration-time tree references, so no per-iteration tree rebuild
             // (Remap) is needed. Multiple iterations leave duplicate-named bookmarks in the

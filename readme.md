@@ -1325,8 +1325,8 @@ AMD Ryzen 9 5900X 3.70GHz, 1 CPU, 24 logical and 12 physical cores
 | Method | Mean | Allocated |
 |---|---|---|
 | RegisterFromMemoryStream | 0.24 ms | 194 KB |
-| RegisterFromBufferedStream | 0.24 ms | 192 KB |
-| RegisterFromFilePath | 0.31 ms | 193 KB |
+| RegisterFromBufferedStream | 0.25 ms | 193 KB |
+| RegisterFromFilePath | 0.33 ms | 193 KB |
 
 
 ### Rendering
@@ -1335,12 +1335,12 @@ ItemCount varies the number of loop iterations (line items for docx, findings/ac
 
 | Method | ItemCount | Mean | Allocated |
 |---|---|---|---|
-| DocxTemplate | 3 | 0.23 ms | 185 KB |
-| MarkdownTemplate | 3 | 0.50 ms | 373 KB |
-| DocxTemplate | 50 | 0.40 ms | 354 KB |
-| MarkdownTemplate | 50 | 1.03 ms | 781 KB |
-| DocxTemplate | 500 | 2.34 ms | 2,024 KB |
-| MarkdownTemplate | 500 | 6.99 ms | 4,634 KB |
+| DocxTemplate | 3 | 0.23 ms | 184 KB |
+| MarkdownTemplate | 3 | 0.52 ms | 374 KB |
+| DocxTemplate | 50 | 0.41 ms | 345 KB |
+| MarkdownTemplate | 50 | 1.07 ms | 786 KB |
+| DocxTemplate | 500 | 2.13 ms | 1,938 KB |
+| MarkdownTemplate | 500 | 6.65 ms | 4,691 KB |
 
 
 ### Loops
@@ -1349,9 +1349,9 @@ A pure-loop docx template (`{% for line in Lines %}{{ line.Description }}: {{ li
 
 | Method | LoopItems | Mean | Allocated |
 |---|---|---|---|
-| RenderLoop | 10 | 0.21 ms | 193 KB |
-| RenderLoop | 100 | 0.59 ms | 525 KB |
-| RenderLoop | 1000 | 4.21 ms | 3,825 KB |
+| RenderLoop | 10 | 0.21 ms | 191 KB |
+| RenderLoop | 100 | 0.54 ms | 508 KB |
+| RenderLoop | 1000 | 4.11 ms | 3,653 KB |
 
 Run benchmarks with:
 

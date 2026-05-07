@@ -142,6 +142,7 @@ class TableRenderer :
             tableCell.Append(block);
         }
 
+        renderer.ReleaseContainer(state);
         return tableCell;
     }
 }
