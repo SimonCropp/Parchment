@@ -52,7 +52,7 @@ sealed class FormatMap
                 }
 
                 var dottedPath = string.Join('.', nextSegments);
-                entries[dottedPath] = new(dottedPath, format.Value);
+                entries[dottedPath] = new(format.Value);
                 continue;
             }
 

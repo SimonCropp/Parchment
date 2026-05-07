@@ -32,23 +32,6 @@ static class ModelSymbolResolver
         }
     }
 
-    public static ITypeSymbol? ResolvePath(ITypeSymbol root, string[] segments)
-    {
-        var current = root;
-        foreach (var segment in segments)
-        {
-            var next = ResolveMember(current, segment);
-            if (next == null)
-            {
-                return null;
-            }
-
-            current = next;
-        }
-
-        return current;
-    }
-
     public static ITypeSymbol? TryGetElementType(ITypeSymbol type)
     {
         if (type is IArrayTypeSymbol array)

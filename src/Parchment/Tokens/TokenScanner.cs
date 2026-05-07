@@ -110,30 +110,40 @@ static class TokenScanner
                 source);
         }
 
-        var tag = tagMatch.Groups["tag"].Value;
-        var expression = tagMatch.Groups["expr"].Success ? tagMatch.Groups["expr"].Value.Trim() : null;
+        var tag = tagMatch.Groups["tag"].ValueSpan;
 
         switch (tag)
         {
             case "for":
-                return BuildForTag(source, expression, templateName, partUri);
+                return BuildForTag(source, GetExpression(tagMatch), templateName, partUri);
             case "endfor":
-                return new(BlockTagKind.EndFor, source, null, null, null, null, []);
+                return new(BlockTagKind.EndFor, source, null, null, null);
             case "if":
-                return BuildIfTag(source, expression, templateName, partUri);
+                return BuildIfTag(source, GetExpression(tagMatch), templateName, partUri);
             case "elsif":
             case "elseif":
-                return BuildElsifTag(source, expression, templateName, partUri);
+                return BuildElsifTag(source, GetExpression(tagMatch), templateName, partUri);
             case "else":
-                return new(BlockTagKind.Else, source, null, null, null, null, []);
+                return new(BlockTagKind.Else, source, null, null, null);
             case "endif":
-                return new(BlockTagKind.EndIf, source, null, null, null, null, []);
+                return new(BlockTagKind.EndIf, source, null, null, null);
             default:
                 throw new ParchmentRegistrationException(
                     templateName,
                     $"Unsupported block tag '{tag}'. Supported: for, endfor, if, elsif, else, endif",
                     partUri,
                     source);
+        }
+
+        static string? GetExpression(Match match)
+        {
+            var group = match.Groups["expr"];
+            if (group.Success)
+            {
+                return group.ValueSpan.Trim().ToString();
+            }
+
+            return null;
         }
     }
 
@@ -172,8 +182,7 @@ static class TokenScanner
                 source);
         }
 
-        var refs = IdentifierVisitor.Collect(template);
-        return new(BlockTagKind.For, source, expression, null, forStatement.Identifier, forStatement.Source, refs);
+        return new(BlockTagKind.For, source, null, forStatement.Identifier, forStatement.Source);
     }
 
     static BlockMarker BuildIfTag(string source, string? expression, string templateName, string partUri) =>
@@ -217,7 +226,6 @@ static class TokenScanner
                 source);
         }
 
-        var refs = IdentifierVisitor.Collect(template);
-        return new(kind, source, expression, ifStatement.Condition, null, null, refs);
+        return new(kind, source, ifStatement.Condition, null, null);
     }
 }

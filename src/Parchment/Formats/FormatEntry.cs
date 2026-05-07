@@ -1,1 +1,1 @@
-﻿sealed record FormatEntry(string DottedPath, FormatKind Kind);
+﻿sealed record FormatEntry(FormatKind Kind);

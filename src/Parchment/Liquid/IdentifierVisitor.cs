@@ -7,8 +7,6 @@ class IdentifierVisitor :
 {
     readonly List<IdentifierPath> paths = [];
 
-    public IReadOnlyList<IdentifierPath> Paths => paths;
-
     public static IReadOnlyList<IdentifierPath> Collect(IFluidTemplate template)
     {
         var visitor = new IdentifierVisitor();

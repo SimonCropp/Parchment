@@ -1,1 +1,1 @@
-sealed record ExcelsiorTableEntry(string DottedPath, Type ElementType, Func<object, object?> Getter);
+sealed record ExcelsiorTableEntry(Type ElementType, Func<object, object?> Getter);

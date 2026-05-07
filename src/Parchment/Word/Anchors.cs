@@ -7,16 +7,6 @@
 static class Anchors
 {
     public const string Prefix = "parchment-anchor-";
-    static long runtimeCounter;
-
-    /// <summary>
-    /// Generates a unique anchor name for runtime clones of registration-time bookmarks.
-    /// Uses a monotonic counter (rather than a fresh GUID per call) because anchors only need
-    /// uniqueness within the active document and are stripped before save — the counter is
-    /// dramatically cheaper than <c>Guid.NewGuid().ToString("N")</c> in tight loop iterations.
-    /// </summary>
-    public static string NextRuntimeName() =>
-        Prefix + Interlocked.Increment(ref runtimeCounter).ToString(CultureInfo.InvariantCulture);
 
     public static string EnsureOn(Paragraph paragraph)
     {

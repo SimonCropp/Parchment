@@ -53,7 +53,7 @@ sealed class StringListMap
             if (IsEnumerableOfString(underlying))
             {
                 var dottedPath = string.Join('.', nextSegments);
-                entries[dottedPath] = new(dottedPath, nextGetter);
+                entries[dottedPath] = new(nextGetter);
                 // Don't descend into a string-list leaf.
                 continue;
             }

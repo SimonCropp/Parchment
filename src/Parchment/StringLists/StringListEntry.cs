@@ -1,1 +1,1 @@
-sealed record StringListEntry(string DottedPath, Func<object, object?> Getter);
+sealed record StringListEntry(Func<object, object?> Getter);

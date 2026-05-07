@@ -52,7 +52,7 @@ sealed class ExcelsiorTableMap
                 }
 
                 var dottedPath = string.Join('.', nextSegments);
-                entries[dottedPath] = new(dottedPath, elementType, nextGetter);
+                entries[dottedPath] = new(elementType, nextGetter);
                 // Don't descend into the element type — collection items become Excelsior columns.
                 continue;
             }

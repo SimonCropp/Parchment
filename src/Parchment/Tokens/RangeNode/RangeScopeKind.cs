@@ -1,4 +1,0 @@
-enum RangeScopeKind
-{
-    Paragraph
-}
