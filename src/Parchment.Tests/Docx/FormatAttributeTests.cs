@@ -240,6 +240,65 @@ public class FormatAttributeTests
     }
 
     [Test]
+    public async Task MarkdownWithNestedHtml_RendersInlineAndBlockHtmlAsRealFormatting()
+    {
+        // Inline HTML tags (<em>, <strong>, ...) push/pop RunProperties via HtmlInlineRenderer so
+        // the enclosed text picks up Italic/Bold. Block HTML dispatches through OpenXmlHtml so
+        // <strong> inside a <div> becomes a real Bold run. Neither set of tags survives as
+        // literal text in the rendered docx.
+        using var template = DocxTemplateBuilder.Build("{{ Body }}");
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<MarkdownDoc>("md-nested-html", template);
+
+        var model = new MarkdownDoc
+        {
+            Title = "T",
+            Body = """
+                Some **bold** with an <em>inline italic</em> tag.
+
+                <div><p>Block <strong>HTML</strong> inside markdown.</p></div>
+
+                Tail.
+                """
+        };
+
+        using var stream = new MemoryStream();
+        await store.Render("md-nested-html", model, stream);
+        stream.Position = 0;
+
+        using var doc = WordprocessingDocument.Open(stream, false);
+        var body = doc.MainDocumentPart!.Document!.Body!;
+        var paragraphTexts = body.Elements<Paragraph>()
+            .Select(p => p.InnerText)
+            .Where(t => t.Length > 0)
+            .ToList();
+
+        await Assert.That(paragraphTexts).Contains("Some bold with an inline italic tag.");
+        await Assert.That(paragraphTexts).Contains("Block HTML inside markdown.");
+        await Assert.That(paragraphTexts).Contains("Tail.");
+
+        var bodyText = body.InnerText;
+        await Assert.That(bodyText).DoesNotContain("<em>");
+        await Assert.That(bodyText).DoesNotContain("</em>");
+        await Assert.That(bodyText).DoesNotContain("<strong>");
+        await Assert.That(bodyText).DoesNotContain("</strong>");
+
+        var bolds = body.Descendants<Run>()
+            .Where(r => r.RunProperties?.Bold is not null)
+            .Select(r => r.InnerText)
+            .ToList();
+        await Assert.That(bolds).Contains("bold");
+        await Assert.That(bolds).Contains("HTML");
+
+        var italics = body.Descendants<Run>()
+            .Where(r => r.RunProperties?.Italic is not null)
+            .Select(r => r.InnerText)
+            .ToList();
+        await Assert.That(italics).Contains("inline italic");
+    }
+
+    [Test]
     public async Task NonSoloMarkdown_InlineContent_SplicesIntoHostParagraph()
     {
         using var template = DocxTemplateBuilder.Build("Note: {{ Body }} (end)");
