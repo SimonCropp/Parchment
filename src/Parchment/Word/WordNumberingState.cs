@@ -140,8 +140,8 @@ class WordNumberingState(MainDocumentPart mainPart)
             PreviousParagraphProperties = new(
                 new Indentation
                 {
-                    Left = (720 + 360 * ilvl).ToString(),
-                    Hanging = "360"
+                    Left = (480 * (ilvl + 1)).ToString(),
+                    Hanging = "240"
                 }),
             NumberingSymbolRunProperties = new(
                 new RunFonts
@@ -163,8 +163,8 @@ class WordNumberingState(MainDocumentPart mainPart)
             PreviousParagraphProperties = new(
                 new Indentation
                 {
-                    Left = (720 + 360 * ilvl).ToString(),
-                    Hanging = "360"
+                    Left = (480 * (ilvl + 1)).ToString(),
+                    Hanging = "240"
                 })
         };
 }
