@@ -1,0 +1,14 @@
+<Project>
+  <!-- IntegrationTests consumes Parchment from the local ../nugets feed, but NuGet's global
+       packages folder is keyed on (name, version) — once $(USERPROFILE)/.nuget/packages/parchment/
+       is populated, the cached copy wins forever even when ../nugets/Parchment.<v>.nupkg is
+       rebuilt with new bits (e.g. an SG behavior change) under the same version. Wiping the
+       parchment folder before Restore forces NuGet to re-extract from the local feed every
+       build, so version bumps aren't required to invalidate the cache. -->
+  <Target Name="WipeParchmentNuGetCache" BeforeTargets="Restore">
+    <PropertyGroup>
+      <_ParchmentCacheDir>$([System.IO.Path]::Combine($(NuGetPackageRoot), 'parchment'))</_ParchmentCacheDir>
+    </PropertyGroup>
+    <RemoveDir Directories="$(_ParchmentCacheDir)" Condition="Exists('$(_ParchmentCacheDir)')" />
+  </Target>
+</Project>
