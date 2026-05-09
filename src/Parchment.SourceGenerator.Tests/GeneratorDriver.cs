@@ -81,6 +81,19 @@ static class GeneratorDriver
         return new PathAdditionalText(path);
     }
 
+    public static GeneratorDriverRunResult RunMarkdown(string userSource, string markdown, string fileName = "template.md")
+    {
+        var setup = CreateDriverWithFiles(
+            userSource,
+            (fileName, System.Text.Encoding.UTF8.GetBytes(markdown)));
+        return setup.Driver.RunGenerators(setup.Compilation).GetRunResult();
+    }
+
+    public static DriverSetup CreateDriverWithFiles(
+        string userSource,
+        params (string FileName, byte[] Bytes)[] files) =>
+        CreateDriverWithDocxes(userSource, files);
+
     public sealed record DriverSetup(
         CSharpGeneratorDriver Driver,
         CSharpCompilation Compilation,
@@ -132,6 +145,18 @@ static class GeneratorDriver
     {
         public override string Path { get; } = path;
 
-        public override SourceText? GetText(Cancel cancel = default) => null;
+        public override SourceText? GetText(Cancel cancel = default)
+        {
+            // Mirror Roslyn: text-based AdditionalFiles (.md) are exposed as SourceText so the
+            // SG can use the canonical GetText path. Binary files (.docx) return null and the
+            // SG must read them via Path with stream-based APIs (ZipFile.OpenRead).
+            if (Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
+                Path.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase))
+            {
+                return SourceText.From(File.ReadAllText(Path));
+            }
+
+            return null;
+        }
     }
 }

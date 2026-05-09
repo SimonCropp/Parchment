@@ -1174,16 +1174,40 @@ Whether registering by hand (`RegisterDocxTemplate<T>(...)`) or through the sour
 
 ## Source generator (compile-time validation)
 
-Decorate a `partial` class with `[ParchmentTemplate]` and Parchment's source generator validates the template tokens against the model type at compile time:
+Decorate a `partial` class with `[ParchmentTemplate]` and Parchment's source generator validates the template tokens against the model type at compile time. Both docx and markdown templates are supported — the generator branches on the path's extension (`.docx` → docx flow, `.md` / `.markdown` → markdown flow):
 
 ```csharp
 [ParchmentTemplate("Templates/invoice.docx", typeof(Invoice))]
 public partial class InvoiceReport
 {
 }
+
+[ParchmentTemplate("Templates/report.md", typeof(Report))]
+public partial class ReportTemplate
+{
+}
 ```
 
-The generator emits the following diagnostics:
+In both cases the generator also emits a `RegisterWith(store)` helper so registration is one line at runtime:
+
+```csharp
+var store = new TemplateStore();
+InvoiceReport.RegisterWith(store);
+ReportTemplate.RegisterWith(store, styleSource: File.OpenRead("brand.docx"));
+```
+
+The markdown helper has an extra optional `styleSource` parameter that mirrors `RegisterMarkdownTemplate<T>` — pass a brand docx whose page setup, headers/footers, and styles should be inherited by the rendered output.
+
+Add each template to `<AdditionalFiles>` so the generator can find it:
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Templates\invoice.docx" />
+  <AdditionalFiles Include="Templates\report.md" />
+</ItemGroup>
+```
+
+The generator emits the following diagnostics. Unless noted, each applies to both flows.
 
 
 ### `PARCH001` — unknown model member
@@ -1248,7 +1272,7 @@ The path in `[ParchmentTemplate("...", typeof(T))]` wasn't found among the proje
 
 ### `PARCH005` — block tag shares a paragraph
 
-Block tags (`{% for %}`, `{% if %}`, etc.) must sit alone in their own paragraph. Mixing a block tag with other text on the same line is rejected.
+**Docx only.** Block tags (`{% for %}`, `{% if %}`, etc.) must sit alone in their own paragraph. Mixing a block tag with other text on the same line is rejected. Markdown templates are exempt — Fluid parses the whole file as one template, so inline block tags like `Hello {% if x %}World{% endif %}` are legal.
 
 ```
 // Template paragraphs — "prefix" is on the same line as the for tag
@@ -1260,12 +1284,12 @@ prefix {% for line in Lines %}
 
 ### `PARCH006` — template file unreadable
 
-The docx at the template path exists in `<AdditionalFiles>` but couldn't be opened — typically a corrupt or truncated file.
+The template at the path exists in `<AdditionalFiles>` but couldn't be opened. For docx, typically a corrupt or truncated file. For markdown, this also fires when Fluid fails to parse the file (e.g. an unclosed `{% for %}` block) — the diagnostic message includes the parser error.
 
 
 ### `PARCH007` — `[ExcelsiorTable]` token not alone in paragraph
 
-An `[ExcelsiorTable]` substitution replaces the entire host paragraph with a Word table. If the paragraph contains other text, that text would be discarded. The token must be the only content in its paragraph.
+**Docx only.** `[ExcelsiorTable]`-driven structural replacement is wired through the docx flow only; markdown templates ignore the attribute. An `[ExcelsiorTable]` substitution replaces the entire host paragraph with a Word table. If the paragraph contains other text, that text would be discarded. The token must be the only content in its paragraph.
 
 ```
 // Model
@@ -1282,7 +1306,7 @@ Prefix {{ Lines }}
 
 ### `PARCH008` — `[ExcelsiorTable]` token with filters or complex expression
 
-The Excelsior render path walks the CLR model directly and bypasses Fluid evaluation, so filters and complex expressions would be silently ignored. Only plain member-access (`{{ Lines }}` or `{{ Customer.Lines }}`) is allowed.
+**Docx only.** The Excelsior render path walks the CLR model directly and bypasses Fluid evaluation, so filters and complex expressions would be silently ignored. Only plain member-access (`{{ Lines }}` or `{{ Customer.Lines }}`) is allowed.
 
 ```
 // Template paragraph — the | reverse filter would be silently dropped
@@ -1297,17 +1321,7 @@ Previously emitted when an `[Html]` / `[Markdown]` token shared its paragraph wi
 
 ### `PARCH010` — `[Html]` / `[Markdown]` token with filters or complex expression
 
-Formatted rendering is selected by the property attribute rather than via Fluid, so filter chains are not applied. Use plain member access (`{{ Body }}` or `{{ Customer.Bio }}`).
-
-It also generates a `RegisterWith(store)` helper so registration is one line at runtime.
-
-Add the docx as an additional file:
-
-```xml
-<ItemGroup>
-  <AdditionalFiles Include="Templates\invoice.docx" />
-</ItemGroup>
-```
+**Docx only.** Formatted rendering is selected by the property attribute rather than via Fluid, so filter chains are not applied. Use plain member access (`{{ Body }}` or `{{ Customer.Bio }}`). The `[Html]` / `[Markdown]` attributes are ignored in the markdown flow — markdown templates have no concept of structural property substitution.
 
 
 ## Benchmarks

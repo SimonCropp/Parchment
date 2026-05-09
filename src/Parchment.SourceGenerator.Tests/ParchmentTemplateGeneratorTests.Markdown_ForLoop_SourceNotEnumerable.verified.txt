@@ -1,0 +1,17 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: : (13,1)-(13,49),
+      Message: Template 'template.md' loop '{% for item in ... %}' source does not resolve to a type implementing IEnumerable<T>,
+      Severity: Error,
+      Descriptor: {
+        Id: PARCH002,
+        Title: Loop source is not enumerable,
+        MessageFormat: Template '{0}' loop '{1}' source does not resolve to a type implementing IEnumerable<T>,
+        Category: Parchment,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}

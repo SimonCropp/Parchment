@@ -369,6 +369,154 @@ public class ParchmentTemplateGeneratorTests
     }
 
     [Test]
+    public Task Markdown_Substitution_Valid()
+    {
+        var source = letterModel +
+                     """
+
+                     [ParchmentTemplate("template.md", typeof(Letter))]
+                     public partial class CustomerLetterMd;
+                     """;
+        var result = GeneratorDriver.RunMarkdown(source, "Hello {{ Customer.Name }}!");
+        return Verify(result);
+    }
+
+    [Test]
+    public Task Markdown_Substitution_MissingMember()
+    {
+        var source = letterModel +
+                     """
+
+                     [ParchmentTemplate("template.md", typeof(Letter))]
+                     public partial class CustomerLetterMd;
+                     """;
+        var result = GeneratorDriver.RunMarkdown(source, "{{ Customer.Missing }}");
+        return Verify(result);
+    }
+
+    [Test]
+    public Task Markdown_ForLoop_Valid()
+    {
+        var source =
+            """
+            using System.Collections.Generic;
+            using Parchment;
+
+            namespace Sample;
+
+            public class Line
+            {
+                public string Description { get; set; } = "";
+            }
+
+            public class Invoice
+            {
+                public List<Line> Lines { get; set; } = new();
+            }
+
+            [ParchmentTemplate("template.md", typeof(Invoice))]
+            public partial class InvoiceMd;
+            """;
+        var result = GeneratorDriver.RunMarkdown(
+            source,
+            """
+            {% for line in Lines %}
+            - {{ line.Description }}
+            {% endfor %}
+            """);
+        return Verify(result);
+    }
+
+    [Test]
+    public Task Markdown_ForLoop_MissingMemberInBody()
+    {
+        var source =
+            """
+            using System.Collections.Generic;
+            using Parchment;
+
+            namespace Sample;
+
+            public class Line
+            {
+                public string Description { get; set; } = "";
+            }
+
+            public class Invoice
+            {
+                public List<Line> Lines { get; set; } = new();
+            }
+
+            [ParchmentTemplate("template.md", typeof(Invoice))]
+            public partial class InvoiceMd;
+            """;
+        var result = GeneratorDriver.RunMarkdown(
+            source,
+            """
+            {% for line in Lines %}
+            - {{ line.Missing }}
+            {% endfor %}
+            """);
+        return Verify(result);
+    }
+
+    [Test]
+    public Task Markdown_ForLoop_SourceNotEnumerable()
+    {
+        var source = letterModel +
+                     """
+
+                     [ParchmentTemplate("template.md", typeof(Letter))]
+                     public partial class BadLoopMd;
+                     """;
+        var result = GeneratorDriver.RunMarkdown(
+            source,
+            """
+            {% for item in Customer %}
+            x
+            {% endfor %}
+            """);
+        return Verify(result);
+    }
+
+    [Test]
+    public Task Markdown_TemplateFileMissing()
+    {
+        var source =
+            """
+            using Parchment;
+
+            namespace Sample;
+
+            public class Empty;
+
+            [ParchmentTemplate("does-not-exist.md", typeof(Empty))]
+            public partial class MissingMd;
+            """;
+        // No additional file added — pipeline must emit PARCH004.
+        var setup = GeneratorDriver.CreateDriverWithFiles(source);
+        var result = setup.Driver.RunGenerators(setup.Compilation).GetRunResult();
+        return Verify(result);
+    }
+
+    [Test]
+    public async Task Markdown_InlineBlockTag_NoDiagnostic()
+    {
+        // Block tags inline with text are legal in markdown templates — Fluid parses the whole
+        // file and there's no docx-style "block tag must sit alone in its paragraph" rule.
+        var source = letterModel +
+                     """
+
+                     [ParchmentTemplate("template.md", typeof(Letter))]
+                     public partial class InlineBlockMd;
+                     """;
+        var result = GeneratorDriver.RunMarkdown(source, "Hello {% if Customer %}{{ Customer.Name }}{% endif %}");
+        var diagnostics = result.Results.Single().Diagnostics;
+        await Assert.That(diagnostics.Any(_ => _.Id == "PARCH005")).IsFalse();
+        await Assert.That(diagnostics.Any(_ => _.Id == "PARCH001")).IsFalse();
+    }
+
+    [Test]
     public Task MixedInlineBlockTag()
     {
         var source =

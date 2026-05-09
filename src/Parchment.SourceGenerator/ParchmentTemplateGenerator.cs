@@ -32,22 +32,36 @@ public sealed class ParchmentTemplateGenerator :
             .Select(static (array, _) => new EquatableArray<DocxData>(array))
             .WithTrackingName(Stages.DocsCollected);
 
+        var markdowns = context.AdditionalTextsProvider
+            .Where(static _ => IsMarkdownPath(_.Path))
+            .Select(static (text, cancel) => ReadMarkdown(text, cancel))
+            .WithTrackingName(Stages.Markdowns)
+            .Collect()
+            .Select(static (array, _) => new EquatableArray<MarkdownData>(array))
+            .WithTrackingName(Stages.MarkdownsCollected);
+
         var combined = targets
             .Combine(docs)
+            .Combine(markdowns)
             .WithTrackingName(Stages.Combined);
 
         context.RegisterSourceOutput(
             combined,
             static (productionContext, tuple) =>
             {
-                var targetInfos = tuple.Left;
-                var docData = tuple.Right;
+                var targetInfos = tuple.Left.Left;
+                var docData = tuple.Left.Right;
+                var markdownData = tuple.Right;
                 foreach (var target in targetInfos)
                 {
-                    Process(productionContext, target, docData);
+                    Process(productionContext, target, docData, markdownData);
                 }
             });
     }
+
+    static bool IsMarkdownPath(string path) =>
+        path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase);
 
     static TargetInfo? ExtractTarget(GeneratorAttributeSyntaxContext context, Cancel cancel)
     {
@@ -111,9 +125,51 @@ public sealed class ParchmentTemplateGenerator :
         }
     }
 
-    static void Process(SourceProductionContext context, TargetInfo target, EquatableArray<DocxData> docs)
+    static MarkdownData ReadMarkdown(AdditionalText text, Cancel cancel)
+    {
+        try
+        {
+            // AdditionalText.GetText is the canonical Roslyn entry point — it handles encoding
+            // detection and lets the SDK reuse any cached SourceText. Direct File.IO is banned
+            // for analyzers (RS1035), so a null return here means the AdditionalText doesn't
+            // back to a readable source; treat that as a read error.
+            var sourceText = text.GetText(cancel);
+            if (sourceText == null)
+            {
+                return new(text.Path, string.Empty, "AdditionalText returned no SourceText");
+            }
+
+            return new(text.Path, sourceText.ToString(), null);
+        }
+        catch (Exception exception)
+        {
+            return new(text.Path, string.Empty, exception.Message);
+        }
+    }
+
+    static void Process(
+        SourceProductionContext context,
+        TargetInfo target,
+        EquatableArray<DocxData> docs,
+        EquatableArray<MarkdownData> markdowns)
     {
         var location = target.Location.ToLocation();
+
+        if (IsMarkdownPath(target.TemplatePath))
+        {
+            ProcessMarkdown(context, target, location, markdowns);
+            return;
+        }
+
+        ProcessDocx(context, target, location, docs);
+    }
+
+    static void ProcessDocx(
+        SourceProductionContext context,
+        TargetInfo target,
+        Location location,
+        EquatableArray<DocxData> docs)
+    {
         var normalized = target.TemplatePath.Replace('\\', '/');
 
         DocxData? matched = null;
@@ -151,7 +207,69 @@ public sealed class ParchmentTemplateGenerator :
         var tokens = TokenScanner.Scan(matched.Paragraphs);
         ValidateTokens(context, target, tokens, location);
 
-        var source = GenerateRegistration(target);
+        EmitRegistration(context, target, GenerateDocxRegistration(target));
+    }
+
+    static void ProcessMarkdown(
+        SourceProductionContext context,
+        TargetInfo target,
+        Location location,
+        EquatableArray<MarkdownData> markdowns)
+    {
+        var normalized = target.TemplatePath.Replace('\\', '/');
+
+        MarkdownData? matched = null;
+        foreach (var md in markdowns)
+        {
+            if (md.Path.Replace('\\', '/')
+                .EndsWith(normalized, StringComparison.OrdinalIgnoreCase))
+            {
+                matched = md;
+                break;
+            }
+        }
+
+        if (matched == null)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.TemplateFileMissing,
+                    location,
+                    target.TemplatePath));
+            return;
+        }
+
+        if (matched.ReadError != null)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.TemplateReadError,
+                    location,
+                    target.TemplatePath,
+                    matched.ReadError));
+            return;
+        }
+
+        if (!markdownParser.TryParse(matched.Text, out var template, out var error))
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.TemplateReadError,
+                    location,
+                    target.TemplatePath,
+                    $"Failed to parse markdown as a liquid template: {error}"));
+            return;
+        }
+
+        MarkdownValidator.Validate(context, target, location, template);
+
+        EmitRegistration(context, target, GenerateMarkdownRegistration(target));
+    }
+
+    static readonly FluidParser markdownParser = new();
+
+    static void EmitRegistration(SourceProductionContext context, TargetInfo target, string source)
+    {
         var hintPrefix = target.DeclaringNamespace is null
             ? target.DeclaringName
             : $"{target.DeclaringNamespace}.{target.DeclaringName}";
@@ -382,7 +500,7 @@ public sealed class ParchmentTemplateGenerator :
         }
     }
 
-    static string GenerateRegistration(TargetInfo target)
+    static string GenerateDocxRegistration(TargetInfo target)
     {
         var templatePath = target.TemplatePath.Replace("\\", @"\\");
         var builder = new StringBuilder(
@@ -415,12 +533,48 @@ public sealed class ParchmentTemplateGenerator :
         return builder.ToString();
     }
 
+    static string GenerateMarkdownRegistration(TargetInfo target)
+    {
+        var templatePath = target.TemplatePath.Replace("\\", @"\\");
+        var builder = new StringBuilder(
+            """
+            // <auto-generated />
+            #nullable enable
+
+            """);
+
+        if (target.DeclaringNamespace != null)
+        {
+            builder.AppendLine($"namespace {target.DeclaringNamespace};");
+        }
+
+        builder.AppendLine(
+            $$"""
+              partial class {{target.DeclaringName}}
+              {
+                  public static string TemplatePath => "{{templatePath}}";
+                  public static string TemplateName => "{{target.DeclaringName}}";
+
+                  public static void RegisterWith(global::Parchment.TemplateStore store, string? basePath = null, global::System.IO.Stream? styleSource = null)
+                  {
+                      var path = basePath is null ? TemplatePath : global::System.IO.Path.Combine(basePath, TemplatePath);
+                      var markdown = global::System.IO.File.ReadAllText(path);
+                      store.RegisterMarkdownTemplate<{{target.ModelFullyQualifiedName}}>(TemplateName, markdown, styleSource);
+                  }
+              }
+              """);
+
+        return builder.ToString();
+    }
+
     public static class Stages
     {
         public const string Targets = "Parchment_Targets";
         public const string TargetsCollected = "Parchment_TargetsCollected";
         public const string Docs = "Parchment_Docs";
         public const string DocsCollected = "Parchment_DocsCollected";
+        public const string Markdowns = "Parchment_Markdowns";
+        public const string MarkdownsCollected = "Parchment_MarkdownsCollected";
         public const string Combined = "Parchment_Combined";
     }
 }
