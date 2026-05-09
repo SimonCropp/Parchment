@@ -21,9 +21,15 @@
                       ReferenceOutputAssembly="false"
                       SkipGetTargetFrameworkProperties="true"
                       PrivateAssets="all" />
-    <None Include="..\Parchment.SourceGenerator\bin\$(Configuration)\netstandard2.0\Parchment.SourceGenerator.dll"
+    <!-- PackageShader renames shaded deps to Parchment.SourceGenerator.<DepName>.dll and emits
+         them as sibling files alongside Parchment.SourceGenerator.dll (PackageShader does not
+         IL-merge — see https://github.com/SimonCropp/PackageShader). The wildcard pulls the
+         main analyzer plus every shaded sibling into the analyzers folder; without the
+         siblings, Roslyn fails to load the analyzer with FileNotFoundException on
+         'Parchment.SourceGenerator.Fluid' (or Parlot, TimeZoneConverter, etc.). -->
+    <None Include="..\Parchment.SourceGenerator\bin\$(Configuration)\netstandard2.0\Parchment.SourceGenerator*.dll"
           Pack="true" PackagePath="analyzers/dotnet/roslyn5.0/cs" Visible="false" />
-    <None Include="..\Parchment.SourceGenerator\bin\$(Configuration)\net10.0\Parchment.SourceGenerator.dll"
+    <None Include="..\Parchment.SourceGenerator\bin\$(Configuration)\net10.0\Parchment.SourceGenerator*.dll"
           Pack="true" PackagePath="analyzers/dotnet/roslyn5.3/cs" Visible="false" />
     <None Include="nuget-readme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
