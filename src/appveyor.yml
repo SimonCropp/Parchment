@@ -47,6 +47,15 @@ build_script:
 - appveyor DownloadFile https://dot.net/v1/dotnet-install.ps1
 - pwsh: ./dotnet-install.ps1 -JSonFile src/global.json -Architecture x64 -InstallDir 'C:\Program Files\dotnet'
 - dotnet build src --configuration Release
+# Wipe Parchment from the global NuGet cache so IntegrationTests' restore re-extracts the
+# freshly-built local nupkg (../nugets/Parchment.<v>.nupkg) instead of reusing a stale
+# extraction from a previous build under the same version. PackageSourceMapping in
+# IntegrationTests/nuget.config pins Parchment to the local feed but is bypassed when the
+# package already exists in the global packages folder — this step is what makes the mapping
+# actually take effect on AppVeyor's persistent NuGet cache.
+- pwsh: |
+    $cache = "$env:USERPROFILE\.nuget\packages\parchment"
+    if (Test-Path $cache) { Remove-Item -Recurse -Force $cache }
 - dotnet build IntegrationTests --configuration Release
 - dotnet run --project src/Parchment.Tests --configuration Release --no-build
 - dotnet run --project src/Parchment.SourceGenerator.Tests --configuration Release --no-build
