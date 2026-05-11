@@ -14,7 +14,6 @@ class ParagraphText
     }
 
     public string InnerText => innerText;
-    public IReadOnlyList<TextSpan> Spans => spans;
 
     public static ParagraphText Build(Paragraph paragraph)
     {
