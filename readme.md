@@ -1349,7 +1349,7 @@ public partial class Outer  // <-- partial
 
 ## Model binding limitations
 
-Parchment binds tokens by reflecting on the model type. A member is bindable only if `typeof(TModel).GetProperties(BindingFlags.Public | BindingFlags.Instance)` returns it, and the source generator's `ShapeBuilder` mirrors the same rules. The following kinds of members are **not** bound — a token referencing them fails registration (`ParchmentRegistrationException`) or compile-time validation (`PARCH001`).
+Parchment binds tokens by reflecting on the model type. Public **instance properties** and public **instance fields** are bindable at every depth — including nested traversal like `{{ Customer.Address.City }}` whether each hop is a property or a field. The source generator's `ShapeBuilder` mirrors the same rules. The following kinds of members are **not** bound — a token referencing them fails registration (`ParchmentRegistrationException`) or compile-time validation (`PARCH001`).
 
 ### Interfaces as the binding model
 
