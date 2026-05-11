@@ -15,7 +15,7 @@ public sealed class ParchmentTemplateGenerator :
         var targets = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 attributeFullName,
-                static (node, _) => node is ClassDeclarationSyntax,
+                static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax,
                 ExtractTarget)
             .Where(static _ => _ != null)
             .Select(static (target, _) => target!)
@@ -103,6 +103,7 @@ public sealed class ParchmentTemplateGenerator :
         return new(
             declaringNamespace,
             typeSymbol.Name,
+            GetTypeKindKeyword(typeSymbol),
             new(enclosingResult.Chain.ToImmutableArray()),
             typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             typeSymbol.Name,
@@ -627,7 +628,7 @@ public sealed class ParchmentTemplateGenerator :
             depth++;
         }
 
-        builder.Indent(depth).AppendLine($"partial class {target.DeclaringName}");
+        builder.Indent(depth).AppendLine($"partial {target.DeclaringKind} {target.DeclaringName}");
         builder.Indent(depth).AppendLine("{");
         foreach (var line in body.Split('\n'))
         {

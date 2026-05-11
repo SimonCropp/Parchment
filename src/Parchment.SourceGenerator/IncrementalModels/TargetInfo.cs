@@ -15,6 +15,7 @@
 sealed record TargetInfo(
     string? DeclaringNamespace,
     string DeclaringName,
+    string DeclaringKind,
     EquatableArray<EnclosingType> EnclosingTypes,
     string ModelFullyQualifiedName,
     string ModelSimpleName,

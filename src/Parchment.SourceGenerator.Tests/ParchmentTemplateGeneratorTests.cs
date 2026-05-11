@@ -576,4 +576,31 @@ public class ParchmentTemplateGeneratorTests
             "{% endfor %}");
         return Verify(result);
     }
+
+    [Test]
+    public async Task RecordTarget_Valid()
+    {
+        // The decorated type is a record. The generator must emit `partial record` to match
+        // the user's declaration — emitting `partial class` would fail with CS0261 "Partial
+        // declarations have inconsistent type." Guards against regressing the kind-keyword
+        // threading through TargetInfo.
+        var source =
+            """
+            using Parchment;
+
+            namespace Sample;
+
+            public record Customer(string Name);
+
+            [ParchmentModel("template.docx")]
+            public partial record Letter
+            {
+                public required Customer Customer { get; init; }
+            }
+            """;
+        var result = GeneratorDriver.Run(source, "Hello {{ Customer.Name }}!");
+        var generated = result.GeneratedTrees.Single().ToString();
+        await Assert.That(generated).Contains("partial record Letter");
+        await Verify(result);
+    }
 }
