@@ -4,4 +4,5 @@ sealed record MemberEntry(
     bool IsExcelsiorTable = false,
     bool IsHtml = false,
     bool IsMarkdown = false,
-    bool IsStringList = false);
+    bool IsStringList = false,
+    bool IsStatic = false);

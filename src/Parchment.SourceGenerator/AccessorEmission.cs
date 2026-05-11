@@ -111,6 +111,16 @@ static class AccessorEmission
 
         foreach (var member in typeEntry.Members)
         {
+            // The per-template maps (Excelsior / Format / StringList) match the runtime walkers,
+            // which use BindingFlags.Instance only. Static members are still bindable through
+            // Fluid accessors (emitted above), but they don't participate in dotted-path map
+            // dispatch — `[ExcelsiorTable]` on a static collection, `[Html]` on a static string,
+            // etc. is intentionally a no-op. Document if a user request comes up.
+            if (member.IsStatic)
+            {
+                continue;
+            }
+
             var nextPath = new List<string>(path) { member.Name };
 
             if (member.IsExcelsiorTable)
@@ -175,10 +185,25 @@ static class AccessorEmission
             {
                 fields.Append("  new(\"");
                 fields.Append(member.Name);
-                fields.Append("\", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((");
-                fields.Append(type.TypeFullyQualifiedName);
-                fields.Append(")o).");
-                fields.Append(member.Name);
+                fields.Append("\", new global::Fluid.Accessors.DelegateAccessor(");
+                if (member.IsStatic)
+                {
+                    // Static member: the instance argument is irrelevant. Access via the owner
+                    // type directly so the emitted code is legal C# (CS0176 forbids instance-
+                    // qualifying a static member).
+                    fields.Append("(_, _) => ");
+                    fields.Append(type.TypeFullyQualifiedName);
+                    fields.Append('.');
+                    fields.Append(member.Name);
+                }
+                else
+                {
+                    fields.Append("(o, _) => ((");
+                    fields.Append(type.TypeFullyQualifiedName);
+                    fields.Append(")o).");
+                    fields.Append(member.Name);
+                }
+
                 fields.AppendLine(")),");
             }
 

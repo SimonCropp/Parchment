@@ -62,31 +62,41 @@ static class SharedFluid
             return;
         }
 
+        // Fluid's MemberAccessStrategyExtensions.Register<T>() walks instance properties only
+        // (and not fields, not static members). Use it for instance properties, then layer
+        // explicit DelegateAccessors on top for everything else: static properties, instance
+        // fields, static fields. PropertyInfo.GetValue / FieldInfo.GetValue ignore the obj
+        // parameter for static members, so a single lambda shape works for both.
         var generic = registerGenericMethod.MakeGenericMethod(type);
         generic.Invoke(null, [Options.MemberAccessStrategy]);
 
-        // Fluid's MemberAccessStrategyExtensions.Register<T>() walks properties only — so without
-        // explicit field accessors here, `{{ x.SomeField }}` on a non-root type renders empty.
-        // Top-level field access still works thanks to TemplateContext(model, ..., allowModelMembers: true),
-        // but nested traversal stops dead. Register a DelegateAccessor per public instance field
-        // so field access is consistent at every depth.
-        var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
-        if (fields.Length > 0)
+        var staticProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Static);
+        var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
+
+        var extra = new List<KeyValuePair<string, IMemberAccessor>>(staticProperties.Length + fields.Length);
+        foreach (var property in staticProperties)
         {
-            var accessors = new List<KeyValuePair<string, IMemberAccessor>>(fields.Length);
-            foreach (var field in fields)
+            if (property.GetIndexParameters().Length > 0)
             {
-                var captured = field;
-                accessors.Add(
-                    new(
-                        field.Name,
-                        new DelegateAccessor((instance, _) => captured.GetValue(instance))));
+                continue;
             }
 
-            Options.MemberAccessStrategy.Register(type, accessors);
+            var captured = property;
+            extra.Add(new(property.Name, new DelegateAccessor((_, _) => captured.GetValue(null))));
         }
 
-        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        foreach (var field in fields)
+        {
+            var captured = field;
+            extra.Add(new(field.Name, new DelegateAccessor((instance, _) => captured.GetValue(instance))));
+        }
+
+        if (extra.Count > 0)
+        {
+            Options.MemberAccessStrategy.Register(type, extra);
+        }
+
+        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
         {
             if (property.GetIndexParameters().Length > 0)
             {

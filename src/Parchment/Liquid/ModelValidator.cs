@@ -70,7 +70,7 @@ static class ModelValidator
     {
         var property = type.GetProperty(
             name,
-            BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.IgnoreCase);
         if (property != null)
         {
             return property.PropertyType;
@@ -78,7 +78,7 @@ static class ModelValidator
 
         var field = type.GetField(
             name,
-            BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.IgnoreCase);
         return field?.FieldType;
     }
 

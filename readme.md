@@ -1355,7 +1355,9 @@ public partial class Outer  // <-- partial
 
 ## Model binding limitations
 
-Parchment binds tokens by reflecting on the model type. Public **instance properties** and public **instance fields** are bindable at every depth — including nested traversal like `{{ Customer.Address.City }}` whether each hop is a property or a field. The source generator's `ShapeBuilder` mirrors the same rules. The following kinds of members are **not** bound — a token referencing them fails registration (`ParchmentRegistrationException`) or compile-time validation (`PARCH001`).
+Parchment binds tokens by reflecting on the model type. Public properties and public fields — both **instance** and **static** — are bindable at every depth, including nested traversal like `{{ Customer.Address.City }}` whether each hop is a property or a field. The source generator's `ShapeBuilder` mirrors the same rules. The following kinds of members are **not** bound — a token referencing them fails registration (`ParchmentRegistrationException`) or compile-time validation (`PARCH001`).
+
+**Static-member caveat**: static members participate in Fluid substitution (`{{ Logo }}` against `public static string Logo`) but **do not** participate in the per-template maps. `[ExcelsiorTable]` on a static collection, `[Html]` / `[Markdown]` on a static string, and auto-bullet-list dispatch on a static `IEnumerable<string>` are silently treated as no-ops — the runtime map walkers and the SG dotted-path walker both skip static members. Mark the member instance, or wrap it in an instance computed property, when attribute-driven dispatch is required.
 
 ### Interfaces as the binding model
 

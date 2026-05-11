@@ -52,7 +52,7 @@ static class ShapeBuilder
             {
                 foreach (var member in current.GetMembers())
                 {
-                    if (!TryGetMemberType(member, out var memberType, out var memberName))
+                    if (!TryGetMemberType(member, out var memberType, out var memberName, out var isStatic))
                     {
                         continue;
                     }
@@ -65,7 +65,7 @@ static class ShapeBuilder
                     var isExcelsior = HasExcelsiorTableAttribute(member, excelsiorTableType);
                     var (isHtml, isMarkdown) = DetectFormat(member);
                     var isStringList = !isExcelsior && IsEnumerableOfString(memberType);
-                    members.Add(new(memberName, Fqn(memberType), isExcelsior, isHtml, isMarkdown, isStringList));
+                    members.Add(new(memberName, Fqn(memberType), isExcelsior, isHtml, isMarkdown, isStringList, isStatic));
                     Enqueue(memberType, visited, queue);
                 }
 
@@ -147,24 +147,27 @@ static class ShapeBuilder
         return false;
     }
 
-    static bool TryGetMemberType(ISymbol member, out ITypeSymbol type, out string name)
+    static bool TryGetMemberType(ISymbol member, out ITypeSymbol type, out string name, out bool isStatic)
     {
-        if (member is IPropertySymbol { DeclaredAccessibility: Accessibility.Public, IsStatic: false } property)
+        if (member is IPropertySymbol { DeclaredAccessibility: Accessibility.Public } property)
         {
             type = property.Type;
             name = property.Name;
+            isStatic = property.IsStatic;
             return true;
         }
 
-        if (member is IFieldSymbol { DeclaredAccessibility: Accessibility.Public, IsStatic: false } field)
+        if (member is IFieldSymbol { DeclaredAccessibility: Accessibility.Public } field)
         {
             type = field.Type;
             name = field.Name;
+            isStatic = field.IsStatic;
             return true;
         }
 
         type = null!;
         name = null!;
+        isStatic = false;
         return false;
     }
 

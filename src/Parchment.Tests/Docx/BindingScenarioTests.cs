@@ -73,6 +73,28 @@ public class BindingScenarioTests
         await Assert.That(exception!.Message).Contains("Body");
     }
 
+    // -- static members ------------------------------------------------------
+
+    public class StaticHostModel
+    {
+        public static string Logo { get; } = "Acme Inc.";
+        public static string Footer = "© 2026";
+
+        public required string Name { get; init; }
+    }
+
+    [Test]
+    public async Task StaticMembers_BindAtRoot()
+    {
+        using var template = DocxTemplateBuilder.Build("{{ Logo }} — {{ Name }} — {{ Footer }}");
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<StaticHostModel>("statics", template);
+
+        using var output = new MemoryStream();
+        await store.Render("statics", new StaticHostModel { Name = "Q1" }, output);
+        await Verify(output, "docx");
+    }
+
     // -- #3 record struct ---------------------------------------------------
 
     public record struct Point(int X, int Y);
