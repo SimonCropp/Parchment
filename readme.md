@@ -619,7 +619,7 @@ The attributes are detected by name — Parchment does not ship them. Define the
 [AttributeUsage(AttributeTargets.Property)]
 sealed class HtmlAttribute : Attribute;
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L13-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlAttribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L11-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlAttribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Mark the property:
@@ -635,7 +635,7 @@ public class HtmlDoc
     public required string Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L23-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L21-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Drop a `{{ Body }}` substitution into the template on its own line:
@@ -659,7 +659,7 @@ var model = new HtmlDoc
 using var stream = new MemoryStream();
 await store.Render("html-doc", model, stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L89-L103' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlUsage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L87-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ![Rendered output](/src/Parchment.Tests/Scenarios/html-property/output%23page01.verified.png)
@@ -677,7 +677,7 @@ public class MarkdownDoc
     public required string Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L33-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L31-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ![Template before render](/src/Parchment.Tests/Scenarios/markdown-property/input.png)
@@ -697,7 +697,7 @@ public class StringSyntaxHtmlDoc
     public required string Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L43-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxHtmlModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L41-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxHtmlModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: StringSyntaxMarkdownModel -->
@@ -711,7 +711,7 @@ public class StringSyntaxMarkdownDoc
     public required string Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L53-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxMarkdownModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L51-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxMarkdownModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Rules:
