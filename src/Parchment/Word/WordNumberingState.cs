@@ -4,7 +4,6 @@
 /// </summary>
 class WordNumberingState(MainDocumentPart mainPart)
 {
-    readonly MainDocumentPart mainPart = mainPart;
     int? bulletAbstractNumId;
     readonly Dictionary<NumberFormatValues, int> orderedAbstractNumIds = [];
     int nextAbstractNumId;
@@ -125,7 +124,11 @@ class WordNumberingState(MainDocumentPart mainPart)
         {
             NumberID = numId
         };
-        instance.Append(new AbstractNumId { Val = abstractId });
+        instance.Append(
+            new AbstractNumId
+            {
+                Val = abstractId
+            });
         numbering.Append(instance);
         return numId;
     }
@@ -134,9 +137,18 @@ class WordNumberingState(MainDocumentPart mainPart)
         new()
         {
             LevelIndex = ilvl,
-            NumberingFormat = new() { Val = NumberFormatValues.Bullet },
-            LevelText = new() { Val = glyph },
-            LevelJustification = new() { Val = LevelJustificationValues.Left },
+            NumberingFormat = new()
+            {
+                Val = NumberFormatValues.Bullet
+            },
+            LevelText = new()
+            {
+                Val = glyph
+            },
+            LevelJustification = new()
+            {
+                Val = LevelJustificationValues.Left
+            },
             PreviousParagraphProperties = new(
                 new Indentation
                 {
@@ -156,10 +168,22 @@ class WordNumberingState(MainDocumentPart mainPart)
         new()
         {
             LevelIndex = ilvl,
-            StartNumberingValue = new() { Val = 1 },
-            NumberingFormat = new() { Val = format },
-            LevelText = new() { Val = $"%{ilvl + 1}." },
-            LevelJustification = new() { Val = LevelJustificationValues.Left },
+            StartNumberingValue = new()
+            {
+                Val = 1
+            },
+            NumberingFormat = new()
+            {
+                Val = format
+            },
+            LevelText = new()
+            {
+                Val = $"%{ilvl + 1}."
+            },
+            LevelJustification = new()
+            {
+                Val = LevelJustificationValues.Left
+            },
             PreviousParagraphProperties = new(
                 new Indentation
                 {

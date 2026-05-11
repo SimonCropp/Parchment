@@ -12,4 +12,11 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="DocumentFormat.OpenXml" />
   </ItemGroup>
+  <!-- SG fixtures: AdditionalFiles makes them visible to the analyzer for compile-time
+       validation; CopyToOutputDirectory makes them available to the generated
+       RegisterWith helper at test time (which reads them from disk). -->
+  <ItemGroup>
+    <AdditionalFiles Include="sg-template.docx" CopyToOutputDirectory="PreserveNewest" />
+    <AdditionalFiles Include="sg-template.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

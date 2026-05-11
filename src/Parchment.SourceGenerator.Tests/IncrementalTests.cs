@@ -11,13 +11,11 @@ public class IncrementalTests
             public string Name { get; set; } = "";
         }
 
-        public class Letter
+        [ParchmentModel("template.docx")]
+        public partial class Letter
         {
             public Customer Customer { get; set; } = new();
         }
-
-        [ParchmentTemplate("template.docx", typeof(Letter))]
-        public partial class CustomerLetter;
         """;
 
     [Test]
@@ -51,7 +49,7 @@ public class IncrementalTests
         // Edit the attributed class's source so the extract stage must re-run and produce a
         // new TargetInfo — this proves the "Cached" assertion above isn't just a false positive
         // from the pipeline never running at all.
-        var editedSource = source.Replace("CustomerLetter", "CustomerLetterV2");
+        var editedSource = source.Replace("class Letter", "class LetterV2");
         var compilation2 = setup.Compilation.ReplaceSyntaxTree(
             setup.Compilation.SyntaxTrees[1],
             CSharpSyntaxTree.ParseText(editedSource));

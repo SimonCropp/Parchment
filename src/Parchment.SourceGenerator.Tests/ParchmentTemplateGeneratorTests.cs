@@ -1,6 +1,6 @@
 public class ParchmentTemplateGeneratorTests
 {
-    const string letterModel =
+    const string letterModelDocx =
         """
         using Parchment;
 
@@ -11,7 +11,26 @@ public class ParchmentTemplateGeneratorTests
             public string Name { get; set; } = "";
         }
 
-        public class Letter
+        [ParchmentModel("template.docx")]
+        public partial class Letter
+        {
+            public Customer Customer { get; set; } = new();
+        }
+        """;
+
+    const string letterModelMd =
+        """
+        using Parchment;
+
+        namespace Sample;
+
+        public class Customer
+        {
+            public string Name { get; set; } = "";
+        }
+
+        [ParchmentModel("template.md")]
+        public partial class Letter
         {
             public Customer Customer { get; set; } = new();
         }
@@ -20,26 +39,14 @@ public class ParchmentTemplateGeneratorTests
     [Test]
     public Task Substitution_Valid()
     {
-        var source = letterModel +
-                     """
-
-                     [ParchmentTemplate("template.docx", typeof(Letter))]
-                     public partial class CustomerLetter;
-                     """;
-        var result = GeneratorDriver.Run(source, "Hello {{ Customer.Name }}!");
+        var result = GeneratorDriver.Run(letterModelDocx, "Hello {{ Customer.Name }}!");
         return Verify(result);
     }
 
     [Test]
     public Task Substitution_MissingMember()
     {
-        var source = letterModel +
-                     """
-
-                     [ParchmentTemplate("template.docx", typeof(Letter))]
-                     public partial class CustomerLetter;
-                     """;
-        var result = GeneratorDriver.Run(source, "{{ Customer.Missing }}");
+        var result = GeneratorDriver.Run(letterModelDocx, "{{ Customer.Missing }}");
         return Verify(result);
     }
 
@@ -58,13 +65,11 @@ public class ParchmentTemplateGeneratorTests
                 public string Description { get; set; } = "";
             }
 
-            public class Invoice
+            [ParchmentModel("template.docx")]
+            public partial class Invoice
             {
                 public List<Line> Lines { get; set; } = new();
             }
-
-            [ParchmentTemplate("template.docx", typeof(Invoice))]
-            public partial class InvoiceDoc;
             """;
         var result = GeneratorDriver.Run(
             source,
@@ -77,14 +82,8 @@ public class ParchmentTemplateGeneratorTests
     [Test]
     public Task ForLoop_SourceNotEnumerable()
     {
-        var source = letterModel +
-                     """
-
-                     [ParchmentTemplate("template.docx", typeof(Letter))]
-                     public partial class BadLoop;
-                     """;
         var result = GeneratorDriver.Run(
-            source,
+            letterModelDocx,
             "{% for item in Customer %}",
             "x",
             "{% endfor %}");
@@ -100,10 +99,8 @@ public class ParchmentTemplateGeneratorTests
 
             namespace Sample;
 
-            public class Empty;
-
-            [ParchmentTemplate("template.docx", typeof(Empty))]
-            public partial class WeirdTag;
+            [ParchmentModel("template.docx")]
+            public partial class Empty;
             """;
         var result = GeneratorDriver.Run(source, "{% foobar %}");
         return Verify(result);
@@ -118,10 +115,8 @@ public class ParchmentTemplateGeneratorTests
 
             namespace Sample;
 
-            public class Empty;
-
-            [ParchmentTemplate("does-not-exist.docx", typeof(Empty))]
-            public partial class MissingFile;
+            [ParchmentModel("does-not-exist.docx")]
+            public partial class Empty;
             """;
         var result = GeneratorDriver.Run(source, "ignored");
         return Verify(result);
@@ -133,14 +128,8 @@ public class ParchmentTemplateGeneratorTests
         // Guards against string being silently treated as IEnumerable<char>. ShapeBuilder
         // has a special-case for SpecialType.System_String; this test fails loudly if that
         // guard is removed (loop would validate as legal "for c in <string>" instead).
-        var source = letterModel +
-                     """
-
-                     [ParchmentTemplate("template.docx", typeof(Letter))]
-                     public partial class StringLoop;
-                     """;
         var result = GeneratorDriver.Run(
-            source,
+            letterModelDocx,
             "{% for c in Customer.Name %}",
             "x",
             "{% endfor %}");
@@ -161,21 +150,17 @@ public class ParchmentTemplateGeneratorTests
                 public string Name { get; set; } = "";
             }
 
-            public class Letter
+            [ParchmentModel("letter.docx")]
+            public partial class Letter
             {
                 public Customer Customer { get; set; } = new();
             }
 
-            public class Invoice
+            [ParchmentModel("invoice.docx")]
+            public partial class Invoice
             {
                 public decimal Total { get; set; }
             }
-
-            [ParchmentTemplate("letter.docx", typeof(Letter))]
-            public partial class LetterDoc;
-
-            [ParchmentTemplate("invoice.docx", typeof(Invoice))]
-            public partial class InvoiceDoc;
             """;
 
         var setup = GeneratorDriver.CreateDriverWithDocxes(
@@ -198,10 +183,8 @@ public class ParchmentTemplateGeneratorTests
 
             namespace Sample;
 
-            public class Empty;
-
-            [ParchmentTemplate("template.docx", typeof(Empty))]
-            public partial class Corrupt;
+            [ParchmentModel("template.docx")]
+            public partial class Empty;
             """;
 
         var setup = GeneratorDriver.CreateDriverWithDocxes(
@@ -227,7 +210,8 @@ public class ParchmentTemplateGeneratorTests
             public string Description { get; set; } = "";
         }
 
-        public class Invoice
+        [ParchmentModel("template.docx")]
+        public partial class Invoice
         {
             [ExcelsiorTable]
             public List<Line> Lines { get; set; } = new();
@@ -239,13 +223,7 @@ public class ParchmentTemplateGeneratorTests
     {
         // Token in the same paragraph as other text must trip PARCH007. The SG asserts diagnostic
         // id directly instead of snapshotting because diagnostic messages may reword over time.
-        var source = excelsiorModel +
-                     """
-
-                     [ParchmentTemplate("template.docx", typeof(Invoice))]
-                     public partial class MixedExcelsior;
-                     """;
-        var result = GeneratorDriver.Run(source, "Prefix {{ Lines }}");
+        var result = GeneratorDriver.Run(excelsiorModel, "Prefix {{ Lines }}");
         var diagnostics = result.Results.Single().Diagnostics;
         await Assert.That(diagnostics.Any(_ => _.Id == "PARCH007")).IsTrue();
     }
@@ -254,13 +232,7 @@ public class ParchmentTemplateGeneratorTests
     public async Task ExcelsiorToken_WithFilter_Diagnostic()
     {
         // Filter chain on an [ExcelsiorTable] substitution must trip PARCH008.
-        var source = excelsiorModel +
-                     """
-
-                     [ParchmentTemplate("template.docx", typeof(Invoice))]
-                     public partial class FilteredExcelsior;
-                     """;
-        var result = GeneratorDriver.Run(source, "{{ Lines | reverse }}");
+        var result = GeneratorDriver.Run(excelsiorModel, "{{ Lines | reverse }}");
         var diagnostics = result.Results.Single().Diagnostics;
         await Assert.That(diagnostics.Any(_ => _.Id == "PARCH008")).IsTrue();
     }
@@ -269,13 +241,7 @@ public class ParchmentTemplateGeneratorTests
     public async Task ExcelsiorToken_Clean_NoDiagnostics()
     {
         // Baseline: plain {{ Lines }} in its own paragraph should NOT trip PARCH007/PARCH008.
-        var source = excelsiorModel +
-                     """
-
-                     [ParchmentTemplate("template.docx", typeof(Invoice))]
-                     public partial class CleanExcelsior;
-                     """;
-        var result = GeneratorDriver.Run(source, "{{ Lines }}");
+        var result = GeneratorDriver.Run(excelsiorModel, "{{ Lines }}");
         var diagnostics = result.Results.Single().Diagnostics;
         await Assert.That(diagnostics.Any(_ => _.Id == "PARCH007")).IsFalse();
         await Assert.That(diagnostics.Any(_ => _.Id == "PARCH008")).IsFalse();
@@ -294,7 +260,8 @@ public class ParchmentTemplateGeneratorTests
         [System.AttributeUsage(System.AttributeTargets.Property)]
         public sealed class MarkdownAttribute : System.Attribute { }
 
-        public class Doc
+        [ParchmentModel("template.docx")]
+        public partial class Doc
         {
             [Html]
             public string Body { get; set; } = "";
@@ -313,13 +280,7 @@ public class ParchmentTemplateGeneratorTests
         // Non-solo `[Html]`/`[Markdown]` tokens are allowed — the runtime splices inline content
         // into the host paragraph and splits the host paragraph for block-level content. PARCH009
         // (the legacy "must sit alone" diagnostic) is no longer emitted.
-        var source = formatModel +
-                     """
-
-                     [ParchmentTemplate("template.docx", typeof(Doc))]
-                     public partial class MixedFormat;
-                     """;
-        var result = GeneratorDriver.Run(source, "Prefix {{ Body }}");
+        var result = GeneratorDriver.Run(formatModel, "Prefix {{ Body }}");
         var diagnostics = result.Results.Single().Diagnostics;
         await Assert.That(diagnostics.Any(_ => _.Id == "PARCH009")).IsFalse();
         await Assert.That(diagnostics.Any(_ => _.Id == "PARCH010")).IsFalse();
@@ -328,13 +289,7 @@ public class ParchmentTemplateGeneratorTests
     [Test]
     public async Task FormatToken_WithFilter_Diagnostic()
     {
-        var source = formatModel +
-                     """
-
-                     [ParchmentTemplate("template.docx", typeof(Doc))]
-                     public partial class FilteredFormat;
-                     """;
-        var result = GeneratorDriver.Run(source, "{{ Body | upcase }}");
+        var result = GeneratorDriver.Run(formatModel, "{{ Body | upcase }}");
         var diagnostics = result.Results.Single().Diagnostics;
         await Assert.That(diagnostics.Any(_ => _.Id == "PARCH010")).IsTrue();
     }
@@ -342,13 +297,7 @@ public class ParchmentTemplateGeneratorTests
     [Test]
     public async Task FormatToken_MarkdownClean_NoDiagnostics()
     {
-        var source = formatModel +
-                     """
-
-                     [ParchmentTemplate("template.docx", typeof(Doc))]
-                     public partial class CleanFormat;
-                     """;
-        var result = GeneratorDriver.Run(source, "{{ Notes }}");
+        var result = GeneratorDriver.Run(formatModel, "{{ Notes }}");
         var diagnostics = result.Results.Single().Diagnostics;
         await Assert.That(diagnostics.Any(_ => _.Id == "PARCH010")).IsFalse();
     }
@@ -356,16 +305,247 @@ public class ParchmentTemplateGeneratorTests
     [Test]
     public async Task FormatToken_StringSyntaxHtml_NoDiagnostics()
     {
-        var source = formatModel +
-                     """
-
-                     [ParchmentTemplate("template.docx", typeof(Doc))]
-                     public partial class SyntaxFormat;
-                     """;
-        var result = GeneratorDriver.Run(source, "{{ Summary }}");
+        var result = GeneratorDriver.Run(formatModel, "{{ Summary }}");
         var diagnostics = result.Results.Single().Diagnostics;
         await Assert.That(diagnostics.Any(_ => _.Id == "PARCH009")).IsFalse();
         await Assert.That(diagnostics.Any(_ => _.Id == "PARCH010")).IsFalse();
+    }
+
+    [Test]
+    public Task Markdown_Substitution_Valid()
+    {
+        var result = GeneratorDriver.RunMarkdown(letterModelMd, "Hello {{ Customer.Name }}!");
+        return Verify(result);
+    }
+
+    [Test]
+    public Task Markdown_Substitution_MissingMember()
+    {
+        var result = GeneratorDriver.RunMarkdown(letterModelMd, "{{ Customer.Missing }}");
+        return Verify(result);
+    }
+
+    [Test]
+    public Task Markdown_ForLoop_Valid()
+    {
+        var source =
+            """
+            using System.Collections.Generic;
+            using Parchment;
+
+            namespace Sample;
+
+            public class Line
+            {
+                public string Description { get; set; } = "";
+            }
+
+            [ParchmentModel("template.md")]
+            public partial class Invoice
+            {
+                public List<Line> Lines { get; set; } = new();
+            }
+            """;
+        var result = GeneratorDriver.RunMarkdown(
+            source,
+            """
+            {% for line in Lines %}
+            - {{ line.Description }}
+            {% endfor %}
+            """);
+        return Verify(result);
+    }
+
+    [Test]
+    public Task Markdown_ForLoop_MissingMemberInBody()
+    {
+        var source =
+            """
+            using System.Collections.Generic;
+            using Parchment;
+
+            namespace Sample;
+
+            public class Line
+            {
+                public string Description { get; set; } = "";
+            }
+
+            [ParchmentModel("template.md")]
+            public partial class Invoice
+            {
+                public List<Line> Lines { get; set; } = new();
+            }
+            """;
+        var result = GeneratorDriver.RunMarkdown(
+            source,
+            """
+            {% for line in Lines %}
+            - {{ line.Missing }}
+            {% endfor %}
+            """);
+        return Verify(result);
+    }
+
+    [Test]
+    public Task Markdown_ForLoop_SourceNotEnumerable()
+    {
+        var result = GeneratorDriver.RunMarkdown(
+            letterModelMd,
+            """
+            {% for item in Customer %}
+            x
+            {% endfor %}
+            """);
+        return Verify(result);
+    }
+
+    [Test]
+    public Task Markdown_TemplateFileMissing()
+    {
+        var source =
+            """
+            using Parchment;
+
+            namespace Sample;
+
+            [ParchmentModel("does-not-exist.md")]
+            public partial class Empty;
+            """;
+        // No additional file added — pipeline must emit PARCH004.
+        var setup = GeneratorDriver.CreateDriverWithFiles(source);
+        var result = setup.Driver.RunGenerators(setup.Compilation).GetRunResult();
+        return Verify(result);
+    }
+
+    [Test]
+    public async Task Markdown_InlineBlockTag_NoDiagnostic()
+    {
+        // Block tags inline with text are legal in markdown templates — Fluid parses the whole
+        // file and there's no docx-style "block tag must sit alone in its paragraph" rule.
+        var result = GeneratorDriver.RunMarkdown(letterModelMd, "Hello {% if Customer %}{{ Customer.Name }}{% endif %}");
+        var diagnostics = result.Results.Single().Diagnostics;
+        await Assert.That(diagnostics.Any(_ => _.Id == "PARCH005")).IsFalse();
+        await Assert.That(diagnostics.Any(_ => _.Id == "PARCH001")).IsFalse();
+    }
+
+    [Test]
+    public Task NestedClass_Valid()
+    {
+        // The decorated model sits inside a partial enclosing class. Generated source must wrap
+        // the registration helper in `partial class Outer { partial class LetterModel { ... } }`.
+        var source =
+            """
+            using Parchment;
+
+            namespace Sample;
+
+            public class Customer
+            {
+                public string Name { get; set; } = "";
+            }
+
+            public partial class Outer
+            {
+                [ParchmentModel("template.docx")]
+                public partial class LetterModel
+                {
+                    public Customer Customer { get; set; } = new();
+                }
+            }
+            """;
+        var result = GeneratorDriver.Run(source, "Hello {{ Customer.Name }}!");
+        return Verify(result);
+    }
+
+    [Test]
+    public Task NestedClass_DoubleNested_Valid()
+    {
+        var source =
+            """
+            using Parchment;
+
+            namespace Sample;
+
+            public class Customer
+            {
+                public string Name { get; set; } = "";
+            }
+
+            public partial class Outer
+            {
+                public partial class Inner
+                {
+                    [ParchmentModel("template.docx")]
+                    public partial class LetterModel
+                    {
+                        public Customer Customer { get; set; } = new();
+                    }
+                }
+            }
+            """;
+        var result = GeneratorDriver.Run(source, "Hello {{ Customer.Name }}!");
+        return Verify(result);
+    }
+
+    [Test]
+    public async Task NestedClass_EnclosingNotPartial_Diagnostic()
+    {
+        // Outer is not partial. Should emit PARCH011 and skip generation entirely.
+        var source =
+            """
+            using Parchment;
+
+            namespace Sample;
+
+            public class Customer
+            {
+                public string Name { get; set; } = "";
+            }
+
+            public class Outer
+            {
+                [ParchmentModel("template.docx")]
+                public partial class LetterModel
+                {
+                    public Customer Customer { get; set; } = new();
+                }
+            }
+            """;
+        var result = GeneratorDriver.Run(source, "Hello {{ Customer.Name }}!");
+        var diagnostics = result.Results.Single().Diagnostics;
+        await Assert.That(diagnostics.Count(_ => _.Id == "PARCH011")).IsEqualTo(1);
+        await Assert.That(diagnostics.Single(_ => _.Id == "PARCH011").GetMessage()).Contains("Outer");
+        // Registration must NOT be emitted — the user would otherwise see a misleading CS0260
+        // about "Missing partial modifier" with no link back to the SG's expectation.
+        await Assert.That(result.GeneratedTrees.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public Task NestedRecord_Valid()
+    {
+        var source =
+            """
+            using Parchment;
+
+            namespace Sample;
+
+            public class Customer
+            {
+                public string Name { get; set; } = "";
+            }
+
+            public partial record OuterRecord
+            {
+                [ParchmentModel("template.docx")]
+                public partial class LetterModel
+                {
+                    public Customer Customer { get; set; } = new();
+                }
+            }
+            """;
+        var result = GeneratorDriver.Run(source, "Hello {{ Customer.Name }}!");
+        return Verify(result);
     }
 
     [Test]
@@ -383,13 +563,11 @@ public class ParchmentTemplateGeneratorTests
                 public string Description { get; set; } = "";
             }
 
-            public class Invoice
+            [ParchmentModel("template.docx")]
+            public partial class Invoice
             {
                 public List<Line> Lines { get; set; } = new();
             }
-
-            [ParchmentTemplate("template.docx", typeof(Invoice))]
-            public partial class Mixed;
             """;
         var result = GeneratorDriver.Run(
             source,

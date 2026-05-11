@@ -21,10 +21,22 @@
                       ReferenceOutputAssembly="false"
                       SkipGetTargetFrameworkProperties="true"
                       PrivateAssets="all" />
-    <None Include="..\Parchment.SourceGenerator\bin\$(Configuration)\netstandard2.0\Parchment.SourceGenerator.dll"
-          Pack="true" PackagePath="analyzers/dotnet/roslyn5.0/cs" Visible="false" />
-    <None Include="..\Parchment.SourceGenerator\bin\$(Configuration)\net10.0\Parchment.SourceGenerator.dll"
-          Pack="true" PackagePath="analyzers/dotnet/roslyn5.3/cs" Visible="false" />
     <None Include="nuget-readme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
+  <!-- Pack the source generator + every shaded sibling DLL (Parchment.SourceGenerator.Fluid.dll,
+       Parlot.dll, etc. — see PackageShader at https://github.com/SimonCropp/PackageShader; it
+       does NOT IL-merge, so without the siblings Roslyn fails to load the analyzer with
+       FileNotFoundException on 'Parchment.SourceGenerator.Fluid'). The wildcard is evaluated
+       inside a target rather than as a static <None>: static items are evaluated at project
+       load time, before the SG ProjectReference has built, so on a clean VM (e.g. CI) the
+       wildcard would match zero files and the analyzers would silently be left out of the
+       nupkg. _GetPackageFiles fires after the SG build, so the wildcard sees real files. -->
+  <Target Name="PackParchmentSourceGenerator" BeforeTargets="_GetPackageFiles">
+    <ItemGroup>
+      <None Include="..\Parchment.SourceGenerator\bin\$(Configuration)\netstandard2.0\Parchment.SourceGenerator*.dll"
+            Pack="true" PackagePath="analyzers/dotnet/roslyn5.0/cs" Visible="false" />
+      <None Include="..\Parchment.SourceGenerator\bin\$(Configuration)\net10.0\Parchment.SourceGenerator*.dll"
+            Pack="true" PackagePath="analyzers/dotnet/roslyn5.3/cs" Visible="false" />
+    </ItemGroup>
+  </Target>
 </Project>

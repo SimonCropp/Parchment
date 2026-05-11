@@ -619,7 +619,7 @@ The attributes are detected by name — Parchment does not ship them. Define the
 [AttributeUsage(AttributeTargets.Property)]
 sealed class HtmlAttribute : Attribute;
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L13-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlAttribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L11-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlAttribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Mark the property:
@@ -635,7 +635,7 @@ public class HtmlDoc
     public required string Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L23-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L21-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Drop a `{{ Body }}` substitution into the template on its own line:
@@ -659,7 +659,7 @@ var model = new HtmlDoc
 using var stream = new MemoryStream();
 await store.Render("html-doc", model, stream);
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L89-L103' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlUsage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L87-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlUsage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ![Rendered output](/src/Parchment.Tests/Scenarios/html-property/output%23page01.verified.png)
@@ -677,7 +677,7 @@ public class MarkdownDoc
     public required string Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L33-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L31-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ![Template before render](/src/Parchment.Tests/Scenarios/markdown-property/input.png)
@@ -697,7 +697,7 @@ public class StringSyntaxHtmlDoc
     public required string Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L43-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxHtmlModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L41-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxHtmlModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: StringSyntaxMarkdownModel -->
@@ -711,7 +711,7 @@ public class StringSyntaxMarkdownDoc
     public required string Body { get; init; }
 }
 ```
-<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L53-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxMarkdownModel' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L51-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxMarkdownModel' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Rules:
@@ -1174,16 +1174,47 @@ Whether registering by hand (`RegisterDocxTemplate<T>(...)`) or through the sour
 
 ## Source generator (compile-time validation)
 
-Decorate a `partial` class with `[ParchmentTemplate]` and Parchment's source generator validates the template tokens against the model type at compile time:
+Decorate the model class itself with `[ParchmentModel]` and Parchment's source generator validates the template tokens against it at compile time. The model must be `partial` — the generator emits a `RegisterWith` helper onto the same class. Both docx and markdown templates are supported — the generator branches on the path's extension (`.docx` → docx flow, `.md` → markdown flow):
 
 ```csharp
-[ParchmentTemplate("Templates/invoice.docx", typeof(Invoice))]
-public partial class InvoiceReport
+[ParchmentModel("Templates/invoice.docx")]
+public partial class Invoice
 {
+    public string Number { get; set; } = "";
+    public Customer Customer { get; set; } = new();
+    // ...
+}
+
+[ParchmentModel("Templates/report.md")]
+public partial class Report
+{
+    public string Title { get; set; } = "";
+    // ...
 }
 ```
 
-The generator emits the following diagnostics:
+The attribute is applied directly to the binding model — there is no separate marker / "template" class. Models almost always need Parchment-aware code on them anyway (`[Html]` / `[Markdown]` / `[ExcelsiorTable]` annotations, helper properties shaping values for binding), so the `partial` + Parchment-dependency tax is already paid. See `CLAUDE.md` → "Design decisions" for the full rationale.
+
+In both cases the generator also emits a `RegisterWith(store)` helper so registration is one line at runtime:
+
+```csharp
+var store = new TemplateStore();
+Invoice.RegisterWith(store);
+Report.RegisterWith(store, styleSource: File.OpenRead("brand.docx"));
+```
+
+The markdown helper has an extra optional `styleSource` parameter that mirrors `RegisterMarkdownTemplate<T>` — pass a brand docx whose page setup, headers/footers, and styles should be inherited by the rendered output.
+
+Add each template to `<AdditionalFiles>` so the generator can find it:
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Templates\invoice.docx" />
+  <AdditionalFiles Include="Templates\report.md" />
+</ItemGroup>
+```
+
+The generator emits the following diagnostics. Unless noted, each applies to both flows.
 
 
 ### `PARCH001` — unknown model member
@@ -1237,7 +1268,7 @@ Only `for`/`endfor`/`if`/`elsif`/`else`/`endif` are supported as block tags.
 
 ### `PARCH004` — template file not in `<AdditionalFiles>`
 
-The path in `[ParchmentTemplate("...", typeof(T))]` wasn't found among the project's `<AdditionalFiles>`. Add the docx to the csproj:
+The path in `[ParchmentModel("...")]` wasn't found among the project's `<AdditionalFiles>`. Add the docx to the csproj:
 
 ```xml
 <ItemGroup>
@@ -1248,7 +1279,7 @@ The path in `[ParchmentTemplate("...", typeof(T))]` wasn't found among the proje
 
 ### `PARCH005` — block tag shares a paragraph
 
-Block tags (`{% for %}`, `{% if %}`, etc.) must sit alone in their own paragraph. Mixing a block tag with other text on the same line is rejected.
+**Docx only.** Block tags (`{% for %}`, `{% if %}`, etc.) must sit alone in their own paragraph. Mixing a block tag with other text on the same line is rejected. Markdown templates are exempt — Fluid parses the whole file as one template, so inline block tags like `Hello {% if x %}World{% endif %}` are legal.
 
 ```
 // Template paragraphs — "prefix" is on the same line as the for tag
@@ -1260,12 +1291,12 @@ prefix {% for line in Lines %}
 
 ### `PARCH006` — template file unreadable
 
-The docx at the template path exists in `<AdditionalFiles>` but couldn't be opened — typically a corrupt or truncated file.
+The template at the path exists in `<AdditionalFiles>` but couldn't be opened. For docx, typically a corrupt or truncated file. For markdown, this also fires when Fluid fails to parse the file (e.g. an unclosed `{% for %}` block) — the diagnostic message includes the parser error.
 
 
 ### `PARCH007` — `[ExcelsiorTable]` token not alone in paragraph
 
-An `[ExcelsiorTable]` substitution replaces the entire host paragraph with a Word table. If the paragraph contains other text, that text would be discarded. The token must be the only content in its paragraph.
+**Docx only.** `[ExcelsiorTable]`-driven structural replacement is wired through the docx flow only; markdown templates ignore the attribute. An `[ExcelsiorTable]` substitution replaces the entire host paragraph with a Word table. If the paragraph contains other text, that text would be discarded. The token must be the only content in its paragraph.
 
 ```
 // Model
@@ -1282,7 +1313,7 @@ Prefix {{ Lines }}
 
 ### `PARCH008` — `[ExcelsiorTable]` token with filters or complex expression
 
-The Excelsior render path walks the CLR model directly and bypasses Fluid evaluation, so filters and complex expressions would be silently ignored. Only plain member-access (`{{ Lines }}` or `{{ Customer.Lines }}`) is allowed.
+**Docx only.** The Excelsior render path walks the CLR model directly and bypasses Fluid evaluation, so filters and complex expressions would be silently ignored. Only plain member-access (`{{ Lines }}` or `{{ Customer.Lines }}`) is allowed.
 
 ```
 // Template paragraph — the | reverse filter would be silently dropped
@@ -1297,16 +1328,22 @@ Previously emitted when an `[Html]` / `[Markdown]` token shared its paragraph wi
 
 ### `PARCH010` — `[Html]` / `[Markdown]` token with filters or complex expression
 
-Formatted rendering is selected by the property attribute rather than via Fluid, so filter chains are not applied. Use plain member access (`{{ Body }}` or `{{ Customer.Bio }}`).
+**Docx only.** Formatted rendering is selected by the property attribute rather than via Fluid, so filter chains are not applied. Use plain member access (`{{ Body }}` or `{{ Customer.Bio }}`). The `[Html]` / `[Markdown]` attributes are ignored in the markdown flow — markdown templates have no concept of structural property substitution.
 
-It also generates a `RegisterWith(store)` helper so registration is one line at runtime.
 
-Add the docx as an additional file:
+### `PARCH011` — enclosing type of `[ParchmentModel]` target must be partial
 
-```xml
-<ItemGroup>
-  <AdditionalFiles Include="Templates\invoice.docx" />
-</ItemGroup>
+The decorated model is nested inside another type that is not declared `partial`. The generator emits the registration helper as `partial class { ... }` and every enclosing type in the chain must be partial too, otherwise the C# compiler rejects the declaration as conflicting with the user's existing one (CS0260). Make every enclosing type partial:
+
+```csharp
+public partial class Outer  // <-- partial
+{
+    [ParchmentModel("template.docx")]
+    public partial class Letter
+    {
+        public Customer Customer { get; set; } = new();
+    }
+}
 ```
 
 

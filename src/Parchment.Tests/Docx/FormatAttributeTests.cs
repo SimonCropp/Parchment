@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 public class FormatAttributeTests
 {
     static string SourcePath([CallerFilePath] string path = "") => path;

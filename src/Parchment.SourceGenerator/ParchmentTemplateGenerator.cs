@@ -2,7 +2,7 @@
 public sealed class ParchmentTemplateGenerator :
     IIncrementalGenerator
 {
-    const string attributeFullName = "Parchment.ParchmentTemplateAttribute";
+    const string attributeFullName = "Parchment.ParchmentModelAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -32,22 +32,35 @@ public sealed class ParchmentTemplateGenerator :
             .Select(static (array, _) => new EquatableArray<DocxData>(array))
             .WithTrackingName(Stages.DocsCollected);
 
+        var markdowns = context.AdditionalTextsProvider
+            .Where(static _ => IsMarkdownPath(_.Path))
+            .Select(static (text, cancel) => ReadMarkdown(text, cancel))
+            .WithTrackingName(Stages.Markdowns)
+            .Collect()
+            .Select(static (array, _) => new EquatableArray<MarkdownData>(array))
+            .WithTrackingName(Stages.MarkdownsCollected);
+
         var combined = targets
             .Combine(docs)
+            .Combine(markdowns)
             .WithTrackingName(Stages.Combined);
 
         context.RegisterSourceOutput(
             combined,
             static (productionContext, tuple) =>
             {
-                var targetInfos = tuple.Left;
-                var docData = tuple.Right;
+                var targetInfos = tuple.Left.Left;
+                var docData = tuple.Left.Right;
+                var markdownData = tuple.Right;
                 foreach (var target in targetInfos)
                 {
-                    Process(productionContext, target, docData);
+                    Process(productionContext, target, docData, markdownData);
                 }
             });
     }
+
+    static bool IsMarkdownPath(string path) =>
+        path.EndsWith(".md", StringComparison.OrdinalIgnoreCase);
 
     static TargetInfo? ExtractTarget(GeneratorAttributeSyntaxContext context, Cancel cancel)
     {
@@ -58,17 +71,12 @@ public sealed class ParchmentTemplateGenerator :
 
         var attribute = context.Attributes.FirstOrDefault();
         if (attribute == null ||
-            attribute.ConstructorArguments.Length < 2)
+            attribute.ConstructorArguments.Length < 1)
         {
             return null;
         }
 
         if (attribute.ConstructorArguments[0].Value is not string path)
-        {
-            return null;
-        }
-
-        if (attribute.ConstructorArguments[1].Value is not INamedTypeSymbol modelType)
         {
             return null;
         }
@@ -84,18 +92,69 @@ public sealed class ParchmentTemplateGenerator :
             ? null
             : typeSymbol.ContainingNamespace.ToDisplayString();
 
+        var enclosingResult = BuildEnclosingChain(typeSymbol);
+
+        // The attribute target IS the model — there is no separate "marker / template" class.
+        // ModelFullyQualifiedName / ModelSimpleName therefore describe the decorated class itself.
         var excelsiorTableType = context.SemanticModel.Compilation
             .GetTypeByMetadataName(ShapeBuilder.ExcelsiorTableAttributeFullName);
-        var shape = ShapeBuilder.Build(modelType, excelsiorTableType, cancel);
+        var shape = ShapeBuilder.Build(typeSymbol, excelsiorTableType, cancel);
 
         return new(
             declaringNamespace,
             typeSymbol.Name,
-            modelType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-            modelType.Name,
+            new(enclosingResult.Chain.ToImmutableArray()),
+            typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            typeSymbol.Name,
             path,
             EquatableLocation.From(rawLocation),
-            shape);
+            shape,
+            enclosingResult.Error);
+    }
+
+    static (List<EnclosingType> Chain, string? Error) BuildEnclosingChain(INamedTypeSymbol typeSymbol)
+    {
+        var stack = new List<EnclosingType>();
+        for (var current = typeSymbol.ContainingType; current != null; current = current.ContainingType)
+        {
+            // Every enclosing type must be `partial` — the SG emits the registration helper
+            // wrapped in `partial {kind} {name} { ... }` declarations, and a non-partial
+            // enclosing declaration would conflict with the user's existing one (CS0260).
+            if (!IsPartial(current))
+            {
+                return (stack, current.Name);
+            }
+
+            stack.Add(new(current.Name, GetTypeKindKeyword(current)));
+        }
+
+        // ContainingType walks innermost → outermost; flip so emission can write outermost first.
+        stack.Reverse();
+        return (stack, null);
+    }
+
+    static bool IsPartial(INamedTypeSymbol typeSymbol)
+    {
+        foreach (var reference in typeSymbol.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax() is TypeDeclarationSyntax declaration &&
+                declaration.Modifiers.Any(SyntaxKind.PartialKeyword))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static string GetTypeKindKeyword(INamedTypeSymbol typeSymbol)
+    {
+        if (typeSymbol.IsRecord)
+        {
+            return typeSymbol.TypeKind == TypeKind.Struct ? "record struct" : "record";
+        }
+
+        return typeSymbol.TypeKind == TypeKind.Struct ? "struct" : "class";
     }
 
     static DocxData ReadDocx(AdditionalText text)
@@ -111,9 +170,65 @@ public sealed class ParchmentTemplateGenerator :
         }
     }
 
-    static void Process(SourceProductionContext context, TargetInfo target, EquatableArray<DocxData> docs)
+    static MarkdownData ReadMarkdown(AdditionalText text, Cancel cancel)
+    {
+        try
+        {
+            // AdditionalText.GetText is the canonical Roslyn entry point — it handles encoding
+            // detection and lets the SDK reuse any cached SourceText. Direct File.IO is banned
+            // for analyzers (RS1035), so a null return here means the AdditionalText doesn't
+            // back to a readable source; treat that as a read error.
+            var sourceText = text.GetText(cancel);
+            if (sourceText == null)
+            {
+                return new(text.Path, string.Empty, "AdditionalText returned no SourceText");
+            }
+
+            return new(text.Path, sourceText.ToString(), null);
+        }
+        catch (Exception exception)
+        {
+            return new(text.Path, string.Empty, exception.Message);
+        }
+    }
+
+    static void Process(
+        SourceProductionContext context,
+        TargetInfo target,
+        EquatableArray<DocxData> docs,
+        EquatableArray<MarkdownData> markdowns)
     {
         var location = target.Location.ToLocation();
+
+        if (target.ExtractError != null)
+        {
+            // PARCH011: an enclosing type isn't partial. Skip both validation and registration —
+            // template tokens may still be valid, but emitting the registration helper into a
+            // namespace-scope partial would land it in the wrong type.
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.EnclosingTypeNotPartial,
+                    location,
+                    target.DeclaringName,
+                    target.ExtractError));
+            return;
+        }
+
+        if (IsMarkdownPath(target.TemplatePath))
+        {
+            ProcessMarkdown(context, target, location, markdowns);
+            return;
+        }
+
+        ProcessDocx(context, target, location, docs);
+    }
+
+    static void ProcessDocx(
+        SourceProductionContext context,
+        TargetInfo target,
+        Location location,
+        EquatableArray<DocxData> docs)
+    {
         var normalized = target.TemplatePath.Replace('\\', '/');
 
         DocxData? matched = null;
@@ -151,12 +266,74 @@ public sealed class ParchmentTemplateGenerator :
         var tokens = TokenScanner.Scan(matched.Paragraphs);
         ValidateTokens(context, target, tokens, location);
 
-        var source = GenerateRegistration(target);
+        EmitRegistration(context, target, GenerateDocxRegistration(target));
+    }
+
+    static void ProcessMarkdown(
+        SourceProductionContext context,
+        TargetInfo target,
+        Location location,
+        EquatableArray<MarkdownData> markdowns)
+    {
+        var normalized = target.TemplatePath.Replace('\\', '/');
+
+        MarkdownData? matched = null;
+        foreach (var md in markdowns)
+        {
+            if (md.Path.Replace('\\', '/')
+                .EndsWith(normalized, StringComparison.OrdinalIgnoreCase))
+            {
+                matched = md;
+                break;
+            }
+        }
+
+        if (matched == null)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.TemplateFileMissing,
+                    location,
+                    target.TemplatePath));
+            return;
+        }
+
+        if (matched.ReadError != null)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.TemplateReadError,
+                    location,
+                    target.TemplatePath,
+                    matched.ReadError));
+            return;
+        }
+
+        if (!markdownParser.TryParse(matched.Text, out var template, out var error))
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Diagnostics.TemplateReadError,
+                    location,
+                    target.TemplatePath,
+                    $"Failed to parse markdown as a liquid template: {error}"));
+            return;
+        }
+
+        MarkdownValidator.Validate(context, target, location, template);
+
+        EmitRegistration(context, target, GenerateMarkdownRegistration(target));
+    }
+
+    static readonly FluidParser markdownParser = new();
+
+    static void EmitRegistration(SourceProductionContext context, TargetInfo target, string source)
+    {
         var hintPrefix = target.DeclaringNamespace is null
             ? target.DeclaringName
             : $"{target.DeclaringNamespace}.{target.DeclaringName}";
         context.AddSource(
-            $"{hintPrefix.Replace('.', '_')}_ParchmentTemplate.g.cs",
+            $"{hintPrefix.Replace('.', '_')}_ParchmentModel.g.cs",
             SourceText.From(source, Encoding.UTF8));
     }
 
@@ -359,7 +536,7 @@ public sealed class ParchmentTemplateGenerator :
         SourceProductionContext context,
         TargetInfo target,
         Location location,
-        IReadOnlyList<string[]> references,
+        List<List<string>> references,
         IReadOnlyDictionary<string, string> scope,
         string tokenSource)
     {
@@ -382,9 +559,48 @@ public sealed class ParchmentTemplateGenerator :
         }
     }
 
-    static string GenerateRegistration(TargetInfo target)
+    static string GenerateDocxRegistration(TargetInfo target)
     {
         var templatePath = target.TemplatePath.Replace("\\", @"\\");
+        var body =
+            $$"""
+              public static string TemplatePath => "{{templatePath}}";
+              public static string TemplateName => "{{target.DeclaringName}}";
+
+              public static void RegisterWith(global::Parchment.TemplateStore store, string? basePath = null)
+              {
+                  var path = basePath is null ? TemplatePath : global::System.IO.Path.Combine(basePath, TemplatePath);
+                  store.RegisterDocxTemplate<{{target.ModelFullyQualifiedName}}>(TemplateName, path);
+              }
+              """;
+
+        return BuildPartialSource(target, body);
+    }
+
+    static string GenerateMarkdownRegistration(TargetInfo target)
+    {
+        var templatePath = target.TemplatePath.Replace("\\", @"\\");
+        var body =
+            $$"""
+              public static string TemplatePath => "{{templatePath}}";
+              public static string TemplateName => "{{target.DeclaringName}}";
+
+              public static void RegisterWith(global::Parchment.TemplateStore store, string? basePath = null, global::System.IO.Stream? styleSource = null)
+              {
+                  var path = basePath is null ? TemplatePath : global::System.IO.Path.Combine(basePath, TemplatePath);
+                  var markdown = global::System.IO.File.ReadAllText(path);
+                  store.RegisterMarkdownTemplate<{{target.ModelFullyQualifiedName}}>(TemplateName, markdown, styleSource);
+              }
+              """;
+
+        return BuildPartialSource(target, body);
+    }
+
+    // Wraps `body` in `partial {kind} {name} { ... }` declarations: namespace (if any), then
+    // each enclosing type outermost-first, then the target itself. Indentation isn't strictly
+    // necessary for correctness but keeps the generated source readable in obj/.../generated.
+    static string BuildPartialSource(TargetInfo target, string body)
+    {
         var builder = new StringBuilder(
             """
             // <auto-generated />
@@ -397,23 +613,40 @@ public sealed class ParchmentTemplateGenerator :
             builder.AppendLine($"namespace {target.DeclaringNamespace};");
         }
 
-        builder.AppendLine(
-            $$"""
-              partial class {{target.DeclaringName}}
-              {
-                  public static string TemplatePath => "{{templatePath}}";
-                  public static string TemplateName => "{{target.DeclaringName}}";
+        var depth = 0;
+        foreach (var enclosing in target.EnclosingTypes)
+        {
+            builder.Append(Indent(depth)).AppendLine($"partial {enclosing.Kind} {enclosing.Name}");
+            builder.Append(Indent(depth)).AppendLine("{");
+            depth++;
+        }
 
-                  public static void RegisterWith(global::Parchment.TemplateStore store, string? basePath = null)
-                  {
-                      var path = basePath is null ? TemplatePath : global::System.IO.Path.Combine(basePath, TemplatePath);
-                      store.RegisterDocxTemplate<{{target.ModelFullyQualifiedName}}>(TemplateName, path);
-                  }
-              }
-              """);
+        builder.Append(Indent(depth)).AppendLine($"partial class {target.DeclaringName}");
+        builder.Append(Indent(depth)).AppendLine("{");
+        foreach (var line in body.Split('\n'))
+        {
+            var trimmed = line.TrimEnd('\r');
+            if (trimmed.Length == 0)
+            {
+                builder.AppendLine();
+            }
+            else
+            {
+                builder.Append(Indent(depth + 1)).AppendLine(trimmed);
+            }
+        }
+
+        builder.Append(Indent(depth)).AppendLine("}");
+
+        for (var i = depth - 1; i >= 0; i--)
+        {
+            builder.Append(Indent(i)).AppendLine("}");
+        }
 
         return builder.ToString();
     }
+
+    static string Indent(int depth) => new(' ', depth * 4);
 
     public static class Stages
     {
@@ -421,6 +654,8 @@ public sealed class ParchmentTemplateGenerator :
         public const string TargetsCollected = "Parchment_TargetsCollected";
         public const string Docs = "Parchment_Docs";
         public const string DocsCollected = "Parchment_DocsCollected";
+        public const string Markdowns = "Parchment_Markdowns";
+        public const string MarkdownsCollected = "Parchment_MarkdownsCollected";
         public const string Combined = "Parchment_Combined";
     }
 }
