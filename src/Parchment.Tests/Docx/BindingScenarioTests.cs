@@ -1,0 +1,100 @@
+public class BindingScenarioTests
+{
+    // -- #1 public fields ----------------------------------------------------
+
+    public class FieldModel
+    {
+        public string Title = "";
+        public NestedField Nested = new();
+    }
+
+    public class NestedField
+    {
+        public string Value = "";
+    }
+
+    [Test]
+    public async Task PublicField_RendersLikeProperty()
+    {
+        using var template = DocxTemplateBuilder.Build("Title: {{ Title }} — Nested: {{ Nested.Value }}");
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<FieldModel>("field", template);
+
+        using var output = new MemoryStream();
+        await store.Render(
+            "field",
+            new FieldModel { Title = "T", Nested = new() { Value = "N" } },
+            output);
+        await Verify(output, "docx");
+    }
+
+    // -- #2 polymorphism / abstract base ------------------------------------
+
+    public abstract class DocumentBase
+    {
+        public required string Title { get; init; }
+    }
+
+    public sealed class ConcreteReport : DocumentBase
+    {
+        public required string Body { get; init; }
+    }
+
+    [Test]
+    public async Task AbstractBase_BindsAgainstDeclaredType_AcceptsSubclassInstance()
+    {
+        // Register against the abstract base. `Title` is on the base, so it must validate and
+        // render. The instance passed in is a concrete subclass — `Render`'s IsInstanceOfType
+        // accepts it. Subclass-only members (Body) are deliberately NOT referenced here; that
+        // case is covered by the negative test below.
+        using var template = DocxTemplateBuilder.Build("Doc: {{ Title }}");
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<DocumentBase>("polymorphic", template);
+
+        using var output = new MemoryStream();
+        await store.Render(
+            "polymorphic",
+            new ConcreteReport { Title = "Q1", Body = "ignored" },
+            output);
+        await Verify(output, "docx");
+    }
+
+    [Test]
+    public async Task AbstractBase_SubclassOnlyMember_FailsValidation()
+    {
+        // The token references `Body`, declared only on ConcreteReport. Registering against the
+        // abstract base must reject the template — the contract is "bind against the declared
+        // type", not "bind against any subclass you might pass at render time".
+        using var template = DocxTemplateBuilder.Build("Doc: {{ Title }} — {{ Body }}");
+        var store = new TemplateStore();
+        var exception = await Assert.That(
+                () => store.RegisterDocxTemplate<DocumentBase>("polymorphic-bad", template))
+            .Throws<ParchmentRegistrationException>();
+        await Assert.That(exception!.Message).Contains("Body");
+    }
+
+    // -- #3 record struct ---------------------------------------------------
+
+    public record struct Point(int X, int Y);
+
+    public class ShapeModel
+    {
+        public required string Name { get; init; }
+        public required Point Origin { get; init; }
+    }
+
+    [Test]
+    public async Task RecordStruct_NestedMember_BindsAndRenders()
+    {
+        using var template = DocxTemplateBuilder.Build("{{ Name }} @ ({{ Origin.X }}, {{ Origin.Y }})");
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<ShapeModel>("record-struct", template);
+
+        using var output = new MemoryStream();
+        await store.Render(
+            "record-struct",
+            new ShapeModel { Name = "origin", Origin = new(3, 7) },
+            output);
+        await Verify(output, "docx");
+    }
+}

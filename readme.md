@@ -1347,6 +1347,23 @@ public partial class Outer  // <-- partial
 ```
 
 
+## Model binding limitations
+
+Parchment binds tokens by reflecting on the model type. A member is bindable only if `typeof(TModel).GetProperties(BindingFlags.Public | BindingFlags.Instance)` returns it, and the source generator's `ShapeBuilder` mirrors the same rules. The following kinds of members are **not** bound — a token referencing them fails registration (`ParchmentRegistrationException`) or compile-time validation (`PARCH001`).
+
+### Interfaces as the binding model
+
+`RegisterDocxTemplate<IFoo>(...)` / `RegisterMarkdownTemplate<IFoo>(...)` is rejected at registration time with a `ParchmentRegistrationException` ("Model type 'IFoo' is an interface. Parchment binds against a concrete type's properties via reflection — register against a class, record, or struct instead."). Reflection on an interface returns only members declared directly on that interface, missing inherited base-interface members. The source-generator path is blocked at the language level — `[ParchmentModel]` is declared with `AttributeUsage(AttributeTargets.Class)`, so applying it to an interface is a CS0592 compile error. Abstract classes **are** supported and work as a polymorphic binding surface: register against the abstract type and pass any concrete subclass to `Render`.
+
+### Default implementations on interfaces
+
+A property declared with a body on an interface — e.g. `interface IDocument { string Title { get; } string Header => $"=== {Title} ==="; }` — is **not** bound on classes that implement the interface unless the class re-declares it as a regular instance property. `typeof(Foo).GetProperties(...)` does not surface interface-default members; they're only reachable via the interface type. The SG-side walker visits `BaseType` but not implemented interfaces, so it behaves the same. Workaround: declare the property on the model class itself.
+
+### C# 14 extension properties
+
+Extension properties compile to static methods on the extension container class, not as instance properties of the target type. `typeof(Customer).GetProperties(...)` does not return them, and `ITypeSymbol.GetMembers()` on the target returns only members declared on the type symbol. Neither the runtime walkers nor `ShapeBuilder` see them. Workaround: declare the property on the model class itself — the model already pays the partial-class / Parchment-reference cost, so helper / computed properties belong there.
+
+
 ## Benchmarks
 
 ``` ini

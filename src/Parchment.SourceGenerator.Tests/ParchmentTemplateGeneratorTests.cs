@@ -686,4 +686,32 @@ public class ParchmentTemplateGeneratorTests
         await Assert.That(generated).Contains("partial record Letter");
         await Verify(result);
     }
+
+    [Test]
+    public async Task InheritedMember_Validates()
+    {
+        // ShapeBuilder.BuildEntry walks `current.BaseType` so members declared on a base class are
+        // visible to validation. Without that walk, `{{ Title }}` would trip PARCH001 even though
+        // the runtime resolves it via reflection.
+        var source =
+            """
+            using Parchment;
+
+            namespace Sample;
+
+            public class DocumentBase
+            {
+                public string Title { get; set; } = "";
+            }
+
+            [ParchmentModel("template.docx")]
+            public partial class Report : DocumentBase
+            {
+                public string Body { get; set; } = "";
+            }
+            """;
+        var result = GeneratorDriver.Run(source, "{{ Title }} — {{ Body }}");
+        var diagnostics = result.Results.Single().Diagnostics;
+        await Assert.That(diagnostics).IsEmpty();
+    }
 }
