@@ -51,9 +51,8 @@ static class TokenScan
 
     /// <summary>
     /// Returns true if any non-whitespace character in <paramref name="text"/> sits outside
-    /// every site in <paramref name="sites"/>. Replaces the old
-    /// <c>TokenRegex.Replace(text, "").Trim().Length &gt; 0</c> idiom that callers used to
-    /// detect static text mixed in with token sites.
+    /// every site in <paramref name="sites"/>. Used to detect static text mixed in with
+    /// token sites.
     /// </summary>
     public static bool HasContentOutsideSites(string text, List<TokenSite> sites)
     {

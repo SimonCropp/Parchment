@@ -1,7 +1,8 @@
 /// <summary>
-/// Parses a block-tag source string of the form <c>{% tag expr %}</c> into its two components.
-/// Replaces the equivalent regex (<c>^\{%\s*(?&lt;tag&gt;\w+)(?:\s+(?&lt;expr&gt;.*?))?\s*%\}$</c>)
-/// with a span-based hand-roll — same semantics, zero allocations, no Regex engine startup.
+/// SG-side mirror of <c>Parchment.Tokens.BlockTagParser</c>. The SG project can't reference the
+/// runtime assembly (different target frameworks; SG ships as a netstandard2.0 analyzer), so the
+/// parser is duplicated here. Same semantics as the original
+/// <c>^\{%\s*(?&lt;tag&gt;\w+)(?:\s+(?&lt;expr&gt;.*?))?\s*%\}$</c> regex, span-based, allocation-free.
 /// </summary>
 static class BlockTagParser
 {
@@ -21,13 +22,12 @@ static class BlockTagParser
             return false;
         }
 
-        var inner = span[2..^2].Trim();
+        var inner = span.Slice(2, span.Length - 4).Trim();
         if (inner.IsEmpty)
         {
             return false;
         }
 
-        // Tag is one or more `\w` characters — letters, digits, underscore.
         var tagLength = 0;
         while (tagLength < inner.Length && IsWord(inner[tagLength]))
         {
@@ -39,12 +39,9 @@ static class BlockTagParser
             return false;
         }
 
-        tag = inner[..tagLength];
-        var rest = inner[tagLength..];
+        tag = inner.Slice(0, tagLength);
+        var rest = inner.Slice(tagLength);
 
-        // After the tag, either end-of-content or whitespace + expression. The original regex
-        // required `\s+` between tag and expr, so non-whitespace immediately after tag word chars
-        // (e.g. `{% for[x] %}`) is a parse failure — same here.
         if (rest.IsEmpty)
         {
             return true;

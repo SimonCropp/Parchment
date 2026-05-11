@@ -198,9 +198,93 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
 
     static bool IsLikelyLoopVariable(string identifier, string markdown)
     {
-        var pattern = $"{{%\\s*for\\s+{Regex.Escape(identifier)}\\s+in\\s+";
-        return Regex.IsMatch(markdown, pattern);
+        // Hand-rolled scan for `{%\s*for\s+<identifier>\s+in\s+` so the markdown reference
+        // validator can skip loop-bound names (they're bound at render time, not pre-validatable
+        // against the model). Loop tag never spans paragraph boundaries in liquid, so a flat scan
+        // of the markdown source is sufficient.
+        var span = markdown.AsSpan();
+        var idSpan = identifier.AsSpan();
+        var index = 0;
+        while (index < span.Length - 1)
+        {
+            var brace = span[index..].IndexOf('{');
+            if (brace < 0)
+            {
+                return false;
+            }
+
+            index += brace;
+            if (index + 1 >= span.Length || span[index + 1] != '%')
+            {
+                index++;
+                continue;
+            }
+
+            var cursor = index + 2;
+            cursor = SkipWhitespace(span, cursor);
+            if (!Matches(span, cursor, "for"))
+            {
+                index++;
+                continue;
+            }
+
+            cursor += 3;
+            var afterFor = SkipWhitespace(span, cursor);
+            if (afterFor == cursor)
+            {
+                index++;
+                continue;
+            }
+
+            cursor = afterFor;
+            if (!Matches(span, cursor, idSpan))
+            {
+                index++;
+                continue;
+            }
+
+            cursor += idSpan.Length;
+            var afterId = SkipWhitespace(span, cursor);
+            if (afterId == cursor)
+            {
+                index++;
+                continue;
+            }
+
+            cursor = afterId;
+            if (!Matches(span, cursor, "in"))
+            {
+                index++;
+                continue;
+            }
+
+            cursor += 2;
+            var afterIn = SkipWhitespace(span, cursor);
+            if (afterIn == cursor)
+            {
+                index++;
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
+
+    static int SkipWhitespace(CharSpan span, int from)
+    {
+        while (from < span.Length && char.IsWhiteSpace(span[from]))
+        {
+            from++;
+        }
+
+        return from;
+    }
+
+    static bool Matches(CharSpan span, int from, CharSpan literal) =>
+        from + literal.Length <= span.Length &&
+        span.Slice(from, literal.Length).SequenceEqual(literal);
 
     public Task Render(string name, object model, Stream output, Cancel cancel = default)
     {

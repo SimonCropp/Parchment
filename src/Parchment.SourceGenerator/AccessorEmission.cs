@@ -23,13 +23,6 @@
 /// <c>Nullable&lt;T&gt;</c> intermediates; non-nullable value-type intermediates are an
 /// unsupported case (rare in real binding models — value types are typically leaves).
 /// </summary>
-// The SG project has no reference to Parchment.dll, so it can't see `FormatMapKind`. Mirror
-// the two values locally — emission only needs the string name to print into the generated code.
-enum FormatMapKind
-{
-    Html,
-    Markdown
-}
 
 static class AccessorEmission
 {
@@ -234,7 +227,7 @@ static class AccessorEmission
         foreach (var (path, elementFqn) in entries)
         {
             fields.Append("  new(\"");
-            fields.Append(string.Join(".", path));
+            fields.AppendJoin('.', path);
             fields.Append("\", typeof(");
             fields.Append(elementFqn);
             fields.Append("), ");
@@ -266,7 +259,7 @@ static class AccessorEmission
         foreach (var (path, kind) in entries)
         {
             fields.Append("  new(\"");
-            fields.Append(string.Join(".", path));
+            fields.AppendJoin('.', path);
             fields.Append("\", global::Parchment.Generated.FormatMapKind.");
             fields.Append(kind);
             fields.Append(", ");
@@ -298,7 +291,7 @@ static class AccessorEmission
         foreach (var path in entries)
         {
             fields.Append("  new(\"");
-            fields.Append(string.Join(".", path));
+            fields.AppendJoin('.', path);
             fields.Append("\", ");
             EmitGetter(fields, rootFqn, path);
             fields.AppendLine("),");

@@ -45,6 +45,63 @@ public class RegistrationBenchmarks
         store.RegisterDocxTemplate<Invoice>("bench", templatePath);
     }
 
+    [Benchmark]
+    public void RegisterViaSourceGeneratorPath()
+    {
+        // Simulates what a SG-emitted RegisterWith does — pre-populates the per-type Fluid
+        // accessors + the StringList map (for Tags), then calls RegisterDocxTemplate. The
+        // runtime's reflection walks short-circuit on the cache hits.
+        global::Parchment.Generated.GeneratedRegistration.RegisterFluidAccessors(
+            typeof(Invoice), invoiceAccessors);
+        global::Parchment.Generated.GeneratedRegistration.RegisterFluidAccessors(
+            typeof(Customer), customerAccessors);
+        global::Parchment.Generated.GeneratedRegistration.RegisterFluidAccessors(
+            typeof(LineItem), lineItemAccessors);
+        global::Parchment.Generated.GeneratedRegistration.RegisterStringList(
+            typeof(Invoice), invoiceStringLists);
+
+        using var ms = new MemoryStream(templateBytes);
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<Invoice>("bench-sg", ms);
+    }
+
+    static readonly KeyValuePair<string, Fluid.IMemberAccessor>[] invoiceAccessors =
+    {
+        new("Number",    new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Number)),
+        new("IssueDate", new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).IssueDate)),
+        new("DueDate",   new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).DueDate)),
+        new("Customer",  new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Customer)),
+        new("Lines",     new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Lines)),
+        new("Currency",  new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Currency)),
+        new("Notes",     new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Notes)),
+        new("Tags",      new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Tags)),
+        new("Subtotal",  new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Subtotal)),
+        new("Tax",       new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Tax)),
+        new("Total",     new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Total)),
+    };
+
+    static readonly KeyValuePair<string, Fluid.IMemberAccessor>[] customerAccessors =
+    {
+        new("Name",        new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).Name)),
+        new("Email",       new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).Email)),
+        new("Address",     new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).Address)),
+        new("VatNumber",   new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).VatNumber)),
+        new("IsPreferred", new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).IsPreferred)),
+    };
+
+    static readonly KeyValuePair<string, Fluid.IMemberAccessor>[] lineItemAccessors =
+    {
+        new("Description", new Fluid.Accessors.DelegateAccessor((o, _) => ((LineItem)o).Description)),
+        new("Quantity",    new Fluid.Accessors.DelegateAccessor((o, _) => ((LineItem)o).Quantity)),
+        new("UnitPrice",   new Fluid.Accessors.DelegateAccessor((o, _) => ((LineItem)o).UnitPrice)),
+        new("LineTotal",   new Fluid.Accessors.DelegateAccessor((o, _) => ((LineItem)o).LineTotal)),
+    };
+
+    static readonly global::Parchment.Generated.StringListMapEntry[] invoiceStringLists =
+    {
+        new("Tags", o => ((Invoice)o).Tags),
+    };
+
     static byte[] BuildTemplate()
     {
         using var stream = new MemoryStream();

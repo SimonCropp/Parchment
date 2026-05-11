@@ -1,9 +1,5 @@
 public static class TokenScanner
 {
-    static readonly Regex blockTagRegex = new(
-        @"^\{%\s*(?<tag>\w+)(?:\s+(?<expr>.*?))?\s*%\}$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
     static readonly FluidParser parser = new();
 
     public static List<Token> Scan(IEnumerable<string> paragraphs)
@@ -64,14 +60,12 @@ public static class TokenScanner
 
     static Token ParseBlockTag(string source, bool hasOtherContent)
     {
-        var match = blockTagRegex.Match(source);
-        if (!match.Success)
+        if (!BlockTagParser.TryParse(source, out var tag, out var expressionSpan))
         {
             return new(TokenKind.UnknownBlock, source, [], null, hasOtherContent);
         }
 
-        var tag = match.Groups["tag"].Value;
-        var expression = match.Groups["expr"].Success ? match.Groups["expr"].Value.Trim() : null;
+        var expression = expressionSpan.IsEmpty ? null : expressionSpan.ToString();
 
         switch (tag)
         {
