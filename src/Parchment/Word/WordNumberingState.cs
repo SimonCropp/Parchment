@@ -9,9 +9,9 @@ class WordNumberingState(MainDocumentPart mainPart)
     int nextAbstractNumId;
     int nextNumId;
     bool initialized;
-    OpenXmlHtml.HtmlNumberingSession? htmlSession;
+    HtmlNumberingSession? htmlSession;
 
-    internal OpenXmlHtml.HtmlNumberingSession GetHtmlSession() =>
+    internal HtmlNumberingSession GetHtmlSession() =>
         htmlSession ??= new();
 
     public int CreateBulletNumbering()

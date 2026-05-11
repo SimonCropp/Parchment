@@ -1,5 +1,3 @@
-namespace Parchment;
-
 /// <summary>
 /// Image resolution policies applied to every HTML / markdown render path. Defaults to
 /// <see cref="OpenXmlHtml.ImagePolicy.AllowAll"/> for both local and web sources because Parchment
@@ -7,14 +5,14 @@ namespace Parchment;
 /// default would silently break <c>&lt;img src="..."&gt;</c> in <c>[Html]</c> properties and
 /// <c>![alt](path)</c> in markdown templates.
 /// </summary>
-sealed record ImagePolicies(OpenXmlHtml.ImagePolicy LocalImages, OpenXmlHtml.ImagePolicy WebImages)
+sealed record ImagePolicies(ImagePolicy LocalImages, ImagePolicy WebImages)
 {
     public static ImagePolicies AllowAll { get; } =
-        new(OpenXmlHtml.ImagePolicy.AllowAll(), OpenXmlHtml.ImagePolicy.AllowAll());
+        new(ImagePolicy.AllowAll(), ImagePolicy.AllowAll());
 
-    public OpenXmlHtml.HtmlConvertSettings BuildSettings(
+    public HtmlConvertSettings BuildSettings(
         int headingOffset = 0,
-        OpenXmlHtml.HtmlNumberingSession? numberingSession = null) =>
+        HtmlNumberingSession? numberingSession = null) =>
         new()
         {
             LocalImages = LocalImages,

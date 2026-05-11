@@ -12,7 +12,7 @@ class HtmlBlockRenderer :
 
         var html = block.Lines.ToString();
         var settings = renderer.ImagePolicies.BuildSettings(headingOffset: renderer.HeadingOffset);
-        var elements = OpenXmlHtml.WordHtmlConverter.ToElements(html, renderer.MainPart, settings);
+        var elements = WordHtmlConverter.ToElements(html, renderer.MainPart, settings);
         foreach (var element in elements)
         {
             renderer.AddBlock(element);

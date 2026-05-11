@@ -69,7 +69,7 @@ class LinkInlineRenderer :
         var html = $"<img src=\"{HtmlEscape(url)}\" alt=\"{HtmlEscape(alt)}\" />";
 
         var settings = renderer.ImagePolicies.BuildSettings();
-        var elements = OpenXmlHtml.WordHtmlConverter.ToElements(html, renderer.MainPart, settings);
+        var elements = WordHtmlConverter.ToElements(html, renderer.MainPart, settings);
         foreach (var element in elements)
         {
             if (element is Paragraph paragraph)

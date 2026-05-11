@@ -10,13 +10,13 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
     /// from <c>&lt;img&gt;</c> tags or markdown <c>![alt](path)</c> images. Defaults to
     /// <see cref="OpenXmlHtml.ImagePolicy.AllowAll"/>.
     /// </summary>
-    public OpenXmlHtml.ImagePolicy LocalImages { get; init; } = OpenXmlHtml.ImagePolicy.AllowAll();
+    public ImagePolicy LocalImages { get; init; } = ImagePolicy.AllowAll();
 
     /// <summary>
     /// Policy for web image sources (<c>http://</c> and <c>https://</c> URIs). Defaults to
     /// <see cref="OpenXmlHtml.ImagePolicy.AllowAll"/>.
     /// </summary>
-    public OpenXmlHtml.ImagePolicy WebImages { get; init; } = OpenXmlHtml.ImagePolicy.AllowAll();
+    public ImagePolicy WebImages { get; init; } = ImagePolicy.AllowAll();
 
     ImagePolicies Policies => new(LocalImages, WebImages);
 

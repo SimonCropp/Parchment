@@ -126,7 +126,7 @@ static class ShapeBuilder
         // `string` itself is `IEnumerable<char>`, not `IEnumerable<string>` — element type would
         // be `char`, which is correctly rejected here.
         var element = ModelSymbolResolver.TryGetElementType(type);
-        return element != null && element.SpecialType == SpecialType.System_String;
+        return element is {SpecialType: SpecialType.System_String};
     }
 
     static bool HasExcelsiorTableAttribute(ISymbol member, INamedTypeSymbol? excelsiorTableType)

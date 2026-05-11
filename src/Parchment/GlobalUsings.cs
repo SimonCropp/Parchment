@@ -28,6 +28,6 @@ global using Markdig.Syntax.Inlines;
 
 global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Logging.Abstractions;
-
+global using OpenXmlHtml;
 global using Parchment;
 global using Parchment.Generated;

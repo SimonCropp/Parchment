@@ -193,7 +193,7 @@ class ScopeTreeRunner(
         value switch
         {
             MarkdownToken md => MarkdownRendering.Render(md.Source, mainPart, numberingState, imagePolicies, headingOffset: 0),
-            HtmlToken html => OpenXmlHtml.WordHtmlConverter.ToElements(
+            HtmlToken html => WordHtmlConverter.ToElements(
                 html.Source,
                 mainPart,
                 imagePolicies.BuildSettings(numberingSession: numberingState.GetHtmlSession())),
