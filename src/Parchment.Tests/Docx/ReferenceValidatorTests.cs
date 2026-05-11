@@ -121,6 +121,55 @@ public class ReferenceValidatorTests
         store.RegisterDocxTemplate<SelfRef>("self-ref", template);
     }
 
+    public class DocumentBase
+    {
+        public required string Title { get; init; }
+    }
+
+    public class Report : DocumentBase
+    {
+        public required string Body { get; init; }
+    }
+
+    public class ShadowBase
+    {
+        public string Title { get; init; } = "base";
+    }
+
+    public class ShadowingReport : ShadowBase
+    {
+        public new string Title { get; init; } = "derived";
+    }
+
+    [Test]
+    public async Task InheritedMember_RegistersAndRenders()
+    {
+        using var template = DocxTemplateBuilder.Build("{{ Title }} — {{ Body }}");
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<Report>("inherited", template);
+
+        using var output = new MemoryStream();
+        await store.Render(
+            "inherited",
+            new Report { Title = "Q1", Body = "summary" },
+            output);
+        await Verify(output, "docx");
+    }
+
+    [Test]
+    public async Task ShadowedMember_DerivedWins()
+    {
+        // ShadowingReport hides DocumentBase.Title with `new`. Validation must see the derived
+        // property (not error on collision) and rendering must pick up the derived value.
+        using var template = DocxTemplateBuilder.Build("{{ Title }}");
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<ShadowingReport>("shadow", template);
+
+        using var output = new MemoryStream();
+        await store.Render("shadow", new ShadowingReport { Title = "derived" }, output);
+        await Verify(output, "docx");
+    }
+
     [Test]
     public async Task IfConditionWithUnknownMember_FailsRegistration()
     {

@@ -31,6 +31,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
+        GuardBindingModel<TModel>(name);
         SharedFluid.RegisterModel(typeof(TModel));
 
         var excelsiorMap = ExcelsiorTableMap.Build(typeof(TModel), name);
@@ -71,6 +72,7 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
+        GuardBindingModel<TModel>(name);
         SharedFluid.RegisterModel(typeof(TModel));
 
         if (!SharedFluid.Parser.TryParse(markdown, out var template, out var error))
@@ -117,6 +119,17 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         var registered = new RegisteredMarkdownTemplate(name, typeof(TModel), bytes, template, Policies);
         templates[name] = registered;
         logger.LogInformation("Registered markdown template {Name} for {ModelType}", name, typeof(TModel).Name);
+    }
+
+    static void GuardBindingModel<TModel>(string name)
+    {
+        var type = typeof(TModel);
+        if (type.IsInterface)
+        {
+            throw new ParchmentRegistrationException(
+                name,
+                $"Model type '{type.Name}' is an interface. Parchment binds against a concrete type's properties via reflection — register against a class, record, or struct instead.");
+        }
     }
 
     static byte[] BlankDocxTemplate { get; } = BuildBlankDocx();

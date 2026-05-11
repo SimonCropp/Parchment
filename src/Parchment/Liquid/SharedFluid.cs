@@ -45,6 +45,27 @@ static class SharedFluid
         var generic = registerGenericMethod.MakeGenericMethod(type);
         generic.Invoke(null, [Options.MemberAccessStrategy]);
 
+        // Fluid's MemberAccessStrategyExtensions.Register<T>() walks properties only — so without
+        // explicit field accessors here, `{{ x.SomeField }}` on a non-root type renders empty.
+        // Top-level field access still works thanks to TemplateContext(model, ..., allowModelMembers: true),
+        // but nested traversal stops dead. Register a DelegateAccessor per public instance field
+        // so field access is consistent at every depth.
+        var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
+        if (fields.Length > 0)
+        {
+            var accessors = new List<KeyValuePair<string, IMemberAccessor>>(fields.Length);
+            foreach (var field in fields)
+            {
+                var captured = field;
+                accessors.Add(
+                    new(
+                        field.Name,
+                        new DelegateAccessor((instance, _) => captured.GetValue(instance))));
+            }
+
+            Options.MemberAccessStrategy.Register(type, accessors);
+        }
+
         foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
             if (property.GetIndexParameters().Length > 0)
@@ -53,6 +74,11 @@ static class SharedFluid
             }
 
             RegisterTypeGraph(Unwrap(property.PropertyType));
+        }
+
+        foreach (var field in fields)
+        {
+            RegisterTypeGraph(Unwrap(field.FieldType));
         }
     }
 

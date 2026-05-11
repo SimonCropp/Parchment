@@ -16,6 +16,7 @@ global using DocumentFormat.OpenXml.Packaging;
 global using DocumentFormat.OpenXml.Wordprocessing;
 global using Excelsior;
 global using Fluid;
+global using Fluid.Accessors;
 global using Fluid.Ast;
 global using Fluid.Values;
 
