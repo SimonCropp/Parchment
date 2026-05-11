@@ -33,17 +33,17 @@ static class FormatTokenValidator
                     continue;
                 }
 
-                if (!formats.TryGet(token.References[0].Dotted, out var kind))
+                if (!formats.TryGet(token.References[0].Dotted, out var entry))
                 {
                     continue;
                 }
 
-                RequirePlainIdentifier(token, kind, templateName, partUri);
+                RequirePlainIdentifier(token, entry.Kind, templateName, partUri);
             }
         }
     }
 
-    static void RequirePlainIdentifier(DocxTokenSite token, FormatKind kind, string templateName, string partUri)
+    static void RequirePlainIdentifier(DocxTokenSite token, FormatMapKind kind, string templateName, string partUri)
     {
         var statements = ((Fluid.Parser.FluidTemplate) token.Template).Statements;
         if (statements.Count == 0)

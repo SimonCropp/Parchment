@@ -1172,9 +1172,13 @@ await store.Render(
 Whether registering by hand (`RegisterDocxTemplate<T>(...)`) or through the source generator's `RegisterWith(store)` helper, the template is fully validated against `T` at registration — before any render runs. Missing members, block tags targeting non-enumerable properties, or `[ExcelsiorTable]` tokens that break the solo-in-paragraph / plain-member-access rules throw `ParchmentRegistrationException` immediately. Register templates at app startup and any binding mismatch surfaces there, not on the first render.
 
 
-## Source generator (compile-time validation)
+## Source generator (recommended)
 
-Decorate the model class itself with `[ParchmentModel]` and Parchment's source generator validates the template tokens against it at compile time. The model must be `partial` — the generator emits a `RegisterWith` helper onto the same class. Both docx and markdown templates are supported — the generator branches on the path's extension (`.docx` → docx flow, `.md` → markdown flow):
+The source generator is the recommended way to register templates. Decorate the model class itself with `[ParchmentModel]` and Parchment's source generator (a) validates the template tokens against the model at compile time, and (b) emits a `RegisterWith` helper that pre-compiles all the member accessors needed at registration time — Fluid accessors per reachable type, plus the per-template maps for `[ExcelsiorTable]`, `[Html]` / `[Markdown]`, and `IEnumerable<string>` properties.
+
+**No runtime reflection at registration.** Both the model graph walk in `SharedFluid.RegisterTypeGraph` and the dotted-path walks in `ExcelsiorTableMap` / `FormatMap` / `StringListMap` short-circuit when the source generator has already populated their caches. This makes Parchment safe for trimming and NativeAOT scenarios, and matches the modern .NET pattern set by `System.Text.Json`'s `JsonSerializerContext`, EF Core's compiled models, and the regex source generator.
+
+The model must be `partial` — the generator emits a `RegisterWith` helper onto the same class. Both docx and markdown templates are supported — the generator branches on the path's extension (`.docx` → docx flow, `.md` → markdown flow):
 
 ```csharp
 [ParchmentModel("Templates/invoice.docx")]
@@ -1194,6 +1198,8 @@ public partial class Report
 ```
 
 The attribute is applied directly to the binding model — there is no separate marker / "template" class. Models almost always need Parchment-aware code on them anyway (`[Html]` / `[Markdown]` / `[ExcelsiorTable]` annotations, helper properties shaping values for binding), so the `partial` + Parchment-dependency tax is already paid. See `CLAUDE.md` → "Design decisions" for the full rationale.
+
+The runtime `TemplateStore.RegisterDocxTemplate<T>(name, path)` / `RegisterMarkdownTemplate<T>(name, markdown)` overloads still exist as an **escape hatch** — use them when the model can't be made `partial` (third-party / generated types), when the model isn't known at compile time, or when one model needs to bind multiple templates. They are reflection-based and not trimming-friendly; the SG path is preferred whenever the model is yours to annotate.
 
 In both cases the generator also emits a `RegisterWith(store)` helper so registration is one line at runtime:
 

@@ -7,6 +7,8 @@
 /// </summary>
 sealed class StringListMap
 {
+    static readonly ConcurrentDictionary<Type, StringListMap> precompiledCache = new();
+
     readonly Dictionary<string, Func<object, object?>> entries;
 
     StringListMap(Dictionary<string, Func<object, object?>> entries) =>
@@ -19,10 +21,26 @@ sealed class StringListMap
 
     public static StringListMap Build(Type modelType)
     {
+        if (precompiledCache.TryGetValue(modelType, out var cached))
+        {
+            return cached;
+        }
+
         var entries = new Dictionary<string, Func<object, object?>>(StringComparer.OrdinalIgnoreCase);
         var visited = new HashSet<Type> { modelType };
         WalkType(modelType, [], static root => root, entries, visited);
         return new(entries);
+    }
+
+    internal static void RegisterPrecompiled(Type modelType, IEnumerable<StringListMapEntry> entries)
+    {
+        var dict = new Dictionary<string, Func<object, object?>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in entries)
+        {
+            dict[entry.DottedPath] = entry.Getter;
+        }
+
+        precompiledCache[modelType] = new(dict);
     }
 
     static void WalkType(

@@ -3,4 +3,5 @@ sealed record MemberEntry(
     string TypeFullyQualifiedName,
     bool IsExcelsiorTable = false,
     bool IsHtml = false,
-    bool IsMarkdown = false);
+    bool IsMarkdown = false,
+    bool IsStringList = false);

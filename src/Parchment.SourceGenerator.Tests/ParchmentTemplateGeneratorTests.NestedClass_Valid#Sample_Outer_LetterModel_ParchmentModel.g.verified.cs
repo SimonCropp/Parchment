@@ -9,8 +9,20 @@ partial class Outer
     public static string TemplatePath => "template.docx";
     public static string TemplateName => "LetterModel";
 
+    static readonly global::System.Collections.Generic.KeyValuePair<string, global::Fluid.IMemberAccessor>[] _Accessors_global__Sample_Outer_LetterModel =
+    {
+      new("Customer", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((global::Sample.Outer.LetterModel)o).Customer)),
+    };
+
+    static readonly global::System.Collections.Generic.KeyValuePair<string, global::Fluid.IMemberAccessor>[] _Accessors_global__Sample_Customer =
+    {
+      new("Name", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((global::Sample.Customer)o).Name)),
+    };
+
     public static void RegisterWith(global::Parchment.TemplateStore store, string? basePath = null)
     {
+      global::Parchment.Generated.GeneratedRegistration.RegisterFluidAccessors(typeof(global::Sample.Outer.LetterModel), _Accessors_global__Sample_Outer_LetterModel);
+      global::Parchment.Generated.GeneratedRegistration.RegisterFluidAccessors(typeof(global::Sample.Customer), _Accessors_global__Sample_Customer);
       var path = basePath is null ? TemplatePath : global::System.IO.Path.Combine(basePath, TemplatePath);
       store.RegisterDocxTemplate<global::Sample.Outer.LetterModel>(TemplateName, path);
     }

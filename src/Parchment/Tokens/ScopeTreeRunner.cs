@@ -403,33 +403,17 @@ class ScopeTreeRunner(
         }
 
         var reference = site.References[0];
-        if (!formats.TryGet(reference.Dotted, out var kind))
+        if (!formats.TryGet(reference.Dotted, out var entry))
         {
             return null;
         }
 
-        var walker = rootModel;
-        foreach (var segment in reference.Segments)
+        var value = entry.Getter(rootModel);
+        var text = value as string ?? string.Empty;
+        return entry.Kind switch
         {
-            if (walker == null)
-            {
-                break;
-            }
-
-            var property = walker.GetType().GetProperty(segment, BindingFlags.Public | BindingFlags.Instance);
-            if (property == null)
-            {
-                return null;
-            }
-
-            walker = property.GetValue(walker);
-        }
-
-        var text = walker as string ?? string.Empty;
-        return kind switch
-        {
-            FormatKind.Html => new HtmlToken(text),
-            FormatKind.Markdown => new MarkdownToken(text),
+            FormatMapKind.Html => new HtmlToken(text),
+            FormatMapKind.Markdown => new MarkdownToken(text),
             _ => null
         };
     }

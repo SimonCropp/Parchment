@@ -1,0 +1,48 @@
+namespace Parchment.Generated;
+
+/// <summary>
+/// Public entry points called from source-generator-emitted <c>RegisterWith</c> helpers.
+/// Pre-populates the runtime's per-type registration caches so the reflection-based
+/// <see cref="SharedFluid.RegisterModel"/> / <c>*Map.Build</c> walks short-circuit when
+/// <see cref="TemplateStore.RegisterDocxTemplate{TModel}(string, string)"/> runs.
+///
+/// Not intended for hand-written consumption — call sites are emitted by the
+/// <c>Parchment.ParchmentModelAttribute</c> source generator. The runtime
+/// <see cref="TemplateStore.RegisterDocxTemplate{TModel}(string, string)"/> path stays
+/// fully functional for callers that can't use the source generator (POCO models, dynamic
+/// template paths, etc.).
+/// </summary>
+public static class GeneratedRegistration
+{
+    public static void RegisterFluidAccessors(
+        Type type,
+        IEnumerable<KeyValuePair<string, IMemberAccessor>> accessors) =>
+        SharedFluid.RegisterPrecompiledAccessors(type, accessors);
+
+    public static void RegisterExcelsiorTable(
+        Type modelType,
+        IEnumerable<ExcelsiorTableMapEntry> entries) =>
+        ExcelsiorTableMap.RegisterPrecompiled(modelType, entries);
+
+    public static void RegisterFormat(
+        Type modelType,
+        IEnumerable<FormatMapEntry> entries) =>
+        FormatMap.RegisterPrecompiled(modelType, entries);
+
+    public static void RegisterStringList(
+        Type modelType,
+        IEnumerable<StringListMapEntry> entries) =>
+        StringListMap.RegisterPrecompiled(modelType, entries);
+}
+
+public sealed record ExcelsiorTableMapEntry(string DottedPath, Type ElementType, Func<object, object?> Getter);
+
+public sealed record FormatMapEntry(string DottedPath, FormatMapKind Format, Func<object, object?> Getter);
+
+public sealed record StringListMapEntry(string DottedPath, Func<object, object?> Getter);
+
+public enum FormatMapKind
+{
+    Html,
+    Markdown
+}

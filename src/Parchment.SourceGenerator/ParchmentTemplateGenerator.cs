@@ -588,14 +588,20 @@ public sealed class ParchmentTemplateGenerator :
     static string GenerateDocxRegistration(TargetInfo target)
     {
         var templatePath = target.TemplatePath.Replace("\\", @"\\");
+        var accessors = AccessorEmission.Emit(target.Shape, target.ModelFullyQualifiedName);
+        // Each accessor section is emitted on its own physical lines so BuildPartialSource's
+        // line-by-line outer indent pass adds the right depth prefix to every line. The blocks
+        // already carry inner indentation; outer pass tops them up by depth+1.
+        var fieldsBlock = accessors == null ? "" : accessors.FieldsBlock + "\n\n";
+        var registrationsBlock = accessors == null ? "" : accessors.RegistrationsBlock + "\n";
         var body =
             $$"""
               public static string TemplatePath => "{{templatePath}}";
               public static string TemplateName => "{{target.DeclaringName}}";
 
-              public static void RegisterWith(global::Parchment.TemplateStore store, string? basePath = null)
+              {{fieldsBlock}}public static void RegisterWith(global::Parchment.TemplateStore store, string? basePath = null)
               {
-                var path = basePath is null ? TemplatePath : global::System.IO.Path.Combine(basePath, TemplatePath);
+              {{registrationsBlock}}  var path = basePath is null ? TemplatePath : global::System.IO.Path.Combine(basePath, TemplatePath);
                 store.RegisterDocxTemplate<{{target.ModelFullyQualifiedName}}>(TemplateName, path);
               }
               """;
@@ -606,14 +612,17 @@ public sealed class ParchmentTemplateGenerator :
     static string GenerateMarkdownRegistration(TargetInfo target)
     {
         var templatePath = target.TemplatePath.Replace("\\", @"\\");
+        var accessors = AccessorEmission.Emit(target.Shape, target.ModelFullyQualifiedName);
+        var fieldsBlock = accessors == null ? "" : accessors.FieldsBlock + "\n\n";
+        var registrationsBlock = accessors == null ? "" : accessors.RegistrationsBlock + "\n";
         var body =
             $$"""
               public static string TemplatePath => "{{templatePath}}";
               public static string TemplateName => "{{target.DeclaringName}}";
 
-              public static void RegisterWith(global::Parchment.TemplateStore store, string? basePath = null, global::System.IO.Stream? styleSource = null)
+              {{fieldsBlock}}public static void RegisterWith(global::Parchment.TemplateStore store, string? basePath = null, global::System.IO.Stream? styleSource = null)
               {
-                var path = basePath is null ? TemplatePath : global::System.IO.Path.Combine(basePath, TemplatePath);
+              {{registrationsBlock}}  var path = basePath is null ? TemplatePath : global::System.IO.Path.Combine(basePath, TemplatePath);
                 var markdown = global::System.IO.File.ReadAllText(path);
                 store.RegisterMarkdownTemplate<{{target.ModelFullyQualifiedName}}>(TemplateName, markdown, styleSource);
               }

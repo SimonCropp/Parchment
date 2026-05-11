@@ -7,8 +7,14 @@ partial class Invoice
   public static string TemplatePath => "invoice.docx";
   public static string TemplateName => "Invoice";
 
+  static readonly global::System.Collections.Generic.KeyValuePair<string, global::Fluid.IMemberAccessor>[] _Accessors_global__Sample_Invoice =
+  {
+    new("Total", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((global::Sample.Invoice)o).Total)),
+  };
+
   public static void RegisterWith(global::Parchment.TemplateStore store, string? basePath = null)
   {
+    global::Parchment.Generated.GeneratedRegistration.RegisterFluidAccessors(typeof(global::Sample.Invoice), _Accessors_global__Sample_Invoice);
     var path = basePath is null ? TemplatePath : global::System.IO.Path.Combine(basePath, TemplatePath);
     store.RegisterDocxTemplate<global::Sample.Invoice>(TemplateName, path);
   }

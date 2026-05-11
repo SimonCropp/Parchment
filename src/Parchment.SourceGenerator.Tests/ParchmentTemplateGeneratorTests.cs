@@ -688,6 +688,62 @@ public class ParchmentTemplateGeneratorTests
     }
 
     [Test]
+    public Task AccessorEmission_AllFourMaps()
+    {
+        // Composite model exercising every emission shape: Fluid accessors for each reachable
+        // type, an [ExcelsiorTable] collection, an [Html] string, a [Markdown] string, and an
+        // IEnumerable<string> (auto bullet-list dispatch). The verified snapshot is the canonical
+        // proof of what the SG produces.
+        var source =
+            """
+            using System.Collections.Generic;
+            using Parchment;
+
+            namespace Sample;
+
+            [System.AttributeUsage(System.AttributeTargets.Property)]
+            public sealed class HtmlAttribute : System.Attribute { }
+
+            [System.AttributeUsage(System.AttributeTargets.Property)]
+            public sealed class MarkdownAttribute : System.Attribute { }
+
+            public class Line
+            {
+                public string Description { get; set; } = "";
+            }
+
+            public class Customer
+            {
+                public string Name { get; set; } = "";
+                public List<string> Tags { get; set; } = new();
+            }
+
+            [ParchmentModel("template.docx")]
+            public partial class Invoice
+            {
+                public Customer Customer { get; set; } = new();
+
+                [ExcelsiorTable]
+                public List<Line> Lines { get; set; } = new();
+
+                [Html]
+                public string Footer { get; set; } = "";
+
+                [Markdown]
+                public string Notes { get; set; } = "";
+            }
+            """;
+        var result = GeneratorDriver.Run(
+            source,
+            "{{ Customer.Name }}",
+            "{{ Customer.Tags }}",
+            "{{ Lines }}",
+            "{{ Footer }}",
+            "{{ Notes }}");
+        return Verify(result);
+    }
+
+    [Test]
     public async Task InheritedMember_Validates()
     {
         // ShapeBuilder.BuildEntry walks `current.BaseType` so members declared on a base class are

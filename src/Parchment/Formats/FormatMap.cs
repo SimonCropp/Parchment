@@ -6,28 +6,47 @@
 /// </summary>
 sealed class FormatMap
 {
-    readonly Dictionary<string, FormatKind> entries;
+    static readonly ConcurrentDictionary<Type, FormatMap> precompiledCache = new();
 
-    FormatMap(Dictionary<string, FormatKind> entries) =>
+    readonly Dictionary<string, FormatEntry> entries;
+
+    FormatMap(Dictionary<string, FormatEntry> entries) =>
         this.entries = entries;
 
     public bool IsEmpty => entries.Count == 0;
 
-    public bool TryGet(string dottedPath, out FormatKind kind) =>
-        entries.TryGetValue(dottedPath, out kind);
+    public bool TryGet(string dottedPath, [NotNullWhen(true)] out FormatEntry? entry) =>
+        entries.TryGetValue(dottedPath, out entry);
 
     public static FormatMap Build(Type modelType, string templateName)
     {
-        var entries = new Dictionary<string, FormatKind>(StringComparer.OrdinalIgnoreCase);
+        if (precompiledCache.TryGetValue(modelType, out var cached))
+        {
+            return cached;
+        }
+
+        var entries = new Dictionary<string, FormatEntry>(StringComparer.OrdinalIgnoreCase);
         var visited = new HashSet<Type> { modelType };
-        WalkType(modelType, [], entries, visited, templateName);
+        WalkType(modelType, [], static root => root, entries, visited, templateName);
         return new(entries);
+    }
+
+    internal static void RegisterPrecompiled(Type modelType, IEnumerable<FormatMapEntry> entries)
+    {
+        var dict = new Dictionary<string, FormatEntry>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in entries)
+        {
+            dict[entry.DottedPath] = new(entry.Format, entry.Getter);
+        }
+
+        precompiledCache[modelType] = new(dict);
     }
 
     static void WalkType(
         Type type,
         List<string> pathSegments,
-        Dictionary<string, FormatKind> entries,
+        Func<object, object?> getter,
+        Dictionary<string, FormatEntry> entries,
         HashSet<Type> visited,
         string templateName)
     {
@@ -39,6 +58,7 @@ sealed class FormatMap
             }
 
             var nextSegments = new List<string>(pathSegments) { property.Name };
+            var nextGetter = ChainGetter(getter, property);
 
             var format = DetectFormat(property, templateName, type);
             if (format != null)
@@ -52,7 +72,7 @@ sealed class FormatMap
                 }
 
                 var dottedPath = string.Join('.', nextSegments);
-                entries[dottedPath] = format.Value;
+                entries[dottedPath] = new(format.Value, nextGetter);
                 continue;
             }
 
@@ -67,12 +87,19 @@ sealed class FormatMap
                 continue;
             }
 
-            WalkType(propUnderlying, nextSegments, entries, visited, templateName);
+            WalkType(propUnderlying, nextSegments, nextGetter, entries, visited, templateName);
             visited.Remove(propUnderlying);
         }
     }
 
-    static FormatKind? DetectFormat(PropertyInfo property, string templateName, Type owner)
+    static Func<object, object?> ChainGetter(Func<object, object?> upstream, PropertyInfo property) =>
+        root =>
+        {
+            var parent = upstream(root);
+            return parent == null ? null : property.GetValue(parent);
+        };
+
+    static FormatMapKind? DetectFormat(PropertyInfo property, string templateName, Type owner)
     {
         var hasHtmlAttribute = false;
         var hasMarkdownAttribute = false;
@@ -114,12 +141,12 @@ sealed class FormatMap
 
         if (hasHtmlAttribute || syntax == "html")
         {
-            return FormatKind.Html;
+            return FormatMapKind.Html;
         }
 
         if (hasMarkdownAttribute || syntax == "markdown")
         {
-            return FormatKind.Markdown;
+            return FormatMapKind.Markdown;
         }
 
         return null;
@@ -166,8 +193,3 @@ sealed class FormatMap
     }
 }
 
-enum FormatKind
-{
-    Html,
-    Markdown
-}

@@ -64,7 +64,8 @@ static class ShapeBuilder
 
                     var isExcelsior = HasExcelsiorTableAttribute(member, excelsiorTableType);
                     var (isHtml, isMarkdown) = DetectFormat(member);
-                    members.Add(new(memberName, Fqn(memberType), isExcelsior, isHtml, isMarkdown));
+                    var isStringList = !isExcelsior && IsEnumerableOfString(memberType);
+                    members.Add(new(memberName, Fqn(memberType), isExcelsior, isHtml, isMarkdown, isStringList));
                     Enqueue(memberType, visited, queue);
                 }
 
@@ -118,6 +119,14 @@ static class ShapeBuilder
         }
 
         return (false, false);
+    }
+
+    static bool IsEnumerableOfString(ITypeSymbol type)
+    {
+        // `string` itself is `IEnumerable<char>`, not `IEnumerable<string>` — element type would
+        // be `char`, which is correctly rejected here.
+        var element = ModelSymbolResolver.TryGetElementType(type);
+        return element != null && element.SpecialType == SpecialType.System_String;
     }
 
     static bool HasExcelsiorTableAttribute(ISymbol member, INamedTypeSymbol? excelsiorTableType)

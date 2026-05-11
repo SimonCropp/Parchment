@@ -5,6 +5,8 @@
 /// </summary>
 sealed class ExcelsiorTableMap
 {
+    static readonly ConcurrentDictionary<Type, ExcelsiorTableMap> precompiledCache = new();
+
     readonly Dictionary<string, ExcelsiorTableEntry> entries;
 
     ExcelsiorTableMap(Dictionary<string, ExcelsiorTableEntry> entries) =>
@@ -17,10 +19,26 @@ sealed class ExcelsiorTableMap
 
     public static ExcelsiorTableMap Build(Type modelType, string templateName)
     {
+        if (precompiledCache.TryGetValue(modelType, out var cached))
+        {
+            return cached;
+        }
+
         var entries = new Dictionary<string, ExcelsiorTableEntry>(StringComparer.OrdinalIgnoreCase);
         var visited = new HashSet<Type> { modelType };
         WalkType(modelType, [], static root => root, entries, visited, templateName);
         return new(entries);
+    }
+
+    internal static void RegisterPrecompiled(Type modelType, IEnumerable<ExcelsiorTableMapEntry> entries)
+    {
+        var dict = new Dictionary<string, ExcelsiorTableEntry>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in entries)
+        {
+            dict[entry.DottedPath] = new(entry.ElementType, entry.Getter);
+        }
+
+        precompiledCache[modelType] = new(dict);
     }
 
     static void WalkType(

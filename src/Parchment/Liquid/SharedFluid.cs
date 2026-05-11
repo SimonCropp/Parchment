@@ -1,3 +1,5 @@
+namespace Parchment;
+
 /// <summary>
 /// Static singletons for Fluid. Fluid's parser, options, and filters are thread-safe and expensive
 /// to construct; one instance per process is the documented recommendation.
@@ -29,6 +31,24 @@ static class SharedFluid
 
     public static void RegisterModel(Type modelType) =>
         RegisterTypeGraph(modelType);
+
+    /// <summary>
+    /// Source-generator entry point (invoked via <see cref="Generated.GeneratedRegistration"/>).
+    /// Registers pre-built accessors for a single type and marks it as visited so the reflection
+    /// walk in <see cref="RegisterTypeGraph"/> short-circuits when the same type is later
+    /// encountered through <see cref="RegisterModel"/>.
+    /// </summary>
+    internal static void RegisterPrecompiledAccessors(
+        Type type,
+        IEnumerable<KeyValuePair<string, IMemberAccessor>> accessors)
+    {
+        if (!registeredTypes.TryAdd(type, true))
+        {
+            return;
+        }
+
+        Options.MemberAccessStrategy.Register(type, accessors);
+    }
 
     static void RegisterTypeGraph(Type? type)
     {
