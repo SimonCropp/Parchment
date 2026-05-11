@@ -95,7 +95,13 @@ public sealed class ParchmentTemplateGenerator :
         var enclosingResult = BuildEnclosingChain(typeSymbol);
 
         // The attribute target IS the model — there is no separate "marker / template" class.
-        // ModelFullyQualifiedName / ModelSimpleName therefore describe the decorated class itself.
+        // ModelFullyQualifiedName / ModelDisplayName therefore describe the decorated class itself.
+        // DisplayName joins enclosing types dotted-style so PARCH001 messages for nested models
+        // (e.g. `XxxGenerator.Info` patterns) disambiguate from sibling `Info` types.
+        var displayName = enclosingResult.Chain.Count == 0
+            ? typeSymbol.Name
+            : string.Join(".", enclosingResult.Chain.Select(_ => _.Name)) + "." + typeSymbol.Name;
+
         var excelsiorTableType = context.SemanticModel.Compilation
             .GetTypeByMetadataName(ShapeBuilder.ExcelsiorTableAttributeFullName);
         var shape = ShapeBuilder.Build(typeSymbol, excelsiorTableType, cancel);
@@ -106,7 +112,7 @@ public sealed class ParchmentTemplateGenerator :
             GetTypeKindKeyword(typeSymbol),
             new(enclosingResult.Chain.ToImmutableArray()),
             typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-            typeSymbol.Name,
+            displayName,
             path,
             EquatableLocation.From(rawLocation),
             shape,
@@ -397,7 +403,7 @@ public sealed class ParchmentTemplateGenerator :
                                 target.TemplatePath,
                                 token.Source,
                                 string.Join('.', token.References[0]),
-                                target.ModelSimpleName));
+                                target.ModelDisplayName));
                         break;
                     }
 
@@ -575,7 +581,7 @@ public sealed class ParchmentTemplateGenerator :
                     target.TemplatePath,
                     tokenSource,
                     string.Join('.', reference),
-                    target.ModelSimpleName));
+                    target.ModelDisplayName));
         }
     }
 

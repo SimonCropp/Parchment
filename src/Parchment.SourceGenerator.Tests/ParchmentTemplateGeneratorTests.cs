@@ -578,6 +578,31 @@ public class ParchmentTemplateGeneratorTests
     }
 
     [Test]
+    public async Task MissingMember_NestedTarget_IncludesEnclosingChain()
+    {
+        // PARCH001 messages must disambiguate by enclosing chain. With seven `XxxGenerator.Info`
+        // records in MinistersManager, a bare "not a member of 'Info'" was useless — the user
+        // couldn't tell which Info the missing member was on. Now the message reads
+        // "not a member of 'OuterGen.Info'".
+        var source =
+            """
+            using Parchment;
+
+            public static partial class OuterGen
+            {
+                [ParchmentModel("template.docx")]
+                public partial class Info
+                {
+                    public string Name { get; set; } = "";
+                }
+            }
+            """;
+        var result = GeneratorDriver.Run(source, "{{ Missing }}");
+        var diagnostic = result.Results.Single().Diagnostics.Single(_ => _.Id == "PARCH001");
+        await Assert.That(diagnostic.GetMessage()).Contains("'OuterGen.Info'");
+    }
+
+    [Test]
     public async Task MultiTarget_SameSimpleName()
     {
         // Two `[ParchmentModel]` targets share the simple name `Info` but live inside different

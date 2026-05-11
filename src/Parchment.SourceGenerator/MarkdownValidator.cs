@@ -164,7 +164,7 @@ static class MarkdownValidator
                     target.TemplatePath,
                     sourceForDiagnostic,
                     string.Join('.', path),
-                    target.ModelSimpleName));
+                    target.ModelDisplayName));
         }
     }
 
