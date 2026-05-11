@@ -2,7 +2,7 @@
 public sealed class ParchmentTemplateGenerator :
     IIncrementalGenerator
 {
-    const string attributeFullName = "Parchment.ParchmentTemplateAttribute";
+    const string attributeFullName = "Parchment.ParchmentModelAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -72,17 +72,12 @@ public sealed class ParchmentTemplateGenerator :
 
         var attribute = context.Attributes.FirstOrDefault();
         if (attribute == null ||
-            attribute.ConstructorArguments.Length < 2)
+            attribute.ConstructorArguments.Length < 1)
         {
             return null;
         }
 
         if (attribute.ConstructorArguments[0].Value is not string path)
-        {
-            return null;
-        }
-
-        if (attribute.ConstructorArguments[1].Value is not INamedTypeSymbol modelType)
         {
             return null;
         }
@@ -100,16 +95,18 @@ public sealed class ParchmentTemplateGenerator :
 
         var enclosingResult = BuildEnclosingChain(typeSymbol);
 
+        // The attribute target IS the model — there is no separate "marker / template" class.
+        // ModelFullyQualifiedName / ModelSimpleName therefore describe the decorated class itself.
         var excelsiorTableType = context.SemanticModel.Compilation
             .GetTypeByMetadataName(ShapeBuilder.ExcelsiorTableAttributeFullName);
-        var shape = ShapeBuilder.Build(modelType, excelsiorTableType, cancel);
+        var shape = ShapeBuilder.Build(typeSymbol, excelsiorTableType, cancel);
 
         return new(
             declaringNamespace,
             typeSymbol.Name,
             new(enclosingResult.Chain.ToImmutableArray()),
-            modelType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-            modelType.Name,
+            typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            typeSymbol.Name,
             path,
             EquatableLocation.From(rawLocation),
             shape,
@@ -337,7 +334,7 @@ public sealed class ParchmentTemplateGenerator :
             ? target.DeclaringName
             : $"{target.DeclaringNamespace}.{target.DeclaringName}";
         context.AddSource(
-            $"{hintPrefix.Replace('.', '_')}_ParchmentTemplate.g.cs",
+            $"{hintPrefix.Replace('.', '_')}_ParchmentModel.g.cs",
             SourceText.From(source, Encoding.UTF8));
     }
 

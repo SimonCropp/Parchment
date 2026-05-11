@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: : (13,1)-(13,49),
+      Location: : (9,1)-(9,30),
       Message: Template 'template.md' token '{{ ... }}' references 'Customer.Missing' which is not a member of 'Letter',
       Severity: Error,
       Descriptor: {

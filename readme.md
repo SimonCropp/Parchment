@@ -1174,26 +1174,33 @@ Whether registering by hand (`RegisterDocxTemplate<T>(...)`) or through the sour
 
 ## Source generator (compile-time validation)
 
-Decorate a `partial` class with `[ParchmentTemplate]` and Parchment's source generator validates the template tokens against the model type at compile time. Both docx and markdown templates are supported — the generator branches on the path's extension (`.docx` → docx flow, `.md` / `.markdown` → markdown flow):
+Decorate the model class itself with `[ParchmentModel]` and Parchment's source generator validates the template tokens against it at compile time. The model must be `partial` — the generator emits a `RegisterWith` helper onto the same class. Both docx and markdown templates are supported — the generator branches on the path's extension (`.docx` → docx flow, `.md` / `.markdown` → markdown flow):
 
 ```csharp
-[ParchmentTemplate("Templates/invoice.docx", typeof(Invoice))]
-public partial class InvoiceReport
+[ParchmentModel("Templates/invoice.docx")]
+public partial class Invoice
 {
+    public string Number { get; set; } = "";
+    public Customer Customer { get; set; } = new();
+    // ...
 }
 
-[ParchmentTemplate("Templates/report.md", typeof(Report))]
-public partial class ReportTemplate
+[ParchmentModel("Templates/report.md")]
+public partial class Report
 {
+    public string Title { get; set; } = "";
+    // ...
 }
 ```
+
+The attribute is applied directly to the binding model — there is no separate marker / "template" class. Models almost always need Parchment-aware code on them anyway (`[Html]` / `[Markdown]` / `[ExcelsiorTable]` annotations, helper properties shaping values for binding), so the `partial` + Parchment-dependency tax is already paid. See `CLAUDE.md` → "Design decisions" for the full rationale.
 
 In both cases the generator also emits a `RegisterWith(store)` helper so registration is one line at runtime:
 
 ```csharp
 var store = new TemplateStore();
-InvoiceReport.RegisterWith(store);
-ReportTemplate.RegisterWith(store, styleSource: File.OpenRead("brand.docx"));
+Invoice.RegisterWith(store);
+Report.RegisterWith(store, styleSource: File.OpenRead("brand.docx"));
 ```
 
 The markdown helper has an extra optional `styleSource` parameter that mirrors `RegisterMarkdownTemplate<T>` — pass a brand docx whose page setup, headers/footers, and styles should be inherited by the rendered output.
@@ -1261,7 +1268,7 @@ Only `for`/`endfor`/`if`/`elsif`/`else`/`endif` are supported as block tags.
 
 ### `PARCH004` — template file not in `<AdditionalFiles>`
 
-The path in `[ParchmentTemplate("...", typeof(T))]` wasn't found among the project's `<AdditionalFiles>`. Add the docx to the csproj:
+The path in `[ParchmentModel("...")]` wasn't found among the project's `<AdditionalFiles>`. Add the docx to the csproj:
 
 ```xml
 <ItemGroup>
@@ -1324,15 +1331,18 @@ Previously emitted when an `[Html]` / `[Markdown]` token shared its paragraph wi
 **Docx only.** Formatted rendering is selected by the property attribute rather than via Fluid, so filter chains are not applied. Use plain member access (`{{ Body }}` or `{{ Customer.Bio }}`). The `[Html]` / `[Markdown]` attributes are ignored in the markdown flow — markdown templates have no concept of structural property substitution.
 
 
-### `PARCH011` — enclosing type of `[ParchmentTemplate]` target must be partial
+### `PARCH011` — enclosing type of `[ParchmentModel]` target must be partial
 
-The decorated class is nested inside another type that is not declared `partial`. The generator emits the registration helper as `partial class { ... }` and every enclosing type in the chain must be partial too, otherwise the C# compiler rejects the declaration as conflicting with the user's existing one (CS0260). Make every enclosing type partial:
+The decorated model is nested inside another type that is not declared `partial`. The generator emits the registration helper as `partial class { ... }` and every enclosing type in the chain must be partial too, otherwise the C# compiler rejects the declaration as conflicting with the user's existing one (CS0260). Make every enclosing type partial:
 
 ```csharp
 public partial class Outer  // <-- partial
 {
-    [ParchmentTemplate("template.docx", typeof(Letter))]
-    public partial class CustomerLetter;
+    [ParchmentModel("template.docx")]
+    public partial class Letter
+    {
+        public Customer Customer { get; set; } = new();
+    }
 }
 ```
 

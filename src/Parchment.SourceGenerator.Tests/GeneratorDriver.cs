@@ -5,16 +5,14 @@ static class GeneratorDriver
         namespace Parchment
         {
             [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-            public sealed class ParchmentTemplateAttribute : System.Attribute
+            public sealed class ParchmentModelAttribute : System.Attribute
             {
-                public ParchmentTemplateAttribute(string templatePath, System.Type modelType)
+                public ParchmentModelAttribute(string templatePath)
                 {
                     TemplatePath = templatePath;
-                    ModelType = modelType;
                 }
 
                 public string TemplatePath { get; }
-                public System.Type ModelType { get; }
             }
 
             public sealed class TemplateStore { }
@@ -85,7 +83,7 @@ static class GeneratorDriver
     {
         var setup = CreateDriverWithFiles(
             userSource,
-            (fileName, System.Text.Encoding.UTF8.GetBytes(markdown)));
+            (fileName, Encoding.UTF8.GetBytes(markdown)));
         return setup.Driver.RunGenerators(setup.Compilation).GetRunResult();
     }
 

@@ -12,7 +12,8 @@ public class MarkdownValidatorTests
             public string Region { get; set; } = "";
         }
 
-        public class Letter
+        [ParchmentModel("template.md")]
+        public partial class Letter
         {
             public Customer Customer { get; set; } = new();
         }
@@ -31,7 +32,8 @@ public class MarkdownValidatorTests
             public int Quantity { get; set; }
         }
 
-        public class Invoice
+        [ParchmentModel("template.md")]
+        public partial class Invoice
         {
             public List<Line> Lines { get; set; } = new();
             public List<Line> Adjustments { get; set; } = new();
@@ -44,14 +46,8 @@ public class MarkdownValidatorTests
         // Inner `line` shadows outer `line`. Inner body's `line.Quantity` resolves against the
         // inner Line; after the inner endfor, the outer `line` is restored and `line.Description`
         // resolves against the outer Line. No PARCH001 expected.
-        var source = invoiceModel +
-                     """
-
-                     [ParchmentTemplate("template.md", typeof(Invoice))]
-                     public partial class Nested;
-                     """;
         var result = GeneratorDriver.RunMarkdown(
-            source,
+            invoiceModel,
             """
             {% for line in Lines %}
               {% for line in Adjustments %}
@@ -69,14 +65,8 @@ public class MarkdownValidatorTests
     {
         // After `{% endfor %}`, `line` is no longer in scope, so `line.Description` must trip
         // PARCH001 — guards against the WalkFor cleanup forgetting to scope.Remove the loop var.
-        var source = invoiceModel +
-                     """
-
-                     [ParchmentTemplate("template.md", typeof(Invoice))]
-                     public partial class Leaked;
-                     """;
         var result = GeneratorDriver.RunMarkdown(
-            source,
+            invoiceModel,
             """
             {% for line in Lines %}
               {{ line.Description }}
@@ -93,14 +83,8 @@ public class MarkdownValidatorTests
     public async Task ForElseBranchValidates()
     {
         // Bad reference inside `{% else %}` branch of a for loop must still trip PARCH001.
-        var source = invoiceModel +
-                     """
-
-                     [ParchmentTemplate("template.md", typeof(Invoice))]
-                     public partial class ForElse;
-                     """;
         var result = GeneratorDriver.RunMarkdown(
-            source,
+            invoiceModel,
             """
             {% for line in Lines %}
               {{ line.Description }}
@@ -118,14 +102,8 @@ public class MarkdownValidatorTests
     public async Task IfConditionAndBodyValidate()
     {
         // Both the condition expression and the body must be walked — two PARCH001s expected.
-        var source = letterModel +
-                     """
-
-                     [ParchmentTemplate("template.md", typeof(Letter))]
-                     public partial class IfBoth;
-                     """;
         var result = GeneratorDriver.RunMarkdown(
-            source,
+            letterModel,
             """
             {% if Customer.BadCondition %}
               {{ Customer.BadBody }}
@@ -139,14 +117,8 @@ public class MarkdownValidatorTests
     [Test]
     public async Task ElsifAndElseBranchesValidate()
     {
-        var source = letterModel +
-                     """
-
-                     [ParchmentTemplate("template.md", typeof(Letter))]
-                     public partial class Branches;
-                     """;
         var result = GeneratorDriver.RunMarkdown(
-            source,
+            letterModel,
             """
             {% if Customer.Name %}
               ok
@@ -168,14 +140,8 @@ public class MarkdownValidatorTests
         // fire (we can't validate the source as a member). The body still walks: `Customer.Name`
         // resolves cleanly against the root model. Confirms the non-member source path doesn't
         // throw or short-circuit the body.
-        var source = letterModel +
-                     """
-
-                     [ParchmentTemplate("template.md", typeof(Letter))]
-                     public partial class Ranged;
-                     """;
         var result = GeneratorDriver.RunMarkdown(
-            source,
+            letterModel,
             """
             {% for i in (1..3) %}
               {{ Customer.Name }}
@@ -191,14 +157,8 @@ public class MarkdownValidatorTests
         // `Customer.A == Customer.B` must produce two PARCH001s (A and B both missing) —
         // confirms ExpressionPathCollector descends into binary expressions via the default
         // AstVisitor traversal.
-        var source = letterModel +
-                     """
-
-                     [ParchmentTemplate("template.md", typeof(Letter))]
-                     public partial class Binary;
-                     """;
         var result = GeneratorDriver.RunMarkdown(
-            source,
+            letterModel,
             """
             {% if Customer.BadA == Customer.BadB %}
               ok
@@ -217,14 +177,8 @@ public class MarkdownValidatorTests
         // no `Name` member, so we expect PARCH001. The point of this test: the body walk runs
         // (no crash, no early return) and the cascade is bounded — accessing real members on
         // the root type does NOT trigger extra noise.
-        var source = letterModel +
-                     """
-
-                     [ParchmentTemplate("template.md", typeof(Letter))]
-                     public partial class BadSource;
-                     """;
         var result = GeneratorDriver.RunMarkdown(
-            source,
+            letterModel,
             """
             {% for line in Customer %}
               {{ line.Customer.Name }}

@@ -86,7 +86,7 @@ Filters (`Liquid/Filters.cs`): `markdown`, `escape_xml`, `bullet_list`, `numbere
 
 ### Source generator (`src/Parchment.SourceGenerator/`)
 
-`netstandard2.0;net10.0`, packaged inside `Parchment.nupkg` under `analyzers/dotnet/roslyn5.0/cs` and `analyzers/dotnet/roslyn5.3/cs`. `IIncrementalGenerator` + `ForAttributeWithMetadataName("Parchment.ParchmentTemplateAttribute")`. Same attribute supports **both** docx and markdown — SG branches on extension (`.docx` → docx flow, `.md`/`.markdown` → markdown flow). Pipeline collects `targets`, `docs`, `markdowns` in three parallel `AdditionalTextsProvider` stages (each cached separately for incrementality), `Combine`s them, dispatches per target.
+`netstandard2.0;net10.0`, packaged inside `Parchment.nupkg` under `analyzers/dotnet/roslyn5.0/cs` and `analyzers/dotnet/roslyn5.3/cs`. `IIncrementalGenerator` + `ForAttributeWithMetadataName("Parchment.ParchmentModelAttribute")`. Same attribute supports **both** docx and markdown — SG branches on extension (`.docx` → docx flow, `.md`/`.markdown` → markdown flow). The attribute target IS the binding model (no separate marker class — see "Design decisions" below). Pipeline collects `targets`, `docs`, `markdowns` in three parallel `AdditionalTextsProvider` stages (each cached separately for incrementality), `Combine`s them, dispatches per target.
 
 **Docx flow** (mirrors runtime Flow A):
 
@@ -235,6 +235,56 @@ dotnet run --project src/Parchment.Tests --configuration Release -- \
 `input.png` is *committed* alongside `input.docx` — the explicit test regenerates it; the committed file is what the readme references.
 
 **Adding a scenario**: mkdir under `Scenarios/`, drop `input.docx` (binary already in `.gitattributes`), write a feature test that calls `UseDirectory(ScenarioPath("<name>")) + UseFileName("output")`, run `ScenarioInputRenderer` once for `input.png`, reference both PNGs from `readme.md` (note `#` → `%23` URL escape).
+
+## Design decisions
+
+### `[ParchmentModel]` lives on the binding model, not on an intermediary "template" class
+
+The source-generator attribute is `Parchment.ParchmentModelAttribute` and is applied **directly to the model class being bound** (the type Parchment renders against). There is **no separate marker / "template" class**, and the attribute does not take a `typeof(TModel)` argument — the attribute target *is* the model.
+
+```csharp
+[ParchmentModel("Templates/report.md")]
+public partial class Report
+{
+    public string Title { get; set; }
+
+    [Markdown]
+    public string Body { get; set; }
+
+    // Helper that adapts a complex graph into a binding-friendly primitive.
+    public string FormattedTotal => Total.ToString("C", Culture);
+}
+```
+
+The SG emits `TemplatePath`, `TemplateName`, and `RegisterWith(TemplateStore store, ...)` into the model partial — the same shape previously emitted onto the marker class.
+
+**Rationale.** Models almost always need code on them anyway:
+
+- `[Html]` / `[Markdown]` annotations on string properties (structural replacement dispatch).
+- `[ExcelsiorTable]` on collection properties.
+- Helper / computed properties that pre-shape values into binding-friendly form (currency formatting, joined name strings, derived flags).
+- Conversions of complex CLR types into the primitives liquid/Fluid can render directly.
+
+Because the model is already a place where the author writes Parchment-aware code, the `partial` requirement and the dependency on Parchment.dll are **already paid**. Adding a separate marker class would force a second declaration site for zero gain — it would not eliminate either tax, and it would add a "where does this live?" decision per template.
+
+**Consequences accepted by this decision:**
+
+- The model **must be `partial`** (the SG generates `RegisterWith` onto it). Models that come from EF/JSON/codegen and resist `partial` are not supported via the SG path — those consumers fall back to the runtime `TemplateStore.RegisterDocxTemplate<T>(name, path)` / `RegisterMarkdownTemplate<T>(name, markdown)` API.
+- The model **references `Parchment`** (for the attribute). For most projects this matches reality — the model is already coupled to rendering through `[Html]` / `[Markdown]` / `[ExcelsiorTable]`. Projects wanting a pure POCO model use the runtime API.
+- **One template per model via the SG attribute** is the canonical case. Multi-template-per-model scenarios are served by the runtime API, not by stacking attributes — the SG emits exactly one `RegisterWith` per model with no name disambiguation needed.
+- The attribute name is `ParchmentModelAttribute`, **not** `ParchmentTemplateAttribute`, to reflect that the decorated type is the model being bound, not a stand-in for the template.
+
+**Alternatives considered and rejected:**
+
+- *Attribute on a separate marker `partial class FooTemplate`* — original design. Rejected: extra declaration with no body, doesn't relieve the `partial` or dependency cost (those move to the model the moment any `[Html]` / `[Markdown]` / helper-property is needed), and forces the user to invent a naming convention for the marker.
+- *Assembly-level `[assembly: ParchmentModel(...)]`* — rejected for now: keeps the model POCO, but pushes binding declarations away from the model they describe and forces a separate "registry" namespace per assembly. Discoverability suffers, and the POCO benefit evaporates as soon as the model needs `[Html]` / `[Markdown]`.
+- *Supporting multiple placement modes simultaneously* — rejected: triples the SG's attribute-target validation, diagnostic-location, and incremental-pipeline surface for a marginal ergonomics win. One canonical path keeps the SG, the diagnostics, and the docs coherent.
+
+**Implications for future work:**
+
+- Diagnostics referencing "the decorated class" target the model itself. `PARCH011` (enclosing-type must be `partial`) still applies when the model is a nested type.
+- The runtime `TemplateStore.RegisterDocxTemplate<T>` / `RegisterMarkdownTemplate<T>` API stays — it is the supported escape hatch for POCO models, multi-template-per-model, or dynamically resolved templates. Do not deprecate it in favor of the SG-only path.
+- When touching the SG (`ParchmentTemplateGenerator.cs`), the attribute predicate, target shape, generated partial wrapping (`BuildPartialSource`), and any new diagnostics should all treat the attribute target as the model type. There is no second symbol to thread through.
 
 ## Non-obvious gotchas
 

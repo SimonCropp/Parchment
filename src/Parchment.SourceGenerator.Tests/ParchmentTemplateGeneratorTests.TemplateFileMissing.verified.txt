@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: : (6,1)-(6,56),
+      Location: : (4,1)-(4,38),
       Message: Template path 'does-not-exist.docx' was not found in AdditionalFiles — add <AdditionalFiles Include="..."/> to the csproj,
       Severity: Error,
       Descriptor: {

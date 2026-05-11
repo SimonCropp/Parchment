@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: : (6,1)-(6,54),
+      Location: : (4,1)-(4,36),
       Message: Template path 'does-not-exist.md' was not found in AdditionalFiles — add <AdditionalFiles Include="..."/> to the csproj,
       Severity: Error,
       Descriptor: {

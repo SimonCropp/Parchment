@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: : (13,1)-(13,49),
+      Location: : (9,1)-(9,30),
       Message: Template 'template.md' loop '{% for item in ... %}' source does not resolve to a type implementing IEnumerable<T>,
       Severity: Error,
       Descriptor: {

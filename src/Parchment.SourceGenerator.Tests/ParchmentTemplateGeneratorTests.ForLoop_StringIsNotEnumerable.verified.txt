@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: : (13,1)-(13,51),
+      Location: : (9,1)-(9,32),
       Message: Template 'template.docx' loop '{% for c in Customer.Name %}' source does not resolve to a type implementing IEnumerable<T>,
       Severity: Error,
       Descriptor: {

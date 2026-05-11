@@ -27,17 +27,21 @@ var bytes = await store.Render("report", reportModel);
 
 ## Source generator
 
-Decorate a partial class with `[ParchmentTemplate]` and Parchment's source generator validates the template tokens against the model type at compile time. Both `.docx` and `.md` templates are supported.
+Decorate the model class itself with `[ParchmentModel]` and Parchment's source generator validates the template tokens against it at compile time. Both `.docx` and `.md` templates are supported.
 
 ```cs
-[ParchmentTemplate("Templates/invoice.docx", typeof(Invoice))]
-public partial class InvoiceReport
+[ParchmentModel("Templates/invoice.docx")]
+public partial class Invoice
 {
+    public string Number { get; set; } = "";
+    // ...
 }
 
-[ParchmentTemplate("Templates/report.md", typeof(Report))]
-public partial class ReportTemplate
+[ParchmentModel("Templates/report.md")]
+public partial class Report
 {
+    public string Title { get; set; } = "";
+    // ...
 }
 ```
 

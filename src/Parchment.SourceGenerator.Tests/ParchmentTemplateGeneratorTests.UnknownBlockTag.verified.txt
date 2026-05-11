@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: : (6,1)-(6,50),
+      Location: : (4,1)-(4,32),
       Message: Template 'template.docx' uses unsupported block tag '{% foobar %}' (supported: for, endfor, if, elsif, else, endif),
       Severity: Error,
       Descriptor: {

@@ -1,7 +1,7 @@
 ﻿{
   Diagnostics: [
     {
-      Location: : (15,1)-(15,52),
+      Location: : (10,1)-(10,32),
       Message: Template 'template.docx' block tag '{% for line in Lines %}' shares a paragraph with other content; block tags must be on their own lines,
       Severity: Error,
       Descriptor: {
