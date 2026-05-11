@@ -148,8 +148,7 @@ static class GeneratorDriver
             // Mirror Roslyn: text-based AdditionalFiles (.md) are exposed as SourceText so the
             // SG can use the canonical GetText path. Binary files (.docx) return null and the
             // SG must read them via Path with stream-based APIs (ZipFile.OpenRead).
-            if (Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
-                Path.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase))
+            if (Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
             {
                 return SourceText.From(File.ReadAllText(Path));
             }

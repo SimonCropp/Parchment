@@ -1174,7 +1174,7 @@ Whether registering by hand (`RegisterDocxTemplate<T>(...)`) or through the sour
 
 ## Source generator (compile-time validation)
 
-Decorate the model class itself with `[ParchmentModel]` and Parchment's source generator validates the template tokens against it at compile time. The model must be `partial` — the generator emits a `RegisterWith` helper onto the same class. Both docx and markdown templates are supported — the generator branches on the path's extension (`.docx` → docx flow, `.md` / `.markdown` → markdown flow):
+Decorate the model class itself with `[ParchmentModel]` and Parchment's source generator validates the template tokens against it at compile time. The model must be `partial` — the generator emits a `RegisterWith` helper onto the same class. Both docx and markdown templates are supported — the generator branches on the path's extension (`.docx` → docx flow, `.md` → markdown flow):
 
 ```csharp
 [ParchmentModel("Templates/invoice.docx")]

@@ -194,7 +194,7 @@ static class MarkdownValidator
     sealed class ExpressionPathCollector :
         AstVisitor
     {
-        readonly List<string[]> paths = [];
+        List<string[]> paths = [];
 
         public static IReadOnlyList<string[]> Collect(Expression expression)
         {

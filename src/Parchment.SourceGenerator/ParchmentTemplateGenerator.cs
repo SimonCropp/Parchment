@@ -60,8 +60,7 @@ public sealed class ParchmentTemplateGenerator :
     }
 
     static bool IsMarkdownPath(string path) =>
-        path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
-        path.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase);
+        path.EndsWith(".md", StringComparison.OrdinalIgnoreCase);
 
     static TargetInfo? ExtractTarget(GeneratorAttributeSyntaxContext context, Cancel cancel)
     {

@@ -86,7 +86,7 @@ Filters (`Liquid/Filters.cs`): `markdown`, `escape_xml`, `bullet_list`, `numbere
 
 ### Source generator (`src/Parchment.SourceGenerator/`)
 
-`netstandard2.0;net10.0`, packaged inside `Parchment.nupkg` under `analyzers/dotnet/roslyn5.0/cs` and `analyzers/dotnet/roslyn5.3/cs`. `IIncrementalGenerator` + `ForAttributeWithMetadataName("Parchment.ParchmentModelAttribute")`. Same attribute supports **both** docx and markdown — SG branches on extension (`.docx` → docx flow, `.md`/`.markdown` → markdown flow). The attribute target IS the binding model (no separate marker class — see "Design decisions" below). Pipeline collects `targets`, `docs`, `markdowns` in three parallel `AdditionalTextsProvider` stages (each cached separately for incrementality), `Combine`s them, dispatches per target.
+`netstandard2.0;net10.0`, packaged inside `Parchment.nupkg` under `analyzers/dotnet/roslyn5.0/cs` and `analyzers/dotnet/roslyn5.3/cs`. `IIncrementalGenerator` + `ForAttributeWithMetadataName("Parchment.ParchmentModelAttribute")`. Same attribute supports **both** docx and markdown — SG branches on extension (`.docx` → docx flow, `.md` → markdown flow). The attribute target IS the binding model (no separate marker class — see "Design decisions" below). Pipeline collects `targets`, `docs`, `markdowns` in three parallel `AdditionalTextsProvider` stages (each cached separately for incrementality), `Combine`s them, dispatches per target.
 
 **Docx flow** (mirrors runtime Flow A):
 
@@ -100,7 +100,7 @@ Filters (`Liquid/Filters.cs`): `markdown`, `escape_xml`, `bullet_list`, `numbere
 **Markdown flow** (mirrors runtime Flow B):
 
 1. Resolves `path` against `<AdditionalFiles>`.
-2. Reads via `AdditionalText.GetText(cancel)` into an equatable `MarkdownData` record. `File.ReadAllText` is **not** used — RS1035 bans it; canonical Roslyn path lets the SDK reuse cached `SourceText`. Test harness's `PathAdditionalText.GetText` returns real `SourceText` for `.md`/`.markdown` (and `null` for `.docx`).
+2. Reads via `AdditionalText.GetText(cancel)` into an equatable `MarkdownData` record. `File.ReadAllText` is **not** used — RS1035 bans it; canonical Roslyn path lets the SDK reuse cached `SourceText`. Test harness's `PathAdditionalText.GetText` returns real `SourceText` for `.md` (and `null` for `.docx`).
 3. Hands the **whole file** to `FluidParser.TryParse` (one call, not per-token) — markdown templates have no paragraph boundaries. Parse failure → `PARCH006` with Fluid error.
 4. `MarkdownValidator.Validate` walks the AST with loop-scope tracking: descends into `ForStatement` (binding `Identifier` → element FQN via `ShapeResolver.GetElementType`), `IfStatement` (incl. `ElseIfs`/`Else`), `OutputStatement`, `for-else`. Each `MemberExpression` is collected via private `ExpressionPathCollector : AstVisitor` and resolved against `target.Shape` honouring scope. When loop source doesn't resolve to enumerable, loop var is bound to root type for body walk — minimises cascade noise on top of upstream `PARCH001`/`PARCH002`.
 5. Emits **only** `PARCH001` (MissingMember) and `PARCH002` (LoopSourceNotEnumerable). `PARCH005` (mixed inline block tag) deliberately not emitted — Fluid parses whole markdown as one template; `Hello {% if x %}World{% endif %}` is legal at runtime. `PARCH007`/`PARCH008` (Excelsior) and `PARCH010` (`[Html]`/`[Markdown]`) are docx-only — `RegisterMarkdownTemplate` doesn't build `ExcelsiorTableMap`/`FormatMap`.
