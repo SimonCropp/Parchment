@@ -100,8 +100,7 @@ static class TokenScanner
 
     static BlockMarker ParseBlockTag(string source, string templateName, string partUri)
     {
-        var tagMatch = TokenRegex.BlockTag.Match(source);
-        if (!tagMatch.Success)
+        if (!BlockTagParser.TryParse(source, out var tag, out var expression))
         {
             throw new ParchmentRegistrationException(
                 templateName,
@@ -110,19 +109,19 @@ static class TokenScanner
                 source);
         }
 
-        var tag = tagMatch.Groups["tag"].ValueSpan;
+        var expr = expression.IsEmpty ? null : expression.ToString();
 
         switch (tag)
         {
             case "for":
-                return BuildForTag(source, GetExpression(tagMatch), templateName, partUri);
+                return BuildForTag(source, expr, templateName, partUri);
             case "endfor":
                 return new(BlockTagKind.EndFor, source, null, null, null);
             case "if":
-                return BuildIfTag(source, GetExpression(tagMatch), templateName, partUri);
+                return BuildIfTag(source, expr, templateName, partUri);
             case "elsif":
             case "elseif":
-                return BuildElsifTag(source, GetExpression(tagMatch), templateName, partUri);
+                return BuildElsifTag(source, expr, templateName, partUri);
             case "else":
                 return new(BlockTagKind.Else, source, null, null, null);
             case "endif":
@@ -133,17 +132,6 @@ static class TokenScanner
                     $"Unsupported block tag '{tag}'. Supported: for, endfor, if, elsif, else, endif",
                     partUri,
                     source);
-        }
-
-        static string? GetExpression(Match match)
-        {
-            var group = match.Groups["expr"];
-            if (group.Success)
-            {
-                return group.ValueSpan.Trim().ToString();
-            }
-
-            return null;
         }
     }
 

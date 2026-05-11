@@ -302,35 +302,23 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
 
     static BlockMarker? ParseBlock(string source)
     {
-        var tagMatch = TokenRegex.BlockTag.Match(source);
-        if (!tagMatch.Success)
+        if (!BlockTagParser.TryParse(source, out var tag, out var expression))
         {
             return null;
         }
 
-        var tag = tagMatch.Groups["tag"].ValueSpan;
+        var expr = expression.IsEmpty ? null : expression.ToString();
 
         return tag switch
         {
-            "for" => RebuildFor(source, GetExpression(tagMatch)),
+            "for" => RebuildFor(source, expr),
             "endfor" => new(BlockTagKind.EndFor, source, null, null, null),
-            "if" => RebuildIf(source, GetExpression(tagMatch)),
-            "elsif" or "elseif" => RebuildElsif(source, GetExpression(tagMatch)),
+            "if" => RebuildIf(source, expr),
+            "elsif" or "elseif" => RebuildElsif(source, expr),
             "else" => new(BlockTagKind.Else, source, null, null, null),
             "endif" => new(BlockTagKind.EndIf, source, null, null, null),
             _ => null
         };
-
-        static string? GetExpression(Match match)
-        {
-            var group = match.Groups["expr"];
-            if (group.Success)
-            {
-                return group.ValueSpan.Trim().ToString();
-            }
-
-            return null;
-        }
     }
 
     static BlockMarker? RebuildFor(string source, string? expression)
