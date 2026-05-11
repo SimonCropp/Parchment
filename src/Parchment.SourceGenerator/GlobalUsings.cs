@@ -12,6 +12,7 @@ global using System.Xml.Linq;
 global using Fluid;
 global using Fluid.Ast;
 global using Fluid.Parser;
+global using Fluid.Values;
 
 global using Microsoft.CodeAnalysis;
 global using Microsoft.CodeAnalysis.CSharp;

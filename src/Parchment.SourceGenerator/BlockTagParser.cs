@@ -39,8 +39,8 @@ static class BlockTagParser
             return false;
         }
 
-        tag = inner.Slice(0, tagLength);
-        var rest = inner.Slice(tagLength);
+        tag = inner[..tagLength];
+        var rest = inner[tagLength..];
 
         if (rest.IsEmpty)
         {

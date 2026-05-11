@@ -15,14 +15,13 @@
         var segments = new List<string>(memberExpression.Segments.Count);
         foreach (var segment in memberExpression.Segments)
         {
-            if (segment is IdentifierSegment identifier)
-            {
-                segments.Add(identifier.Identifier);
-            }
-            else
+            var name = SegmentNames.TryGetStaticName(segment);
+            if (name == null)
             {
                 break;
             }
+
+            segments.Add(name);
         }
 
         if (segments.Count > 0)

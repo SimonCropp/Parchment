@@ -54,6 +54,52 @@ public class ReferenceValidatorTests
     }
 
     [Test]
+    public async Task IndexerWithStringLiteral_ValidatesAsDottedAccess()
+    {
+        // `Customer['DisplayName']` is Fluid-equivalent to `Customer.DisplayName` at render — both
+        // resolve to the same member. Validation should treat them the same instead of skipping
+        // the indexer segment and missing typos.
+        using var template = DocxTemplateBuilder.Build("{{ Profile['DisplayName'] }}");
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<Doc>("indexer-valid", template);
+    }
+
+    [Test]
+    public async Task IndexerWithStringLiteral_UnknownMember_FailsRegistration()
+    {
+        using var template = DocxTemplateBuilder.Build("{{ Profile['NoSuchMember'] }}");
+        var store = new TemplateStore();
+        var exception = await Assert.That(
+                () => store.RegisterDocxTemplate<Doc>("indexer-missing", template))
+            .Throws<ParchmentRegistrationException>();
+        await Assert.That(exception!.Message).Contains("NoSuchMember");
+    }
+
+    [Test]
+    public async Task IndexerWithDoubleQuotedLiteral_UnknownMember_FailsRegistration()
+    {
+        using var template = DocxTemplateBuilder.Build("{{ Profile[\"NoSuchMember\"] }}");
+        var store = new TemplateStore();
+        var exception = await Assert.That(
+                () => store.RegisterDocxTemplate<Doc>("indexer-missing-dq", template))
+            .Throws<ParchmentRegistrationException>();
+        await Assert.That(exception!.Message).Contains("NoSuchMember");
+    }
+
+    [Test]
+    public async Task MixedDotAndIndexer_UnknownMember_FailsRegistration()
+    {
+        // Cross-syntax path — dotted then indexer, indexer then dotted. Both should validate
+        // all segments.
+        using var template = DocxTemplateBuilder.Build("{{ Profile.DisplayName['NoSuchMember'] }}");
+        var store = new TemplateStore();
+        var exception = await Assert.That(
+                () => store.RegisterDocxTemplate<Doc>("indexer-mixed", template))
+            .Throws<ParchmentRegistrationException>();
+        await Assert.That(exception!.Message).Contains("NoSuchMember");
+    }
+
+    [Test]
     public async Task LoopVariableShadowsRootScope()
     {
         // Inside the loop, `Title` refers to the loop element's member (Item.Sku is fine, but

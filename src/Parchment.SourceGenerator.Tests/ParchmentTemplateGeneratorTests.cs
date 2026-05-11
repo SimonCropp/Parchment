@@ -51,6 +51,22 @@ public class ParchmentTemplateGeneratorTests
     }
 
     [Test]
+    public Task Substitution_IndexerStringLiteral_Valid()
+    {
+        // `{{ Customer['Name'] }}` is Fluid-equivalent to `{{ Customer.Name }}` — validation must
+        // walk the indexer segment as if it were dotted.
+        var result = GeneratorDriver.Run(letterModelDocx, "Hello {{ Customer['Name'] }}!");
+        return Verify(result);
+    }
+
+    [Test]
+    public Task Substitution_IndexerStringLiteral_MissingMember()
+    {
+        var result = GeneratorDriver.Run(letterModelDocx, "{{ Customer['Missing'] }}");
+        return Verify(result);
+    }
+
+    [Test]
     public Task ForLoop_Valid()
     {
         var source =
@@ -322,6 +338,13 @@ public class ParchmentTemplateGeneratorTests
     public Task Markdown_Substitution_MissingMember()
     {
         var result = GeneratorDriver.RunMarkdown(letterModelMd, "{{ Customer.Missing }}");
+        return Verify(result);
+    }
+
+    [Test]
+    public Task Markdown_Substitution_IndexerStringLiteral_MissingMember()
+    {
+        var result = GeneratorDriver.RunMarkdown(letterModelMd, "{{ Customer['Missing'] }}");
         return Verify(result);
     }
 
