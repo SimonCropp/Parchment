@@ -1,9 +1,9 @@
 ﻿sealed class IdentifierVisitor :
     AstVisitor
 {
-    List<string[]> paths = [];
+    List<List<string>> paths = [];
 
-    public static IReadOnlyList<string[]> Collect(IFluidTemplate template)
+    public static List<List<string>> Collect(IFluidTemplate template)
     {
         var visitor = new IdentifierVisitor();
         visitor.VisitTemplate(template);
@@ -27,7 +27,7 @@
 
         if (segments.Count > 0)
         {
-            paths.Add(segments.ToArray());
+            paths.Add(segments);
         }
 
         return base.VisitMemberExpression(memberExpression);

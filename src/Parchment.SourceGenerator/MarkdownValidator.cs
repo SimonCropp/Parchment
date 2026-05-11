@@ -168,7 +168,7 @@ static class MarkdownValidator
         }
     }
 
-    static string[]? TryGetMemberPath(Expression expression)
+    static List<string>? TryGetMemberPath(Expression expression)
     {
         if (expression is not MemberExpression member)
         {
@@ -188,15 +188,15 @@ static class MarkdownValidator
             }
         }
 
-        return segments.Count == 0 ? null : segments.ToArray();
+        return segments.Count == 0 ? null : segments;
     }
 
     sealed class ExpressionPathCollector :
         AstVisitor
     {
-        List<string[]> paths = [];
+        List<List<string>> paths = [];
 
-        public static IReadOnlyList<string[]> Collect(Expression expression)
+        public static List<List<string>> Collect(Expression expression)
         {
             var collector = new ExpressionPathCollector();
             collector.Visit(expression);
@@ -220,7 +220,7 @@ static class MarkdownValidator
 
             if (segments.Count > 0)
             {
-                paths.Add(segments.ToArray());
+                paths.Add(segments);
             }
 
             return base.VisitMemberExpression(memberExpression);

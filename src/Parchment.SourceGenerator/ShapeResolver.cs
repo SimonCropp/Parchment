@@ -6,10 +6,10 @@ static class ShapeResolver
 {
     public static string? Resolve(
         ModelShape shape,
-        string[] segments,
+        List<string> segments,
         IReadOnlyDictionary<string, string> scope)
     {
-        if (segments.Length == 0)
+        if (segments.Count == 0)
         {
             return null;
         }
@@ -27,7 +27,7 @@ static class ShapeResolver
             start = 0;
         }
 
-        for (var i = start; i < segments.Length; i++)
+        for (var i = start; i < segments.Count; i++)
         {
             var entry = FindType(shape, currentFqn);
             if (entry == null)
@@ -66,10 +66,10 @@ static class ShapeResolver
     /// </summary>
     public static bool IsExcelsiorTableMember(
         ModelShape shape,
-        string[] segments,
+        List<string> segments,
         IReadOnlyDictionary<string, string> scope)
     {
-        if (segments.Length == 0)
+        if (segments.Count == 0)
         {
             return false;
         }
@@ -87,7 +87,7 @@ static class ShapeResolver
             start = 0;
         }
 
-        for (var i = start; i < segments.Length; i++)
+        for (var i = start; i < segments.Count; i++)
         {
             var entry = FindType(shape, currentFqn);
             if (entry == null)
@@ -110,7 +110,7 @@ static class ShapeResolver
                 return false;
             }
 
-            if (i == segments.Length - 1)
+            if (i == segments.Count - 1)
             {
                 return matched.IsExcelsiorTable;
             }
@@ -123,10 +123,10 @@ static class ShapeResolver
 
     public static MemberEntry? ResolveMember(
         ModelShape shape,
-        string[] segments,
+        List<string> segments,
         IReadOnlyDictionary<string, string> scope)
     {
-        if (segments.Length == 0)
+        if (segments.Count == 0)
         {
             return null;
         }
@@ -144,7 +144,7 @@ static class ShapeResolver
             start = 0;
         }
 
-        for (var i = start; i < segments.Length; i++)
+        for (var i = start; i < segments.Count; i++)
         {
             var entry = FindType(shape, currentFqn);
             if (entry == null)
@@ -167,7 +167,7 @@ static class ShapeResolver
                 return null;
             }
 
-            if (i == segments.Length - 1)
+            if (i == segments.Count - 1)
             {
                 return matched;
             }
