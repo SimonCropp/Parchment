@@ -172,8 +172,8 @@ Model:
 ```cs
 public class NoteModel
 {
-    public required string Title { get; init; }
-    public required TokenValue Body { get; init; }
+    public required string Title;
+    public required TokenValue Body;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L9-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownPropertyModel' title='Start of snippet'>anchor</a></sup>
@@ -231,8 +231,8 @@ Model:
 ```cs
 public class ArticleModel
 {
-    public required string Heading { get; init; }
-    public required string Content { get; init; }
+    public required string Heading;
+    public required string Content;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L60-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownFilterModel' title='Start of snippet'>anchor</a></sup>
@@ -286,8 +286,8 @@ Model:
 ```cs
 public class BriefModel
 {
-    public required string Title { get; init; }
-    public required string Details { get; init; }
+    public required string Title;
+    public required string Details;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Markdown/MarkdownFlowTests.cs#L57-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownTemplatePropertyModel' title='Start of snippet'>anchor</a></sup>
@@ -348,8 +348,8 @@ Model:
 ```cs
 public class PostModel
 {
-    public required string Title { get; init; }
-    public required TokenValue Body { get; init; }
+    public required string Title;
+    public required TokenValue Body;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L159-L167' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlPropertyModel' title='Start of snippet'>anchor</a></sup>
@@ -405,8 +405,8 @@ Model:
 ```cs
 public class ReportModel
 {
-    public required string Title { get; init; }
-    public required TokenValue Callout { get; init; }
+    public required string Title;
+    public required TokenValue Callout;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L208-L216' title='Snippet source file'>snippet source</a> | <a href='#snippet-OpenXmlPropertyModel' title='Start of snippet'>anchor</a></sup>
@@ -469,8 +469,8 @@ Model:
 ```cs
 public class StyledModel
 {
-    public required string Label { get; init; }
-    public required TokenValue Highlight { get; init; }
+    public required string Label;
+    public required TokenValue Highlight;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L108-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-MutateModel' title='Start of snippet'>anchor</a></sup>
@@ -528,22 +528,22 @@ Mark the collection on the model:
 ```cs
 public class Quote
 {
-    public required string Reference { get; init; }
+    public required string Reference;
 
     [ExcelsiorTable]
-    public required IReadOnlyList<QuoteLine> Lines { get; init; }
+    public required IReadOnlyList<QuoteLine> Lines;
 }
 
 public class QuoteLine
 {
     [Column(Heading = "Item", Order = 1)]
-    public required string Description { get; init; }
+    public required string Description;
 
     [Column(Heading = "Qty", Order = 2)]
-    public required int Quantity { get; init; }
+    public required int Quantity;
 
     [Column(Order = 3, Format = "C0")]
-    public required decimal UnitPrice { get; init; }
+    public required decimal UnitPrice;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Docx/ExcelsiorTableTests.cs#L12-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-ExcelsiorTableModel' title='Start of snippet'>anchor</a></sup>
@@ -629,10 +629,10 @@ Mark the property:
 ```cs
 public class HtmlDoc
 {
-    public required string Title { get; init; }
+    public required string Title;
 
     [Html]
-    public required string Body { get; init; }
+    public required string Body;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L31-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-HtmlModel' title='Start of snippet'>anchor</a></sup>
@@ -671,10 +671,10 @@ await store.Render("html-doc", model, stream);
 ```cs
 public class MarkdownDoc
 {
-    public required string Title { get; init; }
+    public required string Title;
 
     [Markdown]
-    public required string Body { get; init; }
+    public required string Body;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L41-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-MarkdownModel' title='Start of snippet'>anchor</a></sup>
@@ -691,10 +691,10 @@ As an alternative to defining custom attributes, `[StringSyntax]` from `System.D
 ```cs
 public class StringSyntaxHtmlDoc
 {
-    public required string Title { get; init; }
+    public required string Title;
 
     [StringSyntax("html")]
-    public required string Body { get; init; }
+    public required string Body;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L51-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxHtmlModel' title='Start of snippet'>anchor</a></sup>
@@ -705,10 +705,10 @@ public class StringSyntaxHtmlDoc
 ```cs
 public class StringSyntaxMarkdownDoc
 {
-    public required string Title { get; init; }
+    public required string Title;
 
     [StringSyntax("markdown")]
-    public required string Body { get; init; }
+    public required string Body;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Docx/FormatAttributeTests.cs#L61-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringSyntaxMarkdownModel' title='Start of snippet'>anchor</a></sup>
@@ -745,8 +745,8 @@ Mark the property:
 ```cs
 public class Person
 {
-    public required string Name { get; init; }
-    public required IEnumerable<string> Tags { get; init; }
+    public required string Name;
+    public required IEnumerable<string> Tags;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Docx/StringListTests.cs#L12-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-StringListModel' title='Start of snippet'>anchor</a></sup>
@@ -1060,8 +1060,8 @@ Model:
 ```cs
 public class BrandKit
 {
-    public required string Title { get; init; }
-    public required TokenValue Logo { get; init; }
+    public required string Title;
+    public required TokenValue Logo;
 }
 ```
 <sup><a href='/src/Parchment.Tests/Docx/TokenOverrideTests.cs#L291-L299' title='Snippet source file'>snippet source</a> | <a href='#snippet-ImageTokenModel' title='Start of snippet'>anchor</a></sup>

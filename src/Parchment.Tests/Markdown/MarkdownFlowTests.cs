@@ -58,8 +58,8 @@ public class MarkdownFlowTests
 
     public class BriefModel
     {
-        public required string Title { get; init; }
-        public required string Details { get; init; }
+        public required string Title;
+        public required string Details;
     }
 
     #endregion

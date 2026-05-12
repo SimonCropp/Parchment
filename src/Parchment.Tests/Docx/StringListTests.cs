@@ -12,8 +12,8 @@ public class StringListTests
     #region StringListModel
     public class Person
     {
-        public required string Name { get; init; }
-        public required IEnumerable<string> Tags { get; init; }
+        public required string Name;
+        public required IEnumerable<string> Tags;
     }
     #endregion
 

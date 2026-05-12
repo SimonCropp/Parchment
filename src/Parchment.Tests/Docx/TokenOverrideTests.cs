@@ -10,8 +10,8 @@ public class TokenOverrideTests
 
     public class NoteModel
     {
-        public required string Title { get; init; }
-        public required TokenValue Body { get; init; }
+        public required string Title;
+        public required TokenValue Body;
     }
 
     #endregion
@@ -61,8 +61,8 @@ public class TokenOverrideTests
 
     public class ArticleModel
     {
-        public required string Heading { get; init; }
-        public required string Content { get; init; }
+        public required string Heading;
+        public required string Content;
     }
 
     #endregion
@@ -109,8 +109,8 @@ public class TokenOverrideTests
 
     public class StyledModel
     {
-        public required string Label { get; init; }
-        public required TokenValue Highlight { get; init; }
+        public required string Label;
+        public required TokenValue Highlight;
     }
 
     #endregion
@@ -160,8 +160,8 @@ public class TokenOverrideTests
 
     public class PostModel
     {
-        public required string Title { get; init; }
-        public required TokenValue Body { get; init; }
+        public required string Title;
+        public required TokenValue Body;
     }
 
     #endregion
@@ -209,8 +209,8 @@ public class TokenOverrideTests
 
     public class ReportModel
     {
-        public required string Title { get; init; }
-        public required TokenValue Callout { get; init; }
+        public required string Title;
+        public required TokenValue Callout;
     }
 
     #endregion
@@ -292,8 +292,8 @@ public class TokenOverrideTests
 
     public class BrandKit
     {
-        public required string Title { get; init; }
-        public required TokenValue Logo { get; init; }
+        public required string Title;
+        public required TokenValue Logo;
     }
 
     #endregion

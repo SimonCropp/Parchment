@@ -13,22 +13,22 @@ public class ExcelsiorTableTests
 
     public class Quote
     {
-        public required string Reference { get; init; }
+        public required string Reference;
 
         [ExcelsiorTable]
-        public required IReadOnlyList<QuoteLine> Lines { get; init; }
+        public required IReadOnlyList<QuoteLine> Lines;
     }
 
     public class QuoteLine
     {
         [Column(Heading = "Item", Order = 1)]
-        public required string Description { get; init; }
+        public required string Description;
 
         [Column(Heading = "Qty", Order = 2)]
-        public required int Quantity { get; init; }
+        public required int Quantity;
 
         [Column(Order = 3, Format = "C0")]
-        public required decimal UnitPrice { get; init; }
+        public required decimal UnitPrice;
     }
 
     #endregion

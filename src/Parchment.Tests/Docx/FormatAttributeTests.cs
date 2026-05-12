@@ -31,40 +31,40 @@ public class FormatAttributeTests
     #region HtmlModel
     public class HtmlDoc
     {
-        public required string Title { get; init; }
+        public required string Title;
 
         [Html]
-        public required string Body { get; init; }
+        public required string Body;
     }
     #endregion
 
     #region MarkdownModel
     public class MarkdownDoc
     {
-        public required string Title { get; init; }
+        public required string Title;
 
         [Markdown]
-        public required string Body { get; init; }
+        public required string Body;
     }
     #endregion
 
     #region StringSyntaxHtmlModel
     public class StringSyntaxHtmlDoc
     {
-        public required string Title { get; init; }
+        public required string Title;
 
         [StringSyntax("html")]
-        public required string Body { get; init; }
+        public required string Body;
     }
     #endregion
 
     #region StringSyntaxMarkdownModel
     public class StringSyntaxMarkdownDoc
     {
-        public required string Title { get; init; }
+        public required string Title;
 
         [StringSyntax("markdown")]
-        public required string Body { get; init; }
+        public required string Body;
     }
     #endregion
 
