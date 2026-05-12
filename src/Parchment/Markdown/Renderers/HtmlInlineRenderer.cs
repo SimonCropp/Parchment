@@ -7,12 +7,24 @@ class HtmlInlineRenderer :
         ["i"] = props => props.Append(new Italic()),
         ["strong"] = props => props.Append(new Bold()),
         ["b"] = props => props.Append(new Bold()),
-        ["u"] = props => props.Append(new Underline { Val = UnderlineValues.Single }),
+        ["u"] = props => props.Append(
+            new Underline
+            {
+                Val = UnderlineValues.Single
+            }),
         ["s"] = props => props.Append(new Strike()),
         ["del"] = props => props.Append(new Strike()),
         ["strike"] = props => props.Append(new Strike()),
-        ["sub"] = props => props.Append(new VerticalTextAlignment { Val = VerticalPositionValues.Subscript }),
-        ["sup"] = props => props.Append(new VerticalTextAlignment { Val = VerticalPositionValues.Superscript }),
+        ["sub"] = props => props.Append(
+            new VerticalTextAlignment
+            {
+                Val = VerticalPositionValues.Subscript
+            }),
+        ["sup"] = props => props.Append(
+            new VerticalTextAlignment
+            {
+                Val = VerticalPositionValues.Superscript
+            }),
     };
 
     protected override void Write(OpenXmlMarkdownRenderer renderer, HtmlInline inline)

@@ -121,7 +121,12 @@ static class GeneratorDriver
             var body = mainPart.Document.Body!;
             foreach (var text in paragraphs)
             {
-                body.Append(new Paragraph(new Run(new Text(text) {Space = SpaceProcessingModeValues.Preserve})));
+                body.Append(
+                    new Paragraph(
+                        new Run(new Text(text)
+                        {
+                            Space = SpaceProcessingModeValues.Preserve
+                        })));
             }
         }
 

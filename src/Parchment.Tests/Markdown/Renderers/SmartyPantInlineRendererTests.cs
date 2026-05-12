@@ -11,7 +11,11 @@ public class SmartyPantInlineRendererTests
     public async Task EmitsExpectedGlyph(SmartyPantType type, string expected)
     {
         var renderer = RendererHarness.BuildRenderer();
-        renderer.Render(new SmartyPant { Type = type });
+        renderer.Render(
+            new SmartyPant
+            {
+                Type = type
+            });
 
         var run = (Run)renderer.Top.CurrentRuns.Single();
         await Assert.That(run.GetFirstChild<Text>()!.Text).IsEqualTo(expected);

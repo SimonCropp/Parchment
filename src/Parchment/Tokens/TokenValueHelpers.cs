@@ -53,11 +53,12 @@ public static class TokenValueHelpers
             ContextualSpacing = new()
         };
         paragraph.Append(props);
-        paragraph.Append(new Run(
-            new Text(XmlCharSanitizer.Strip(text).ToString())
-            {
-                Space = SpaceProcessingModeValues.Preserve
-            }));
+        paragraph.Append(
+            new Run(
+                new Text(XmlCharSanitizer.Strip(text).ToString())
+                {
+                    Space = SpaceProcessingModeValues.Preserve
+                }));
         return paragraph;
     }
 }
