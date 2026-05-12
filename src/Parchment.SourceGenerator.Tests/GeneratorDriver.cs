@@ -135,7 +135,7 @@ static class GeneratorDriver
             if (removePersonalInformation)
             {
                 var settingsPart = mainPart.AddNewPart<DocumentSettingsPart>();
-                settingsPart.Settings = new Settings(
+                settingsPart.Settings = new(
                     new RemovePersonalInformation(),
                     new RemoveDateAndTime());
             }

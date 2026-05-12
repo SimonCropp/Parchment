@@ -14,8 +14,7 @@ static class DocxArchiveReader
             {
                 using var stream = entry.Open();
                 var settings = XDocument.Load(stream);
-                hasRemovePersonalInformation = settings.Root != null &&
-                    settings.Root.Element(w + "removePersonalInformation") != null;
+                hasRemovePersonalInformation = settings.Root?.Element(w + "removePersonalInformation") != null;
                 continue;
             }
 
