@@ -86,9 +86,10 @@ static class AccessorEmission
         EmitFormatBlock(fields, registrations, rootFqn, formatEntries);
         EmitStringListBlock(fields, registrations, rootFqn, stringListEntries);
 
-        return new(
-            fields.ToString().TrimEnd('\r', '\n'),
-            registrations.ToString().TrimEnd('\r', '\n'));
+        fields.TrimTrailingNewlines();
+        registrations.TrimTrailingNewlines();
+
+        return new(fields.ToString(), registrations.ToString());
     }
 
     static void WalkForMaps(
