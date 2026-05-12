@@ -50,25 +50,20 @@ sealed class FormatMap
         HashSet<Type> visited,
         string templateName)
     {
-        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        foreach (var (name, memberType, memberGetter, member) in EnumerateMembers(type))
         {
-            if (!property.CanRead)
-            {
-                continue;
-            }
+            var nextSegments = new List<string>(pathSegments) { name };
+            var nextGetter = ChainGetter(getter, memberGetter);
 
-            var nextSegments = new List<string>(pathSegments) { property.Name };
-            var nextGetter = ChainGetter(getter, property);
-
-            var format = DetectFormat(property, templateName, type);
+            var format = DetectFormat(member, templateName, type);
             if (format != null)
             {
-                var underlying = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+                var underlying = Nullable.GetUnderlyingType(memberType) ?? memberType;
                 if (underlying != typeof(string))
                 {
                     throw new ParchmentRegistrationException(
                         templateName,
-                        $"[{format}] property '{type.Name}.{property.Name}' must be a string.");
+                        $"[{format}] member '{type.Name}.{name}' must be a string.");
                 }
 
                 var dottedPath = string.Join('.', nextSegments);
@@ -76,34 +71,60 @@ sealed class FormatMap
                 continue;
             }
 
-            var propUnderlying = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
-            if (!ShouldDescend(propUnderlying))
+            var memberUnderlying = Nullable.GetUnderlyingType(memberType) ?? memberType;
+            if (!ShouldDescend(memberUnderlying))
             {
                 continue;
             }
 
-            if (!visited.Add(propUnderlying))
+            if (!visited.Add(memberUnderlying))
             {
                 continue;
             }
 
-            WalkType(propUnderlying, nextSegments, nextGetter, entries, visited, templateName);
-            visited.Remove(propUnderlying);
+            WalkType(memberUnderlying, nextSegments, nextGetter, entries, visited, templateName);
+            visited.Remove(memberUnderlying);
         }
     }
 
-    static Func<object, object?> ChainGetter(Func<object, object?> upstream, PropertyInfo property) =>
+    internal static IEnumerable<(string Name, Type Type, Func<object, object?> Getter, MemberInfo Member)> EnumerateMembers(Type type)
+    {
+        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (!property.CanRead)
+            {
+                continue;
+            }
+
+            yield return (
+                property.Name,
+                property.PropertyType,
+                property.GetValue,
+                property);
+        }
+
+        foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
+        {
+            yield return (
+                field.Name,
+                field.FieldType,
+                field.GetValue,
+                field);
+        }
+    }
+
+    static Func<object, object?> ChainGetter(Func<object, object?> upstream, Func<object, object?> memberGetter) =>
         root =>
         {
             var parent = upstream(root);
-            return parent == null ? null : property.GetValue(parent);
+            return parent == null ? null : memberGetter(parent);
         };
 
-    static FormatMapKind? DetectFormat(PropertyInfo property, string templateName, Type owner)
+    static FormatMapKind? DetectFormat(MemberInfo member, string templateName, Type owner)
     {
         var hasHtmlAttribute = false;
         var hasMarkdownAttribute = false;
-        foreach (var attribute in property.GetCustomAttributes(true))
+        foreach (var attribute in member.GetCustomAttributes(true))
         {
             var name = attribute.GetType().Name;
             if (name == "HtmlAttribute")
@@ -116,27 +137,27 @@ sealed class FormatMap
             }
         }
 
-        var syntax = ReadStringSyntax(property);
+        var syntax = ReadStringSyntax(member);
 
         if (hasHtmlAttribute && hasMarkdownAttribute)
         {
             throw new ParchmentRegistrationException(
                 templateName,
-                $"Property '{owner.Name}.{property.Name}': cannot have both [Html] and [Markdown].");
+                $"Member '{owner.Name}.{member.Name}': cannot have both [Html] and [Markdown].");
         }
 
         if (hasHtmlAttribute && syntax == "markdown")
         {
             throw new ParchmentRegistrationException(
                 templateName,
-                $"Property '{owner.Name}.{property.Name}': mismatched format — [Html] contradicts [StringSyntax(\"markdown\")].");
+                $"Member '{owner.Name}.{member.Name}': mismatched format — [Html] contradicts [StringSyntax(\"markdown\")].");
         }
 
         if (hasMarkdownAttribute && syntax == "html")
         {
             throw new ParchmentRegistrationException(
                 templateName,
-                $"Property '{owner.Name}.{property.Name}': mismatched format — [Markdown] contradicts [StringSyntax(\"html\")].");
+                $"Member '{owner.Name}.{member.Name}': mismatched format — [Markdown] contradicts [StringSyntax(\"html\")].");
         }
 
         if (hasHtmlAttribute || syntax == "html")
@@ -152,9 +173,9 @@ sealed class FormatMap
         return null;
     }
 
-    static string? ReadStringSyntax(PropertyInfo property)
+    static string? ReadStringSyntax(MemberInfo member)
     {
-        foreach (var attribute in property.GetCustomAttributes(true))
+        foreach (var attribute in member.GetCustomAttributes(true))
         {
             if (attribute.GetType().FullName != "System.Diagnostics.CodeAnalysis.StringSyntaxAttribute")
             {

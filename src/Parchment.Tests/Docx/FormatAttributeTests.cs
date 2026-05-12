@@ -9,13 +9,23 @@ public class FormatAttributeTests
             scenarioName);
 
     #region HtmlAttribute
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     sealed class HtmlAttribute : Attribute;
     #endregion
 
     #region MarkdownAttribute
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     sealed class MarkdownAttribute : Attribute;
+    #endregion
+
+    #region MarkdownFieldModel
+    public record MarkdownFieldDoc
+    {
+        public required string Title;
+
+        [Markdown]
+        public required string Body;
+    }
     #endregion
 
     #region HtmlModel
@@ -133,6 +143,36 @@ public class FormatAttributeTests
 
         stream.Position = 0;
         await Verify(stream, "docx", settings);
+    }
+
+    [Test]
+    public async Task MarkdownOnFieldRendersAsMarkdown()
+    {
+        // Regression: `[Markdown]` on a public field (e.g. record with `public required string X;`
+        // and no `{ get; init; }`) must be detected by the reflection FormatMap walker — not just
+        // properties. Without this, the value would be inserted as plain text and bare URLs /
+        // mailto: prefixes would not autolink.
+        using var template = DocxTemplateBuilder.Build("{{ Body }}");
+
+        var store = new TemplateStore();
+        store.RegisterDocxTemplate<MarkdownFieldDoc>("md-field", template);
+
+        var model = new MarkdownFieldDoc
+        {
+            Title = "T",
+            Body = "Contact (mailto:user@example.com) please."
+        };
+
+        using var stream = new MemoryStream();
+        await store.Render("md-field", model, stream);
+        stream.Position = 0;
+
+        using var doc = WordprocessingDocument.Open(stream, false);
+        var main = doc.MainDocumentPart!;
+        var hyperlinkRels = main.HyperlinkRelationships.ToList();
+        await Assert.That(hyperlinkRels.Count).IsEqualTo(1);
+        await Assert.That(hyperlinkRels[0].Uri.ToString()).IsEqualTo("mailto:user@example.com");
+        await Assert.That(main.Document!.Body!.Descendants<Hyperlink>().Count()).IsEqualTo(1);
     }
 
     [Test]
