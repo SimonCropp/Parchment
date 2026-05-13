@@ -113,7 +113,7 @@ Declare a model property as `TokenValue` and return one of:
 
 - A plain `string` (or any value Fluid stringifies) — plain text substitution. This is the default when the property is typed as `string` directly; assigning a string to a `TokenValue` property goes through the same path via the implicit conversion.
 - `new MarkdownToken(string)` — the value is rendered as markdown via Markdig and spliced into the host paragraph.
-- `new HtmlToken(string)` — the value is converted from HTML (via OpenXmlHtml) and spliced into the host paragraph.
+- `new HtmlToken(string)` — the value is converted from HTML (via [OpenXmlHtml](https://github.com/SimonCropp/OpenXmlHtml)) and spliced into the host paragraph.
 - `new OpenXmlToken(Func<IOpenXmlContext, IEnumerable<OpenXmlElement>>)` — the callback emits raw OpenXML elements. Useful for rich tables, generated charts, custom-styled lists.
 - `new MutateToken(Action<Paragraph, IOpenXmlContext>)` — the callback receives the host paragraph and mutates it in place. The token text is cleared before the callback runs. Useful for adding runs with custom formatting, injecting bookmarks, or tweaking paragraph properties while preserving the original paragraph.
 
