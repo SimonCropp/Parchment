@@ -10,7 +10,7 @@ class RegisteredMarkdownTemplate(
     {
         var context = new TemplateContext(model, SharedFluid.Options, allowModelMembers: true);
         await using var writer = new StringWriter();
-        await parsedTemplate.RenderAsync(writer, System.Text.Encodings.Web.HtmlEncoder.Default, context);
+        await parsedTemplate.RenderAsync(writer, NullEncoder.Default, context);
         var markdownText = writer.ToString();
         cancel.ThrowIfCancellationRequested();
 

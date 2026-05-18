@@ -1,0 +1,5 @@
+﻿Release notes
+The search feature has landed.
+Closed three regressions
+Halved test flake rate
+Ship it.

@@ -1,2 +1,5 @@
 ﻿Sprint recap
-Done- Landed the search feature- Fixed three regressions Ship it.
+Done
+Landed the search feature
+Fixed three regressions
+Ship it.
