@@ -24,9 +24,9 @@ public class RegistrationBenchmarks
     [Benchmark]
     public void RegisterFromMemoryStream()
     {
-        using var ms = new MemoryStream(templateBytes);
+        using var stream = new MemoryStream(templateBytes);
         var store = new TemplateStore();
-        store.RegisterDocxTemplate<Invoice>("bench", ms);
+        store.RegisterDocxTemplate<Invoice>("bench", stream);
     }
 
     [Benchmark]
@@ -60,41 +60,41 @@ public class RegistrationBenchmarks
         Parchment.Generated.GeneratedRegistration.RegisterStringList(
             typeof(Invoice), invoiceStringLists);
 
-        using var ms = new MemoryStream(templateBytes);
+        using var stream = new MemoryStream(templateBytes);
         var store = new TemplateStore();
-        store.RegisterDocxTemplate<Invoice>("bench-sg", ms);
+        store.RegisterDocxTemplate<Invoice>("bench-sg", stream);
     }
 
     static KeyValuePair<string, Fluid.IMemberAccessor>[] invoiceAccessors =
     [
-        new("Number",    new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Number)),
+        new("Number", new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Number)),
         new("IssueDate", new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).IssueDate)),
-        new("DueDate",   new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).DueDate)),
-        new("Customer",  new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Customer)),
-        new("Lines",     new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Lines)),
-        new("Currency",  new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Currency)),
-        new("Notes",     new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Notes)),
-        new("Tags",      new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Tags)),
-        new("Subtotal",  new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Subtotal)),
-        new("Tax",       new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Tax)),
-        new("Total",     new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Total))
+        new("DueDate", new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).DueDate)),
+        new("Customer", new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Customer)),
+        new("Lines", new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Lines)),
+        new("Currency", new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Currency)),
+        new("Notes", new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Notes)),
+        new("Tags", new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Tags)),
+        new("Subtotal", new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Subtotal)),
+        new("Tax", new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Tax)),
+        new("Total", new Fluid.Accessors.DelegateAccessor((o, _) => ((Invoice)o).Total))
     ];
 
     static KeyValuePair<string, Fluid.IMemberAccessor>[] customerAccessors =
     [
-        new("Name",        new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).Name)),
-        new("Email",       new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).Email)),
-        new("Address",     new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).Address)),
-        new("VatNumber",   new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).VatNumber)),
+        new("Name", new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).Name)),
+        new("Email", new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).Email)),
+        new("Address", new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).Address)),
+        new("VatNumber", new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).VatNumber)),
         new("IsPreferred", new Fluid.Accessors.DelegateAccessor((o, _) => ((Customer)o).IsPreferred))
     ];
 
     static KeyValuePair<string, Fluid.IMemberAccessor>[] lineItemAccessors =
     [
         new("Description", new Fluid.Accessors.DelegateAccessor((o, _) => ((LineItem)o).Description)),
-        new("Quantity",    new Fluid.Accessors.DelegateAccessor((o, _) => ((LineItem)o).Quantity)),
-        new("UnitPrice",   new Fluid.Accessors.DelegateAccessor((o, _) => ((LineItem)o).UnitPrice)),
-        new("LineTotal",   new Fluid.Accessors.DelegateAccessor((o, _) => ((LineItem)o).LineTotal))
+        new("Quantity", new Fluid.Accessors.DelegateAccessor((o, _) => ((LineItem)o).Quantity)),
+        new("UnitPrice", new Fluid.Accessors.DelegateAccessor((o, _) => ((LineItem)o).UnitPrice)),
+        new("LineTotal", new Fluid.Accessors.DelegateAccessor((o, _) => ((LineItem)o).LineTotal))
     ];
 
     static readonly Parchment.Generated.StringListMapEntry[] invoiceStringLists =

@@ -107,9 +107,9 @@ public sealed class TemplateStore(ILogger<TemplateStore>? logger = null)
         }
         else if (styleSource != null)
         {
-            using var ms = new MemoryStream();
-            styleSource.CopyTo(ms);
-            bytes = ms.ToArray();
+            using var stream = new MemoryStream();
+            styleSource.CopyTo(stream);
+            bytes = stream.ToArray();
         }
         else
         {
