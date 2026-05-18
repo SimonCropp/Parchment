@@ -4,6 +4,8 @@ class OpenXmlMarkdownRenderer :
     readonly Stack<ContainerState> stack = new();
     readonly Stack<ContainerState> pool = new();
     readonly List<(string TagName, Action<RunProperties> Apply)> activeInlineHtml = new();
+    readonly Stack<int> indentStack = new();
+    int currentIndent;
 
     public OpenXmlMarkdownRenderer(MainDocumentPart mainPart, WordNumberingState numbering, ImagePolicies imagePolicies, int headingOffset = 0)
     {
@@ -127,4 +129,15 @@ class OpenXmlMarkdownRenderer :
         FlushParagraph();
         stack.Peek().Blocks.Add(block);
     }
+
+    internal int CurrentIndent => currentIndent;
+
+    internal void PushIndent(int dxa)
+    {
+        indentStack.Push(dxa);
+        currentIndent += dxa;
+    }
+
+    internal void PopIndent() =>
+        currentIndent -= indentStack.Pop();
 }

@@ -4,7 +4,7 @@ class TableRenderer :
     protected override void Write(OpenXmlMarkdownRenderer renderer, Markdig.Extensions.Tables.Table tableBlock)
     {
         var table = new Table();
-        table.Append(BuildTableProperties());
+        table.Append(BuildTableProperties(renderer.CurrentIndent));
         table.Append(BuildTableGrid(tableBlock));
 
         foreach (var child in tableBlock)
@@ -18,65 +18,82 @@ class TableRenderer :
         renderer.AddBlock(table);
     }
 
-    static TableProperties BuildTableProperties() =>
+    static TableProperties BuildTableProperties(int indent)
+    {
+        var width = indent > 0
+            ? new TableWidth { Type = TableWidthUnitValues.Auto }
+            : new TableWidth { Width = "5000", Type = TableWidthUnitValues.Pct };
+        var properties = new TableProperties(width);
+        if (indent > 0)
+        {
+            properties.Append(
+                new TableIndentation
+                {
+                    Width = indent,
+                    Type = TableWidthUnitValues.Dxa
+                });
+        }
+
+        properties.Append(BuildBorders());
+        properties.Append(BuildCellMargins());
+        return properties;
+    }
+
+    static TableBorders BuildBorders() =>
         new(
-            new TableWidth
+            new TopBorder
             {
-                Width = "5000",
-                Type = TableWidthUnitValues.Pct
+                Val = BorderValues.Single,
+                Size = 4
             },
-            new TableBorders(
-                new TopBorder
-                {
-                    Val = BorderValues.Single,
-                    Size = 4
-                },
-                new BottomBorder
-                {
-                    Val = BorderValues.Single,
-                    Size = 4
-                },
-                new LeftBorder
-                {
-                    Val = BorderValues.Single,
-                    Size = 4
-                },
-                new RightBorder
-                {
-                    Val = BorderValues.Single,
-                    Size = 4
-                },
-                new InsideHorizontalBorder
-                {
-                    Val = BorderValues.Single,
-                    Size = 4
-                },
-                new InsideVerticalBorder
-                {
-                    Val = BorderValues.Single,
-                    Size = 4
-                }),
-            new TableCellMarginDefault(
-                new TopMargin
-                {
-                    Width = "0",
-                    Type = TableWidthUnitValues.Dxa
-                },
-                new StartMargin
-                {
-                    Width = "108",
-                    Type = TableWidthUnitValues.Dxa
-                },
-                new BottomMargin
-                {
-                    Width = "0",
-                    Type = TableWidthUnitValues.Dxa
-                },
-                new EndMargin
-                {
-                    Width = "108",
-                    Type = TableWidthUnitValues.Dxa
-                }));
+            new BottomBorder
+            {
+                Val = BorderValues.Single,
+                Size = 4
+            },
+            new LeftBorder
+            {
+                Val = BorderValues.Single,
+                Size = 4
+            },
+            new RightBorder
+            {
+                Val = BorderValues.Single,
+                Size = 4
+            },
+            new InsideHorizontalBorder
+            {
+                Val = BorderValues.Single,
+                Size = 4
+            },
+            new InsideVerticalBorder
+            {
+                Val = BorderValues.Single,
+                Size = 4
+            });
+
+    static TableCellMarginDefault BuildCellMargins() =>
+        new(
+            new TopMargin
+            {
+                Width = "0",
+                Type = TableWidthUnitValues.Dxa
+            },
+            new StartMargin
+            {
+                Width = "108",
+                Type = TableWidthUnitValues.Dxa
+            },
+            new BottomMargin
+            {
+                Width = "0",
+                Type = TableWidthUnitValues.Dxa
+            },
+            new EndMargin
+            {
+                Width = "108",
+                Type = TableWidthUnitValues.Dxa
+            });
 
     static TableGrid BuildTableGrid(Markdig.Extensions.Tables.Table table)
     {

@@ -18,7 +18,15 @@ class ListBlockRenderer :
             {
                 if (child is not LeafBlock leaf)
                 {
-                    renderer.Render(child);
+                    renderer.PushIndent(480);
+                    try
+                    {
+                        renderer.Render(child);
+                    }
+                    finally
+                    {
+                        renderer.PopIndent();
+                    }
                     continue;
                 }
 

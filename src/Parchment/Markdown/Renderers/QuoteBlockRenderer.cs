@@ -19,7 +19,15 @@ class QuoteBlockRenderer :
             }
             else
             {
-                renderer.Render(child);
+                renderer.PushIndent(720);
+                try
+                {
+                    renderer.Render(child);
+                }
+                finally
+                {
+                    renderer.PopIndent();
+                }
             }
         }
     }
