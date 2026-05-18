@@ -111,6 +111,46 @@ public class MarkdownFlowTests
     }
 
     [Test]
+    public async Task PropertyContainingHtml()
+    {
+        using var targetStream = new MemoryStream();
+        var markdown =
+            """
+            # {{ Title }}
+
+            {{ Details }}
+            """;
+
+        using var styleSource = DocxTemplateBuilder.Build();
+
+        var store = new TemplateStore();
+        store.RegisterMarkdownTemplate<BriefModel>(
+            "brief-html",
+            markdown,
+            styleSource);
+
+        await store.Render(
+            "brief-html",
+            new BriefModel
+            {
+                Title = "Release notes",
+                Details =
+                    """
+                    <p>The <b>search</b> feature has landed.</p>
+                    <ul>
+                      <li>Closed three regressions</li>
+                      <li>Halved test flake rate</li>
+                    </ul>
+                    <blockquote>Ship it.</blockquote>
+                    """
+            },
+            targetStream);
+
+        targetStream.Position = 0;
+        await Verify(targetStream, "docx");
+    }
+
+    [Test]
     public async Task HtmlCommentsAreStripped()
     {
         // HTML comment blocks (snippet markers, authoring notes, TODOs) must not bleed into the

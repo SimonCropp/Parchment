@@ -296,7 +296,7 @@ class ScopeTreeRunner(
         try
         {
             await using var writer = new StringWriter();
-            await site.Template.RenderAsync(writer, System.Text.Encodings.Web.HtmlEncoder.Default, context);
+            await site.Template.RenderAsync(writer, NullEncoder.Default, context);
             return writer.ToString();
         }
         catch (ParchmentException)
