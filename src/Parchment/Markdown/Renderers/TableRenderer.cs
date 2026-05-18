@@ -20,6 +20,11 @@ class TableRenderer :
 
     static TableProperties BuildTableProperties() =>
         new(
+            new TableWidth
+            {
+                Width = "5000",
+                Type = TableWidthUnitValues.Pct
+            },
             new TableBorders(
                 new TopBorder
                 {
