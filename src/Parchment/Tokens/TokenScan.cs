@@ -21,7 +21,8 @@ static class TokenScan
         while (i <= text.Length - 4)
         {
             var openIndex = text.IndexOf('{', i);
-            if (openIndex < 0 || openIndex > text.Length - 4)
+            if (openIndex < 0 ||
+                openIndex > text.Length - 4)
             {
                 break;
             }

@@ -5,7 +5,8 @@ static class StringBuilderExtensions
 
     public static void TrimTrailingNewlines(this StringBuilder builder)
     {
-        while (builder.Length > 0 && builder[^1] is '\r' or '\n')
+        while (builder.Length > 0 &&
+               builder[^1] is '\r' or '\n')
         {
             builder.Length--;
         }
