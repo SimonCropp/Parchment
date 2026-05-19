@@ -299,7 +299,7 @@ public class TableRendererTests
     }
 
     [Test]
-    public async Task PipeTableWithUniformSeparatorPreservesEqualColumns()
+    public async Task PipeTableWithUniformSeparatorSkipsExplicitWidths()
     {
         const string md =
             """
@@ -314,10 +314,15 @@ public class TableRendererTests
         renderer.Render(tableBlock);
 
         var table = (Table) renderer.Drain().Single();
+        var properties = table.GetFirstChild<TableProperties>()!;
+        await Assert.That(properties.GetFirstChild<TableLayout>()).IsNull();
+
         var gridCols = table.GetFirstChild<TableGrid>()!.Elements<GridColumn>().ToList();
         await Assert.That(gridCols.Count).IsEqualTo(3);
-        await Assert.That(gridCols[0].Width?.Value).IsEqualTo(gridCols[1].Width?.Value);
-        await Assert.That(gridCols[1].Width?.Value).IsEqualTo(gridCols[2].Width?.Value);
+        foreach (var col in gridCols)
+        {
+            await Assert.That(col.Width).IsNull();
+        }
     }
 
     [Test]

@@ -38,12 +38,21 @@ class TableRenderer :
         }
 
         float totalPct = 0;
+        var first = columns[0].Width;
+        var allEqual = true;
         foreach (var column in columns)
         {
             totalPct += column.Width;
+            if (column.Width != first)
+            {
+                allEqual = false;
+            }
         }
 
-        if (totalPct <= 0)
+        // No width hints (totalPct == 0) or uniform separators produce the same layout as Word's
+        // default auto-distribution, so skip the explicit dxa emission to keep the docx output
+        // minimal and avoid overriding the table's natural sizing.
+        if (totalPct <= 0 || allEqual)
         {
             return null;
         }
