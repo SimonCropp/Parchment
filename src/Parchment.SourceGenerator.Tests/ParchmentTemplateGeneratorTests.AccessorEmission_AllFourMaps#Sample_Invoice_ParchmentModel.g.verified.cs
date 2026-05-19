@@ -14,29 +14,24 @@ partial class Invoice
     new("Footer", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((global::Sample.Invoice)o).Footer)),
     new("Notes", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((global::Sample.Invoice)o).Notes)),
   };
-
   static readonly global::System.Collections.Generic.KeyValuePair<string, global::Fluid.IMemberAccessor>[] _Accessors_global__Sample_Customer =
   {
     new("Name", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((global::Sample.Customer)o).Name)),
     new("Tags", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((global::Sample.Customer)o).Tags)),
   };
-
   static readonly global::System.Collections.Generic.KeyValuePair<string, global::Fluid.IMemberAccessor>[] _Accessors_global__Sample_Line =
   {
     new("Description", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((global::Sample.Line)o).Description)),
   };
-
   static readonly global::Parchment.Generated.ExcelsiorTableMapEntry[] _ExcelsiorTables =
   {
     new("Lines", typeof(global::Sample.Line), o => ((global::Sample.Invoice)o).Lines),
   };
-
   static readonly global::Parchment.Generated.FormatMapEntry[] _Formats =
   {
     new("Footer", global::Parchment.Generated.FormatMapKind.Html, o => ((global::Sample.Invoice)o).Footer),
     new("Notes", global::Parchment.Generated.FormatMapKind.Markdown, o => ((global::Sample.Invoice)o).Notes),
   };
-
   static readonly global::Parchment.Generated.StringListMapEntry[] _StringLists =
   {
     new("Customer.Tags", o => ((global::Sample.Invoice)o).Customer?.Tags),

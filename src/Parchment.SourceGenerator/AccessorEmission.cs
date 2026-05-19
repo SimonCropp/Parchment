@@ -202,8 +202,11 @@ static class AccessorEmission
                 fields.AppendLine(")),");
             }
 
-            fields.AppendLine("};");
-            fields.AppendLine();
+            fields.Append(
+                """
+                };
+
+                """);
 
             registrations.AppendLine($"  global::Parchment.Generated.GeneratedRegistration.RegisterFluidAccessors(typeof({type.TypeFullyQualifiedName}), {fieldName});");
         }
@@ -237,8 +240,11 @@ static class AccessorEmission
             fields.AppendLine("),");
         }
 
-        fields.AppendLine("};");
-        fields.AppendLine();
+        fields.Append(
+            """
+            };
+
+            """);
 
         registrations.AppendLine($"  global::Parchment.Generated.GeneratedRegistration.RegisterExcelsiorTable(typeof({rootFqn}), _ExcelsiorTables);");
     }
@@ -271,8 +277,11 @@ static class AccessorEmission
             fields.AppendLine("),");
         }
 
-        fields.AppendLine("};");
-        fields.AppendLine();
+        fields.Append(
+            """
+            };
+
+            """);
 
         registrations.AppendLine($"  global::Parchment.Generated.GeneratedRegistration.RegisterFormat(typeof({rootFqn}), _Formats);");
     }
@@ -303,8 +312,11 @@ static class AccessorEmission
             fields.AppendLine("),");
         }
 
-        fields.AppendLine("};");
-        fields.AppendLine();
+        fields.Append(
+            """
+            };
+
+            """);
 
         registrations.AppendLine($"  global::Parchment.Generated.GeneratedRegistration.RegisterStringList(typeof({rootFqn}), _StringLists);");
     }

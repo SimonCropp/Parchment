@@ -11,7 +11,6 @@ partial class Invoice
   {
     new("Lines", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((global::Sample.Invoice)o).Lines)),
   };
-
   static readonly global::System.Collections.Generic.KeyValuePair<string, global::Fluid.IMemberAccessor>[] _Accessors_global__Sample_Line =
   {
     new("Description", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((global::Sample.Line)o).Description)),

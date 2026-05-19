@@ -16,13 +16,15 @@ static class BlockTagParser
 
         var span = source.AsSpan();
         if (span.Length < 4 ||
-            span[0] != '{' || span[1] != '%' ||
-            span[^2] != '%' || span[^1] != '}')
+            span[0] != '{' ||
+            span[1] != '%' ||
+            span[^2] != '%' ||
+            span[^1] != '}')
         {
             return false;
         }
 
-        var inner = span.Slice(2, span.Length - 4).Trim();
+        var inner = span[2..^2].Trim();
         if (inner.IsEmpty)
         {
             return false;

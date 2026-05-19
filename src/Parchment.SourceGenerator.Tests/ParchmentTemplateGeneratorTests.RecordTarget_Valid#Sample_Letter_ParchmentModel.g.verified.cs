@@ -11,7 +11,6 @@ partial record Letter
   {
     new("Customer", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((global::Sample.Letter)o).Customer)),
   };
-
   static readonly global::System.Collections.Generic.KeyValuePair<string, global::Fluid.IMemberAccessor>[] _Accessors_global__Sample_Customer =
   {
     new("Name", new global::Fluid.Accessors.DelegateAccessor((o, _) => ((global::Sample.Customer)o).Name)),
