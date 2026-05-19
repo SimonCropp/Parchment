@@ -6,7 +6,7 @@ static class ShapeResolver
 {
     public static string? Resolve(
         ModelShape shape,
-        List<string> segments,
+        IReadOnlyList<string> segments,
         IReadOnlyDictionary<string, string> scope)
     {
         if (segments.Count == 0)
@@ -66,7 +66,7 @@ static class ShapeResolver
     /// </summary>
     public static bool IsExcelsiorTableMember(
         ModelShape shape,
-        List<string> segments,
+        IReadOnlyList<string> segments,
         IReadOnlyDictionary<string, string> scope)
     {
         if (segments.Count == 0)
@@ -123,7 +123,7 @@ static class ShapeResolver
 
     public static MemberEntry? ResolveMember(
         ModelShape shape,
-        List<string> segments,
+        IReadOnlyList<string> segments,
         IReadOnlyDictionary<string, string> scope)
     {
         if (segments.Count == 0)

@@ -587,7 +587,7 @@ public sealed class ParchmentTemplateGenerator :
         SourceProductionContext context,
         TargetInfo target,
         Location location,
-        List<List<string>> references,
+        IReadOnlyList<IReadOnlyList<string>> references,
         IReadOnlyDictionary<string, string> scope,
         string tokenSource)
     {
