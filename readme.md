@@ -953,8 +953,22 @@ Dash counts 6 / 20 / 6 yield widths in the same ratio (18.75% / 62.5% / 18.75%).
 
 Behaviour notes:
 
-- The default convention of padding all separator cells to the same dash count produces equal-width columns — same as before this feature existed.
-- Tables nested in blockquotes or list items are auto-sized to fit their indented container, so the explicit dxa column widths are skipped — the table sizes to content as it did previously.
+- If the `|` characters in the header, separator, and body rows all line up at the same column positions, dash counts are treated as readability padding and ignored — the table sizes naturally. Custom widths are inferred only when the separator dashes intentionally break that alignment. The two snippets below illustrate the distinction:
+
+  ```markdown
+  | Left | Center | Right | Default |    ← pipes align across all rows ⇒ uniform widths
+  |:-----|:------:|------:|---------|
+  | a    | b      | c     | d       |
+  ```
+
+  ```markdown
+  | Name | Description           | Count |    ← separator pipes shift ⇒ widths apply
+  |------|--------------------|------|
+  | A    | Short                 | 1     |
+  ```
+
+- When all column widths are equal (uniform separators like `|---|---|`), no explicit widths are emitted — Word's default auto-distribution produces the same layout, so the docx stays minimal.
+- Tables nested in blockquotes or list items are auto-sized to fit their indented container, so the explicit dxa column widths are skipped regardless of dash counts.
 
 #### [Grid tables](https://github.com/xoofx/markdig/blob/main/src/Markdig.Tests/Specs/GridTableSpecs.md)
 

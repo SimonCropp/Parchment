@@ -257,6 +257,57 @@ public class TableRendererTests
     }
 
     [Test]
+    public async Task PipeTableWithAlignedPipesSkipsExplicitWidthsViaPipeline()
+    {
+        // Separator has uneven dash counts (5/6/6/9) because of alignment colons, but the pipes
+        // in the header, separator and body all land at the same columns — readability padding.
+        // Going through MarkdownRendering exercises the source-aware alignment heuristic.
+        const string md =
+            """
+            | Left | Center | Right | Default |
+            |:-----|:------:|------:|---------|
+            | a    | b      | c     | d       |
+            | e    | f      | g     | h       |
+            """;
+
+        var elements = RendererHarness.RenderMarkdown(md);
+        var table = elements.OfType<Table>().Single();
+
+        var properties = table.GetFirstChild<TableProperties>()!;
+        await Assert.That(properties.GetFirstChild<TableLayout>()).IsNull();
+        foreach (var col in table.GetFirstChild<TableGrid>()!.Elements<GridColumn>())
+        {
+            await Assert.That(col.Width).IsNull();
+        }
+    }
+
+    [Test]
+    public async Task PipeTableWithMisalignedSeparatorEmitsWidthsViaPipeline()
+    {
+        // Body rows match the header pipes, but the separator deliberately uses 6/20/6 dashes —
+        // the pipe-alignment heuristic only suppresses widths when the separator aligns too, so
+        // the inferred column widths still drive the rendered layout.
+        const string md =
+            """
+            | Name | Description           | Count |
+            |------|--------------------|------|
+            | A    | Short                 | 1     |
+            | BB   | A longer description  | 22    |
+            """;
+
+        var elements = RendererHarness.RenderMarkdown(md);
+        var table = elements.OfType<Table>().Single();
+
+        var properties = table.GetFirstChild<TableProperties>()!;
+        await Assert.That(properties.GetFirstChild<TableLayout>()?.Type?.Value)
+            .IsEqualTo(TableLayoutValues.Fixed);
+        var gridCols = table.GetFirstChild<TableGrid>()!.Elements<GridColumn>().ToList();
+        await Assert.That(gridCols[0].Width?.Value).IsEqualTo("1688");
+        await Assert.That(gridCols[1].Width?.Value).IsEqualTo("5625");
+        await Assert.That(gridCols[2].Width?.Value).IsEqualTo("1688");
+    }
+
+    [Test]
     public async Task PipeTableHonorsColumnWidthsFromDashCounts()
     {
         // Separator dash counts 6 / 20 / 6 → widths 18.75% / 62.5% / 18.75%.

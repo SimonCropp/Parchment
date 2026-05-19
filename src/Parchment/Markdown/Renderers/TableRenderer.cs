@@ -11,9 +11,12 @@ class TableRenderer :
     {
         var columns = tableBlock.ColumnDefinitions;
         // Indented tables use Auto width and size to content; absolute dxa column widths would
-        // override that and stretch the table to the full budget. Keep the column-width feature
-        // gated to full-width (non-indented) tables.
-        var columnWidths = renderer.CurrentIndent > 0 ? null : ComputeColumnWidths(columns);
+        // override that and stretch the table to the full budget. Tables flagged by
+        // SkipColumnWidths had aligned pipes across header/separator/body in the source,
+        // signalling readability padding rather than custom widths.
+        var columnWidths = renderer.CurrentIndent > 0 || renderer.SkipColumnWidths.Contains(tableBlock)
+            ? null
+            : ComputeColumnWidths(columns);
 
         var table = new Table();
         table.Append(BuildTableProperties(renderer.CurrentIndent, columnWidths is not null));
@@ -49,9 +52,10 @@ class TableRenderer :
             }
         }
 
-        // No width hints (totalPct == 0) or uniform separators produce the same layout as Word's
-        // default auto-distribution, so skip the explicit dxa emission to keep the docx output
-        // minimal and avoid overriding the table's natural sizing.
+        // No width hints from Markdig (totalPct == 0) or every column has the same width —
+        // either way the default Word auto-distribution yields the same layout, so skip the
+        // explicit emission to keep the docx output minimal. Source-aligned pipe tables are
+        // filtered upstream via OpenXmlMarkdownRenderer.SkipColumnWidths.
         if (totalPct <= 0 || allEqual)
         {
             return null;
