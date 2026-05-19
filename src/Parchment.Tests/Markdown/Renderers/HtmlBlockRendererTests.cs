@@ -30,10 +30,7 @@ public class HtmlBlockRendererTests
     [Test]
     public async Task HtmlBlockNestedInBlockQuoteIndentsParagraphs()
     {
-        const string md =
-            """
-            > <p>hello</p>
-            """;
+        const string md = "> <p>hello</p>";
 
         var quote = RendererHarness.FirstBlock<QuoteBlock>(md);
         await Assert.That(quote.Descendants<HtmlBlock>().Any()).IsTrue();

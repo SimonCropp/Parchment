@@ -22,10 +22,7 @@ public class ThematicBreakRendererTests
     [Test]
     public async Task ThematicBreakNestedInBlockQuoteIsIndented()
     {
-        const string md =
-            """
-            > ---
-            """;
+        const string md = "> ---";
 
         var quote = RendererHarness.FirstBlock<QuoteBlock>(md);
         await Assert.That(quote.Descendants<ThematicBreakBlock>().Any()).IsTrue();

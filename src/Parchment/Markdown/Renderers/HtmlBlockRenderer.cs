@@ -61,7 +61,7 @@ class HtmlBlockRenderer :
         var properties = table.GetFirstChild<TableProperties>();
         if (properties == null)
         {
-            properties = new TableProperties();
+            properties = new();
             table.InsertAt(properties, 0);
         }
 
