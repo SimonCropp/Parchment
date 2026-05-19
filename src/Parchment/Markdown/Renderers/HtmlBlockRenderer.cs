@@ -13,9 +13,71 @@ class HtmlBlockRenderer :
         var html = block.Lines.ToString();
         var settings = renderer.ImagePolicies.BuildSettings(headingOffset: renderer.HeadingOffset);
         var elements = WordHtmlConverter.ToElements(html, renderer.MainPart, settings);
+        var indent = renderer.CurrentIndent;
         foreach (var element in elements)
         {
+            if (indent > 0)
+            {
+                ApplyIndent(element, indent);
+            }
+
             renderer.AddBlock(element);
         }
+    }
+
+    static void ApplyIndent(OpenXmlElement element, int indent)
+    {
+        switch (element)
+        {
+            case Paragraph paragraph:
+                ApplyParagraphIndent(paragraph, indent);
+                break;
+            case Table table:
+                ApplyTableIndent(table, indent);
+                break;
+        }
+    }
+
+    static void ApplyParagraphIndent(Paragraph paragraph, int indent)
+    {
+        paragraph.ParagraphProperties ??= new();
+        var existing = paragraph.ParagraphProperties.GetFirstChild<Indentation>();
+        if (existing == null)
+        {
+            paragraph.ParagraphProperties.Append(
+                new Indentation
+                {
+                    Left = indent.ToString(CultureInfo.InvariantCulture)
+                });
+            return;
+        }
+
+        var current = int.TryParse(existing.Left?.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ? parsed : 0;
+        existing.Left = (current + indent).ToString(CultureInfo.InvariantCulture);
+    }
+
+    static void ApplyTableIndent(Table table, int indent)
+    {
+        var properties = table.GetFirstChild<TableProperties>();
+        if (properties == null)
+        {
+            properties = new TableProperties();
+            table.InsertAt(properties, 0);
+        }
+
+        var existing = properties.GetFirstChild<TableIndentation>();
+        if (existing == null)
+        {
+            properties.Append(
+                new TableIndentation
+                {
+                    Width = indent,
+                    Type = TableWidthUnitValues.Dxa
+                });
+            return;
+        }
+
+        existing.Width = (existing.Width?.Value ?? 0) + indent;
+        existing.Type = TableWidthUnitValues.Dxa;
     }
 }

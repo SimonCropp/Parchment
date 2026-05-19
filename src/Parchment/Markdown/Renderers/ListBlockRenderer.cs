@@ -16,7 +16,7 @@ class ListBlockRenderer :
 
             foreach (var child in itemBlock)
             {
-                if (child is not LeafBlock leaf)
+                if (child is HtmlBlock or CodeBlock or ThematicBreakBlock || child is not LeafBlock leaf)
                 {
                     renderer.PushIndent(480);
                     try

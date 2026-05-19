@@ -5,7 +5,7 @@ class QuoteBlockRenderer :
     {
         foreach (var child in quoteBlock)
         {
-            if (child is LeafBlock leaf)
+            if (child is LeafBlock leaf && child is not HtmlBlock && child is not CodeBlock && child is not ThematicBreakBlock)
             {
                 var properties = new ParagraphProperties
                 {
