@@ -16,9 +16,17 @@ class ListBlockRenderer :
 
             foreach (var child in itemBlock)
             {
-                if (child is not LeafBlock leaf)
+                if (child is HtmlBlock or CodeBlock or ThematicBreakBlock || child is not LeafBlock leaf)
                 {
-                    renderer.Render(child);
+                    renderer.PushIndent(480);
+                    try
+                    {
+                        renderer.Render(child);
+                    }
+                    finally
+                    {
+                        renderer.PopIndent();
+                    }
                     continue;
                 }
 

@@ -413,6 +413,7 @@ perl -e ‘print "<IMG SRC=java\0script:alert("218")>";’ > out
 ";alert(‘223’);//
  Copy me
  Scroll over me 
+</body>
 http://a/%%30%30
 </textarea><script>alert(225)</script>
 1;DROP TABLE users
@@ -435,6 +436,7 @@ ls -al /
 Kernel.exec("ls -al /")
 Kernel.exit(1)
 %x('ls -al /')
+]>&xxe;
 $HOME
 $ENV{‘HOME’}
 %d

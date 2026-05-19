@@ -5,7 +5,10 @@ class QuoteBlockRenderer :
     {
         foreach (var child in quoteBlock)
         {
-            if (child is LeafBlock leaf)
+            if (child is LeafBlock leaf and
+                not HtmlBlock and
+                not CodeBlock and
+                not ThematicBreakBlock)
             {
                 var properties = new ParagraphProperties
                 {
@@ -19,7 +22,15 @@ class QuoteBlockRenderer :
             }
             else
             {
-                renderer.Render(child);
+                renderer.PushIndent(720);
+                try
+                {
+                    renderer.Render(child);
+                }
+                finally
+                {
+                    renderer.PopIndent();
+                }
             }
         }
     }

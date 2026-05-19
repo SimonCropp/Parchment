@@ -3,14 +3,25 @@ class CodeBlockRenderer :
 {
     protected override void Write(OpenXmlMarkdownRenderer renderer, CodeBlock block)
     {
+        var indent = renderer.CurrentIndent;
         foreach (var line in block.Lines.Lines.Take(block.Lines.Count))
         {
-            var paragraph = new Paragraph(
-                new ParagraphProperties(
-                    new ParagraphStyleId
+            var properties = new ParagraphProperties(
+                new ParagraphStyleId
+                {
+                    Val = "Code"
+                });
+            if (indent > 0)
+            {
+                properties.Append(
+                    new Indentation
                     {
-                        Val = "Code"
-                    }),
+                        Left = indent.ToString(CultureInfo.InvariantCulture)
+                    });
+            }
+
+            var paragraph = new Paragraph(
+                properties,
                 new Run(
                     new RunProperties(
                         new RunFonts
