@@ -118,7 +118,10 @@ static class AccessorEmission
                 continue;
             }
 
-            var nextPath = new List<string>(path) { member.Name };
+            var nextPath = new List<string>(path)
+            {
+                member.Name
+            };
 
             if (member.IsExcelsiorTable)
             {
@@ -174,44 +177,38 @@ static class AccessorEmission
     {
         foreach (var (fieldName, type) in blocks)
         {
-            fields.Append("static readonly global::System.Collections.Generic.KeyValuePair<string, global::Fluid.IMemberAccessor>[] ");
-            fields.Append(fieldName);
-            fields.AppendLine(" =");
-            fields.AppendLine("{");
+            fields.Append(
+                $$"""
+                static readonly KeyValuePair<string, global::Fluid.IMemberAccessor>[] {{fieldName}} =
+                {
+
+                """);
             foreach (var member in type.Members)
             {
-                fields.Append("  new(\"");
-                fields.Append(member.Name);
-                fields.Append("\", new global::Fluid.Accessors.DelegateAccessor(");
+                fields.Append(
+                    $"""  new("{member.Name}", new global::Fluid.Accessors.DelegateAccessor(""");
                 if (member.IsStatic)
                 {
                     // Static member: the instance argument is irrelevant. Access via the owner
                     // type directly so the emitted code is legal C# (CS0176 forbids instance-
                     // qualifying a static member).
-                    fields.Append("(_, _) => ");
-                    fields.Append(type.TypeFullyQualifiedName);
-                    fields.Append('.');
-                    fields.Append(member.Name);
+                    fields.Append($"(_, _) => {type.TypeFullyQualifiedName}.{member.Name}");
                 }
                 else
                 {
-                    fields.Append("(o, _) => ((");
-                    fields.Append(type.TypeFullyQualifiedName);
-                    fields.Append(")o).");
-                    fields.Append(member.Name);
+                    fields.Append($"(o, _) => (({type.TypeFullyQualifiedName})o).{member.Name}");
                 }
 
                 fields.AppendLine(")),");
             }
 
-            fields.AppendLine("};");
-            fields.AppendLine();
+            fields.Append(
+                """
+                };
 
-            registrations.Append("  global::Parchment.Generated.GeneratedRegistration.RegisterFluidAccessors(typeof(");
-            registrations.Append(type.TypeFullyQualifiedName);
-            registrations.Append("), ");
-            registrations.Append(fieldName);
-            registrations.AppendLine(");");
+                """);
+
+            registrations.AppendLine($"  global::Parchment.Generated.GeneratedRegistration.RegisterFluidAccessors(typeof({type.TypeFullyQualifiedName}), {fieldName});");
         }
     }
 
@@ -226,8 +223,12 @@ static class AccessorEmission
             return;
         }
 
-        fields.AppendLine("static readonly global::Parchment.Generated.ExcelsiorTableMapEntry[] _ExcelsiorTables =");
-        fields.AppendLine("{");
+        fields.Append(
+            """
+            static readonly global::Parchment.Generated.ExcelsiorTableMapEntry[] _ExcelsiorTables =
+            {
+
+            """);
         foreach (var (path, elementFqn) in entries)
         {
             fields.Append("  new(\"");
@@ -239,12 +240,13 @@ static class AccessorEmission
             fields.AppendLine("),");
         }
 
-        fields.AppendLine("};");
-        fields.AppendLine();
+        fields.Append(
+            """
+            };
 
-        registrations.Append("  global::Parchment.Generated.GeneratedRegistration.RegisterExcelsiorTable(typeof(");
-        registrations.Append(rootFqn);
-        registrations.AppendLine("), _ExcelsiorTables);");
+            """);
+
+        registrations.AppendLine($"  global::Parchment.Generated.GeneratedRegistration.RegisterExcelsiorTable(typeof({rootFqn}), _ExcelsiorTables);");
     }
 
     static void EmitFormatBlock(
@@ -258,8 +260,12 @@ static class AccessorEmission
             return;
         }
 
-        fields.AppendLine("static readonly global::Parchment.Generated.FormatMapEntry[] _Formats =");
-        fields.AppendLine("{");
+        fields.Append(
+            """
+            static readonly global::Parchment.Generated.FormatMapEntry[] _Formats =
+            {
+
+            """);
         foreach (var (path, kind) in entries)
         {
             fields.Append("  new(\"");
@@ -271,12 +277,13 @@ static class AccessorEmission
             fields.AppendLine("),");
         }
 
-        fields.AppendLine("};");
-        fields.AppendLine();
+        fields.Append(
+            """
+            };
 
-        registrations.Append("  global::Parchment.Generated.GeneratedRegistration.RegisterFormat(typeof(");
-        registrations.Append(rootFqn);
-        registrations.AppendLine("), _Formats);");
+            """);
+
+        registrations.AppendLine($"  global::Parchment.Generated.GeneratedRegistration.RegisterFormat(typeof({rootFqn}), _Formats);");
     }
 
     static void EmitStringListBlock(
@@ -290,8 +297,12 @@ static class AccessorEmission
             return;
         }
 
-        fields.AppendLine("static readonly global::Parchment.Generated.StringListMapEntry[] _StringLists =");
-        fields.AppendLine("{");
+        fields.Append(
+            """
+            static readonly global::Parchment.Generated.StringListMapEntry[] _StringLists =
+            {
+
+            """);
         foreach (var path in entries)
         {
             fields.Append("  new(\"");
@@ -301,12 +312,13 @@ static class AccessorEmission
             fields.AppendLine("),");
         }
 
-        fields.AppendLine("};");
-        fields.AppendLine();
+        fields.Append(
+            """
+            };
 
-        registrations.Append("  global::Parchment.Generated.GeneratedRegistration.RegisterStringList(typeof(");
-        registrations.Append(rootFqn);
-        registrations.AppendLine("), _StringLists);");
+            """);
+
+        registrations.AppendLine($"  global::Parchment.Generated.GeneratedRegistration.RegisterStringList(typeof({rootFqn}), _StringLists);");
     }
 
     static void EmitGetter(StringBuilder sb, string rootFqn, List<string> path)
